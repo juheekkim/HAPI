@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' — HAPI Portal' : 'HAPI Portal' %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/common.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+  <div class="page-wrapper">
+    <%- body %>
+  </div>
+  <script src="/js/common/apiClient.js"></script>
+  <script>
+    // 비고 툴팁 마우스 위치 추적
+    document.addEventListener('mousemove', function(e) {
+      var tooltips = document.querySelectorAll('.fw-note-tooltip');
+      tooltips.forEach(function(tip) {
+        var x = e.clientX;
+        var y = e.clientY;
+        var tipW = tip.offsetWidth || 280;
+        var left = x - tipW + 10;
+        if (left < 4) left = 4;
+        tip.style.left = left + 'px';
+        tip.style.top  = (y - 10) + 'px';
+        tip.style.transform = 'translateY(-100%) translateY(-8px)';
+      });
+    });
+  </script>
+</body>
+</html>

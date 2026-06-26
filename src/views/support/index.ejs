@@ -1,0 +1,48 @@
+<div class="community-hero">
+  <h1>운영 지원</h1>
+  <p>공지사항을 확인하고 궁금한 점을 해결하세요.</p>
+</div>
+
+<div class="community-tabs">
+  <a href="/support" class="community-tab active">📢 공지사항</a>
+  <a href="/support/inquiry" class="community-tab">✏ 문의하기</a>
+  <a href="/support/firewall-apply" class="community-tab">🔒 방화벽/토큰 신청</a>
+</div>
+
+<div class="community-body">
+  <!-- 공지사항 -->
+  <div class="comm-card">
+    <div class="comm-card-title">📢 공지사항</div>
+    <% if (notices.length === 0) { %>
+    <p style="color:#8a9bb0;font-size:13px;padding:12px 0">등록된 공지사항이 없습니다.</p>
+    <% } %>
+    <% notices.forEach(n => { %>
+    <div class="notice-item">
+      <span class="notice-tag tag-<%= n.tag_type %>"><%= n.tag %></span>
+      <div class="notice-info">
+        <div class="notice-title"><%= n.title %></div>
+        <div class="notice-date"><%= n.created_at %></div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+
+  <!-- FAQ (관리자 등록) -->
+  <div class="comm-card">
+    <div class="comm-card-title">💬 자주 묻는 질문</div>
+    <% if (faqs.length === 0) { %>
+    <p style="color:#8a9bb0;font-size:13px;padding:12px 0">등록된 FAQ가 없습니다.</p>
+    <% } %>
+    <% faqs.forEach(f => { %>
+    <div style="border-bottom:1px solid #e9eef5;padding:14px 0;">
+      <div style="font-size:14px;font-weight:600;color:#1a2332;margin-bottom:8px;white-space:pre-wrap;">Q. <%= f.question %></div>
+      <div style="font-size:13px;color:#374151;background:#f0f7ff;border-left:3px solid #2680eb;padding:10px 14px;border-radius:0 6px 6px 0;white-space:pre-wrap;">A. <%= f.answer %></div>
+    </div>
+    <% }) %>
+  </div>
+</div>
+
+<div class="tip-bar">
+  <span class="tip-label">TIP</span>
+  API 오류 발생 시 HTTP 상태코드와 에러 메시지를 함께 <a href="/support/inquiry" style="color:#2680eb;text-decoration:underline;">문의하기</a>에 남겨주시면 빠른 답변이 가능합니다.
+</div>

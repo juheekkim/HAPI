@@ -1,0 +1,58 @@
+<div class="home-hero">
+  <div class="home-hero-content">
+    <h1>시작하기</h1>
+    <p>API 연동을 위한 단계별 가이드를 제공합니다.</p>
+  </div>
+</div>
+
+<div class="home-body">
+  <div class="section-title">연동 절차</div>
+  <div class="guide-cards">
+    <div class="guide-card">
+      <div class="step-num">01</div>
+      <h3>API 개요</h3>
+      <p>연동 시작 전 전체 개요 및 기본 구조를 확인하세요.</p>
+    </div>
+    <div class="guide-card">
+      <div class="step-num">02</div>
+      <h3>개발 환경 안내</h3>
+      <p>스테이징/운영 환경별 접속 정보 및 설정 방법을 안내합니다.</p>
+    </div>
+    <div class="guide-card">
+      <div class="step-num">03</div>
+      <h3>호출 기본 규칙</h3>
+      <p>공통 Header, 인증 방식, 요청/응답 구조를 확인하세요.</p>
+    </div>
+    <div class="guide-card">
+      <div class="step-num">04</div>
+      <h3>샘플 JSON</h3>
+      <p>각 API별 요청/응답 샘플 데이터를 제공합니다.</p>
+    </div>
+  </div>
+
+  <div class="section-title">환경별 접속 정보</div>
+  <div class="env-table-wrap">
+    <table class="param-table">
+      <thead>
+        <tr><th>환경</th><th>NAT IP</th><th>URL</th><th>PORT</th><th>프로토콜</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="env-badge env-staging">개발서버</span></td>
+          <td class="mono">	211.197.235.21</td>
+          <td class="mono">https://exgatedev.hanwharesort.co.kr:443/iGate/LCB/json.jdo</td>
+          <td>80</td>
+          <td><span class="proto-badge">TLS 1.2</span></td>
+        </tr>
+        <tr>
+          <td><span class="env-badge env-prod">운영서버</span></td>
+          <td class="mono">211.197.235.530</td>
+          <td class="mono">	https://exgate.hanwharesort.co.kr:443/iGate/LCB/json.jdo</td>
+          <td>443</td>
+          <td><span class="proto-badge">TLS 1.2</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

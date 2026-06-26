@@ -1,0 +1,144 @@
+<div class="admin-nav">
+  <span class="admin-nav-title">⚙ 관리자 페이지</span>
+  <span>|</span>
+  <span>문의 확인</span>
+</div>
+
+<div class="admin-tabs">
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab active">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
+</div>
+
+<div class="admin-content">
+  <div class="admin-section-title">문의 목록</div>
+
+  <div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:11px 16px;margin-bottom:14px;font-size:13px;color:#1a3a6b;">
+    💡 답변 등록 후 <strong>FAQ 등록</strong> 버튼을 누르면 <strong>[운영지원 &gt; 자주 묻는 질문]</strong> 에 추가됩니다.
+  </div>
+
+  <div style="margin-bottom:20px;text-align:right;">
+    <button type="button" onclick="toggleAddForm()"
+      style="padding:8px 18px;border-radius:6px;font-size:13px;font-weight:600;border:none;background:#1a3a6b;color:#fff;cursor:pointer;">
+      + 문의 추가
+    </button>
+  </div>
+
+  <!-- 관리자 직접 Q&A 작성 폼 -->
+  <div id="add-form-wrap" style="display:none;background:#f8fafc;border:1.5px solid #bfdbfe;border-radius:10px;padding:20px 24px;margin-bottom:20px;">
+    <div style="font-size:14px;font-weight:700;color:#1a3a6b;margin-bottom:14px;">✏ Q&amp;A 직접 작성</div>
+    <form action="/admin/inquiries" method="POST">
+      <div style="margin-bottom:10px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:#5a7194;margin-bottom:4px;">질문 (Q)</label>
+        <textarea
+          name="question"
+          rows="2"
+          required
+          placeholder="질문 내용을 입력하세요."
+          style="width:100%;padding:10px 12px;border:1.5px solid #dde3ea;border-radius:6px;font-size:13px;font-family:inherit;outline:none;resize:vertical;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='#2680eb'" onblur="this.style.borderColor='#dde3ea'"
+        ></textarea>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:#5a7194;margin-bottom:4px;">답변 (A)</label>
+        <textarea
+          name="answer"
+          rows="3"
+          required
+          placeholder="답변 내용을 입력하세요."
+          style="width:100%;padding:10px 12px;border:1.5px solid #dde3ea;border-radius:6px;font-size:13px;font-family:inherit;outline:none;resize:vertical;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='#2680eb'" onblur="this.style.borderColor='#dde3ea'"
+        ></textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="submit" class="btn btn-primary btn-sm">등록</button>
+        <button type="button" onclick="toggleAddForm()" class="btn btn-sm" style="background:#f0f4f8;color:#5a7194;border:none;">취소</button>
+      </div>
+    </form>
+  </div>
+
+  <% if (inquiries.length === 0) { %>
+  <p style="color:#8a9bb0;padding:32px 0;text-align:center;">등록된 문의가 없습니다.</p>
+  <% } %>
+
+  <% inquiries.forEach(q => { %>
+  <div style="background:#fff;border:1px solid #dde3ea;border-radius:10px;padding:20px 24px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <% if (q.status === 'answered') { %>
+        <span class="badge badge-approved">답변완료</span>
+      <% } else { %>
+        <span class="badge badge-pending">답변대기</span>
+      <% } %>
+      <span style="font-size:12px;color:#8a9bb0;">
+        <%= q.user_name || '(알 수 없음)' %> &nbsp;|&nbsp;
+        <%= q.created_at ? new Date(q.created_at).toLocaleString('ko-KR', {timeZone:'Asia/Seoul'}) : '' %>
+      </span>
+    </div>
+
+    <div style="font-size:14px;font-weight:600;color:#1a2332;margin-bottom:10px;white-space:pre-wrap;">Q. <%= q.question %></div>
+
+    <% if (q.answer) { %>
+    <div style="font-size:13px;color:#374151;background:#f0f7ff;border-left:3px solid #2680eb;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:10px;white-space:pre-wrap;">A. <%= q.answer %></div>
+    <% } %>
+
+    <% if (q.status !== 'answered') { %>
+    <form action="/admin/inquiries/<%= q.id %>/answer" method="POST" style="margin-top:8px;">
+      <textarea
+        name="answer"
+        rows="3"
+        required
+        placeholder="답변 내용을 입력해주세요."
+        style="width:100%;padding:10px 12px;border:1.5px solid #dde3ea;border-radius:6px;font-size:13px;font-family:inherit;outline:none;resize:vertical;margin-bottom:8px;transition:border-color 0.2s;"
+        onfocus="this.style.borderColor='#2680eb'" onblur="this.style.borderColor='#dde3ea'"
+      ></textarea>
+      <button type="submit" class="btn btn-primary btn-sm">답변 등록</button>
+    </form>
+    <% } else { %>
+    <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <!-- 답변 수정 토글 -->
+      <button type="button" onclick="toggleEdit(<%= q.id %>)"
+        style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;border:1.5px solid #dde3ea;background:#fff;color:#5a7194;cursor:pointer;">
+        ✏ 답변 수정
+      </button>
+      <!-- FAQ 등록/취소 -->
+      <form action="/admin/inquiries/<%= q.id %>/toggle-faq" method="POST" style="margin:0;">
+        <button type="submit"
+          style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;border:none;cursor:pointer;
+                 background:<%= q.is_faq ? '#fee2e2' : '#dcfce7' %>;
+                 color:<%= q.is_faq ? '#dc2626' : '#15803d' %>;">
+          <%= q.is_faq ? '✅ FAQ 등록 취소' : '📌 FAQ 등록' %>
+        </button>
+      </form>
+    </div>
+    <!-- 답변 수정 폼 (기본 숨김) -->
+    <div id="edit-form-<%= q.id %>" style="display:none;margin-top:10px;">
+      <form action="/admin/inquiries/<%= q.id %>/answer" method="POST">
+        <textarea
+          name="answer"
+          rows="3"
+          required
+          style="width:100%;padding:10px 12px;border:1.5px solid #dde3ea;border-radius:6px;font-size:13px;font-family:inherit;outline:none;resize:vertical;margin-bottom:8px;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='#2680eb'" onblur="this.style.borderColor='#dde3ea'"
+        ><%= q.answer %></textarea>
+        <div style="display:flex;gap:8px;">
+          <button type="submit" class="btn btn-primary btn-sm">수정 완료</button>
+          <button type="button" onclick="toggleEdit(<%= q.id %>)" class="btn btn-sm" style="background:#f0f4f8;color:#5a7194;border:none;">취소</button>
+        </div>
+      </form>
+    </div>
+    <% } %>
+  </div>
+  <% }) %>
+</div>
+
+<script>
+function toggleAddForm() {
+  const el = document.getElementById('add-form-wrap');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function toggleEdit(id) {
+  const el = document.getElementById('edit-form-' + id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>

@@ -1,0 +1,224 @@
+﻿<div class="admin-nav">
+  <span class="admin-nav-title">⚙ 관리자 페이지</span>
+  <span>|</span>
+  <span>방화벽·토큰 신청 관리</span>
+</div>
+
+<div class="admin-tabs">
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab active">🔓 방화벽·토큰 신청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
+</div>
+
+<div class="admin-content">
+  <div class="admin-section-title">방화벽 해제 신청 목록</div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th rowspan="2" style="width:36px;vertical-align:middle;text-align:center;background:#d9e8fb;color:#5a7194;">No</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center;background:#d9e8fb;color:#5a7194;white-space:nowrap;">파트너사</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center;background:#d9e8fb;color:#5a7194;white-space:nowrap;">파트너사코드</th>
+          <th colspan="2" style="text-align:center;background:#d9e8fb;color:#5a7194;letter-spacing:0.05em;">SOURCE</th>
+          <th colspan="4" style="text-align:center;background:#d9e8fb;color:#5a7194;letter-spacing:0.05em;">DESTINATION</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center;background:#d9e8fb;color:#5a7194;white-space:nowrap;">비고</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center;background:#d9e8fb;color:#5a7194;white-space:nowrap;width:110px;">신청일시</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center;background:#d9e8fb;color:#5a7194;white-space:nowrap;">신청상태</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center;background:#d9e8fb;color:#5a7194;white-space:nowrap;">처리</th>
+          <th rowspan="2" style="vertical-align:middle;text-align:center;background:#d9e8fb;color:#5a7194;white-space:nowrap;min-width:160px;">토큰</th>
+        </tr>
+        <tr>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;font-size:11.5px;">IP</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;font-size:11.5px;">Hostname</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;font-size:11.5px;">구분</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;font-size:11.5px;">IP</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;font-size:11.5px;width:52px;">Port(s)</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;font-size:11.5px;">Hostname</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (requests.length === 0) { %>
+        <tr>
+          <td colspan="14" style="text-align:center;color:#8a9bb0;padding:32px;">신청 내역이 없습니다.</td>
+        </tr>
+        <% } %>
+        <% requests.forEach((r, idx) => { const rowNo = requests.length - idx; %>
+        <%
+          const DEV_IP = '211.197.235.21';
+          const isDevServer = r.dest_ip === DEV_IP;
+          const serverLabel = !r.dest_ip ? '—' : (isDevServer ? '개발' : '운영');
+          const serverColor = !r.dest_ip ? '#c8d4e0' : (isDevServer ? '#1e6fce' : '#7c3aed');
+          const serverBg   = !r.dest_ip ? 'transparent' : (isDevServer ? '#e8f0fe' : '#f3e8ff');
+        %>
+        <tr>
+          <td style="text-align:center;color:#8a9bb0;"><%= rowNo %></td>
+          <td style="white-space:nowrap;">
+            <div
+              class="partner-link"
+              data-company="<%- (r.company_name || '').replace(/"/g, '&quot;') %>"
+              data-manager="<%- (r.partner_manager_name || '').replace(/"/g, '&quot;') %>"
+              data-email="<%- (r.partner_email || '').replace(/"/g, '&quot;') %>"
+              data-phone="<%- (r.partner_phone || '').replace(/"/g, '&quot;') %>"
+              style="font-weight:600;color:#1e6fce;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;"
+              onclick="showPartnerPopupFromEl(event,this)"
+            ><%= r.company_name || '—' %></div>
+          </td>
+          <td style="text-align:center;color:#1a3a6b;font-weight:700;white-space:nowrap;"><%= r.partner_code || '—' %></td>
+          <td><%= r.source_ip %></td>
+          <td><%= r.source_hostname %></td>
+          <td style="text-align:center;">
+            <span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:600;background:<%- serverBg %>;color:<%- serverColor %>;"><%- serverLabel %></span>
+          </td>
+          <td style="color:#8a9bb0;"><%= r.dest_ip || '—' %></td>
+          <td style="color:#8a9bb0;text-align:center;"><%= r.dest_port || '443' %></td>
+          <td style="color:#8a9bb0;"><%= r.dest_hostname || '—' %></td>
+          <td style="min-width:100px; max-width:180px; word-break:break-word; white-space:normal;"><%= r.note || '—' %></td>
+          <td style="color:#8a9bb0;white-space:nowrap;text-align:center;">
+            <%= r.requested_at ? new Date(r.requested_at).toLocaleString('ko-KR', {timeZone:'Asia/Seoul'}) : '—' %>
+          </td>
+          <td style="text-align:center;white-space:nowrap;">
+            <% if (r.approval_status === 'approved') { %>
+              <span class="badge badge-approved">승인완료</span>
+            <% } else if (r.approval_status === 'rejected') { %>
+              <span class="badge badge-rejected">반려</span>
+              <% if (r.reject_reason) { %>
+              <div style="font-size:11px;color:#8a9bb0;margin-top:4px;max-width:140px;word-break:break-all;white-space:normal;"><%= r.reject_reason %></div>
+              <% } %>
+            <% } else { %>
+              <span class="badge badge-pending">검토중</span>
+            <% } %>
+          </td>
+          <td style="text-align:center;min-width:150px;">
+            <% if (r.approval_status === 'pending') { %>
+            <div class="action-btns" style="justify-content:center;">
+              <form action="/admin/firewall/<%= r.id %>/approve" method="POST" style="display:inline">
+                <button class="btn btn-success btn-sm" type="submit">승인</button>
+              </form>
+              <button class="btn btn-danger btn-sm" onclick="openRejectModal(<%= r.id %>)">반려</button>
+            </div>
+            <% } else { %>
+            <div style="font-size:11.5px;color:#8a9bb0;white-space:nowrap;">
+              <%= r.approved_at ? new Date(r.approved_at).toLocaleString('ko-KR', {timeZone:'Asia/Seoul'}) : '—' %>
+            </div>
+            <% } %>
+          </td>
+          <td style="text-align:center;min-width:160px;">
+            <% if (r.token) { %>
+            <span class="mono" style="font-size:12px;font-weight:700;letter-spacing:2px;color:#2680eb"><%= r.token %></span>
+            <% } else { %>
+            <span style="color:#c8d4e0;">—</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 파트너사 담당자 팝업 -->
+<div id="partner-popup" style="display:none;position:fixed;z-index:9999;background:#fff;border:1.5px solid #d9e8fb;border-radius:10px;padding:16px 20px;box-shadow:0 8px 24px rgba(0,0,0,0.13);min-width:220px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <span id="popup-company" style="font-size:13px;font-weight:700;color:#1a3a6b;"></span>
+    <button onclick="closePartnerPopup()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#8a9bb0;line-height:1;">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;">
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="color:#8a9bb0;min-width:64px;">담당자명</span>
+      <span id="popup-manager" style="color:#1a2332;font-weight:600;cursor:pointer;" onclick="copyText(this)" title="클릭하여 복사"></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="color:#8a9bb0;min-width:64px;">이메일</span>
+      <span id="popup-email" style="color:#1e6fce;cursor:pointer;" onclick="copyText(this)" title="클릭하여 복사"></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span style="color:#8a9bb0;min-width:64px;">연락처</span>
+      <span id="popup-phone" style="color:#1a2332;cursor:pointer;" onclick="copyText(this)" title="클릭하여 복사"></span>
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:10.5px;color:#b0bec5;">클릭하면 복사됩니다</div>
+</div>
+
+<!-- 반려 사유 모달 -->
+<div id="modal-reject" class="modal-overlay" style="display:none">
+  <div class="reject-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 style="font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <span style="color:#f59e0b">⚠</span> 반려 사유 입력
+      </h3>
+      <button onclick="closeRejectModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#8a9bb0">✕</button>
+    </div>
+    <form id="reject-form" method="POST">
+      <textarea name="reason" placeholder="반려 사유를 입력해 주세요." rows="4"
+        style="width:100%;padding:10px 12px;border:1.5px solid #dde3ea;border-radius:6px;font-family:inherit;font-size:13px;resize:none;outline:none;margin-bottom:16px"
+        onfocus="this.style.borderColor='#2680eb'" onblur="this.style.borderColor='#dde3ea'"
+      ></textarea>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button type="button" onclick="closeRejectModal()" class="btn btn-outline">취소</button>
+        <button type="submit" class="btn btn-danger">반려 처리</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openRejectModal(id) {
+  document.getElementById('reject-form').action = '/admin/firewall/' + id + '/reject';
+  document.getElementById('modal-reject').style.display = 'flex';
+}
+function closeRejectModal() {
+  document.getElementById('modal-reject').style.display = 'none';
+}
+document.getElementById('modal-reject').addEventListener('click', function(e) {
+  if (e.target === this) closeRejectModal();
+});
+
+function showPartnerPopupFromEl(event, el) {
+  showPartnerPopup(event, el.dataset.company, el.dataset.manager, el.dataset.email, el.dataset.phone);
+}
+function showPartnerPopup(event, company, manager, email, phone) {
+  event.stopPropagation();
+  const popup = document.getElementById('partner-popup');
+  document.getElementById('popup-company').textContent = company;
+  document.getElementById('popup-manager').textContent = manager || '—';
+  document.getElementById('popup-email').textContent   = email   || '—';
+  document.getElementById('popup-phone').textContent   = phone   || '—';
+  popup.style.display = 'block';
+  const rect = event.target.getBoundingClientRect();
+  const scrollY = window.scrollY || document.documentElement.scrollTop;
+  const scrollX = window.scrollX || document.documentElement.scrollLeft;
+  let top  = rect.bottom + scrollY + 6;
+  let left = rect.left   + scrollX;
+  if (left + 240 > window.innerWidth) left = window.innerWidth - 248;
+  popup.style.top  = top  + 'px';
+  popup.style.left = left + 'px';
+}
+function closePartnerPopup() {
+  document.getElementById('partner-popup').style.display = 'none';
+}
+document.addEventListener('click', function(e) {
+  const popup = document.getElementById('partner-popup');
+  if (popup.style.display !== 'none' && !popup.contains(e.target)) {
+    closePartnerPopup();
+  }
+});
+function copyText(el) {
+  const text = el.textContent;
+  if (!text || text === '—') return;
+  navigator.clipboard.writeText(text).then(function() {
+    const orig = el.style.color;
+    el.style.color = '#15803d';
+    el.style.fontWeight = '700';
+    setTimeout(function() { el.style.color = orig; el.style.fontWeight = ''; }, 1200);
+  }).catch(function() {
+    const range = document.createRange();
+    range.selectNode(el);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+  });
+}
+</script>

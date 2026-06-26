@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HABIS API Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-dark: #0a1628;
+  --navy-mid: #0d2244;
+  --navy: #1a3a6b;
+  --blue: #1e6fce;
+  --blue-bright: #2680eb;
+  --blue-light: #4da3ff;
+  --cyan: #00c4cc;
+  --bg: #f0f4f8;
+  --bg-white: #ffffff;
+  --border: #dde3ea;
+  --text-dark: #1a2332;
+  --text-mid: #4a5568;
+  --text-light: #8a9bb0;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --sidebar-w: 200px;
+  --header-h: 52px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text-dark); font-size: 14px; }
+.hidden { display: none !important; }
+
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  background: #fff; border-radius: 10px; padding: 32px;
+  width: 560px; max-width: 95vw; position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.modal-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.modal-title span { color: var(--blue); }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-light); padding: 4px; }
+.modal-close:hover { color: var(--text-dark); }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.modal-full { grid-column: 1/-1; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-mid); }
+.form-group label .req { color: var(--danger); }
+.form-group input, .form-group textarea {
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+  border-radius: 6px; font-size: 13px; font-family: inherit;
+  outline: none; transition: border-color 0.2s;
+  color: var(--text-dark);
+}
+.form-group input:focus, .form-group textarea:focus { border-color: var(--blue); }
+.form-group textarea { resize: none; height: 72px; }
+.modal-notice {
+  background: #f0f7ff; border: 1px solid #bee3f8; border-radius: 6px;
+  padding: 12px 14px; font-size: 12.5px; color: #2c5282; margin-bottom: 20px;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.btn { padding: 10px 22px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; font-family: inherit; }
+.btn-outline { background: #fff; border: 1.5px solid var(--border); color: var(--text-mid); }
+.btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: #1a5fb8; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
+
+/* ===== LOGIN PAGE ===== */
+#page-login {
+  display: flex; height: 100vh;
+}
+.login-left {
+  width: 360px; min-height: 100vh;
+  background: linear-gradient(160deg, var(--navy-dark) 0%, var(--navy-mid) 50%, #0e3060 100%);
+  padding: 40px 36px; display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.login-left::before {
+  content: ''; position: absolute; width: 280px; height: 280px;
+  border-radius: 50%; background: rgba(30,111,206,0.2);
+  bottom: 80px; right: -80px;
+}
+.login-left::after {
+  content: ''; position: absolute; width: 180px; height: 180px;
+  border-radius: 50%; background: rgba(0,196,204,0.12);
+  bottom: 200px; right: 60px;
+}
+.login-brand { font-size: 13px; color: var(--blue-light); font-weight: 500; margin-bottom: 24px; }
+.login-title { font-size: 28px; font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 48px; }
+.login-features { list-style: none; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
+.login-features li { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.85); font-size: 14px; }
+.login-features li::before {
+  content: ''; width: 4px; height: 18px;
+  background: var(--blue-bright); border-radius: 2px; flex-shrink: 0;
+}
+.login-right {
+  flex: 1; background: #eef2f7; display: flex; align-items: center; justify-content: center; padding: 40px;
+}
+.login-box { width: 380px; }
+.login-box h2 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
+.login-box p { color: var(--text-light); font-size: 13px; margin-bottom: 32px; }
+.login-form .form-group { margin-bottom: 18px; }
+.login-form label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.login-form input {
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 14px; outline: none; background: #fff;
+  transition: border-color 0.2s; font-family: inherit;
+}
+.login-form input:focus { border-color: var(--blue); }
+.btn-login {
+  width: 100%; padding: 13px; background: var(--blue-bright); color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
+  cursor: pointer; margin-bottom: 20px; transition: background 0.2s; font-family: inherit;
+}
+.btn-login:hover { background: #1a5fb8; }
+.login-divider { text-align: center; color: var(--text-light); font-size: 13px; margin-bottom: 12px; }
+.btn-partner-apply {
+  width: 100%; padding: 12px; background: #fff; border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-dark);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s; font-family: inherit;
+}
+.btn-partner-apply:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ===== PORTAL LAYOUT ===== */
+#portal-layout { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Top Nav */
+.top-nav {
+  height: var(--header-h); background: var(--navy-dark);
+  display: flex; align-items: center; padding: 0 24px;
+  position: sticky; top: 0; z-index: 100; gap: 0;
+}
+.nav-logo {
+  font-size: 16px; font-weight: 800; color: #fff; margin-right: 40px;
+  display: flex; align-items: center; gap: 2px; cursor: pointer;
+}
+.nav-logo span { color: var(--blue-bright); }
+.nav-tabs { display: flex; align-items: stretch; height: 100%; flex: 1; }
+.nav-tab {
+  height: 100%; padding: 0 20px; display: flex; align-items: center;
+  color: rgba(255,255,255,0.7); font-size: 14px; font-weight: 500;
+  cursor: pointer; border-bottom: 3px solid transparent;
+  transition: all 0.2s; white-space: nowrap;
+}
+.nav-tab:hover { color: #fff; }
+.nav-tab.active { color: #fff; border-bottom-color: var(--blue-bright); }
+.nav-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.nav-user {
+  background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+  padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;
+  font-family: inherit; font-weight: 500; transition: background 0.2s;
+}
+.nav-user:hover { background: rgba(255,255,255,0.2); }
+.btn-ai {
+  background: var(--blue-bright); color: #fff; border: none;
+  padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px;
+}
+
+/* Pages */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ===== HOME PAGE ===== */
+.home-hero {
+  background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 60%, #1a4a8a 100%);
+  padding: 48px 60px; color: #fff; position: relative; overflow: hidden;
+}
+.home-hero::after {
+  content: ''; position: absolute; width: 400px; height: 400px;
+  border-radius: 50%; background: rgba(30,111,206,0.15);
+  right: -80px; top: -80px;
+}
+.home-hero h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+.home-hero p { color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 24px; }
+.btn-hero { background: var(--cyan); color: var(--navy-dark); padding: 10px 24px; border-radius: 6px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.home-body { padding: 40px 60px; }
+.section-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+.guide-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px; }
+.guide-card {
+  background: #fff; border-radius: 10px; padding: 24px; border: 1px solid var(--border);
+  position: relative; transition: box-shadow 0.2s;
+}
+.guide-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.guide-card .step-num { font-size: 28px; font-weight: 800; color: var(--blue-bright); margin-bottom: 6px; }
+.guide-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.guide-card p { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+.guide-card .arrow { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--text-light); font-size: 18px; }
+.home-stats { display: flex; gap: 40px; background: var(--navy-dark); padding: 20px 32px; border-radius: 10px; }
+.stat-item { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.8); font-size: 13px; }
+.stat-icon { font-size: 18px; }
+
+/* ===== API PAGE ===== */
+.api-layout { display: flex; height: calc(100vh - var(--header-h)); }
+.api-sidebar {
+  width: var(--sidebar-w); background: #fff; border-right: 1px solid var(--border);
+  overflow-y: auto; flex-shrink: 0; padding: 16px 0;
+}
+.sidebar-search {
+  margin: 0 12px 12px; padding: 8px 12px; border: 1.5px solid var(--border);
+  border-radius: 6px; font-size: 13px; width: calc(100% - 24px);
+  outline: none; font-family: inherit;
+}
+.sidebar-search:focus { border-color: var(--blue); }
+.sidebar-group { margin-bottom: 4px; }
+.sidebar-group-title {
+  padding: 8px 16px; font-size: 12px; font-weight: 700;
+  color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;
+  display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+}
+.sidebar-group-title::after { content: '▾'; font-size: 10px; }
+.sidebar-item {
+  padding: 8px 16px 8px 24px; font-size: 13px; color: var(--text-mid);
+  cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent;
+}
+.sidebar-item:hover { background: #f5f8ff; color: var(--blue); }
+.sidebar-item.active { background: #eef4ff; color: var(--blue); border-left-color: var(--blue); font-weight: 600; }
+.sidebar-sub { padding: 7px 16px 7px 32px; font-size: 12.5px; color: var(--text-light); cursor: pointer; }
+.sidebar-sub:hover { color: var(--blue); }
+
+.api-content { flex: 1; overflow-y: auto; padding: 32px 40px; }
+.breadcrumb { font-size: 12.5px; color: var(--text-light); margin-bottom: 16px; }
+.breadcrumb span { color: var(--blue); }
+.api-page-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.api-page-desc { color: var(--text-mid); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+
+.api-section {
+  background: #fff; border-radius: 10px; border: 1px solid var(--border);
+  margin-bottom: 16px; overflow: hidden;
+}
+.api-section-header {
+  padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; border-bottom: 1px solid var(--border);
+}
+.api-section-header h3 { font-size: 15px; font-weight: 700; }
+.api-section-body { padding: 20px; }
+.api-section-toggle { font-size: 12px; color: var(--blue); font-weight: 600; }
+
+.method-badge {
+  display: inline-block; padding: 4px 10px; border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+  margin-right: 10px;
+}
+.method-post { background: #dcfce7; color: #15803d; }
+.method-get { background: #dbeafe; color: #1d4ed8; }
+.method-delete { background: #fee2e2; color: #dc2626; }
+.method-put { background: #fef3c7; color: #d97706; }
+
+.api-url {
+  font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  color: var(--text-dark); background: #f8fafc; padding: 10px 16px;
+  border-radius: 6px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+}
+
+.tab-group { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; width: fit-content; }
+.tab-btn { padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; background: #fff; border: none; color: var(--text-mid); font-family: inherit; transition: all 0.15s; }
+.tab-btn.active { background: var(--navy-dark); color: #fff; }
+
+.param-table { width: 100%; border-collapse: collapse; }
+.param-table th {
+  background: var(--navy-dark); color: #fff; padding: 10px 14px;
+  font-size: 12.5px; font-weight: 600; text-align: left;
+}
+.param-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--border); }
+.param-table tr:last-child td { border-bottom: none; }
+.param-table tr:hover td { background: #f8fafc; }
+.param-req { color: var(--danger); font-weight: 700; font-size: 12px; }
+.param-type { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--blue); }
+
+.code-block {
+  background: #1e2d40; color: #e2e8f0; border-radius: 8px;
+  padding: 20px; font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px; line-height: 1.7; overflow-x: auto;
+}
+.code-comment { color: #6b8aaa; }
+.code-key { color: #7dd3fc; }
+.code-string { color: #86efac; }
+.code-number { color: #fbbf24; }
+
+/* ===== FIREWALL PAGE ===== */
+.fw-layout { padding: 0; }
+.fw-tabs { display: flex; background: var(--navy-dark); padding: 0 24px; }
+.fw-tab {
+  padding: 14px 22px; color: rgba(255,255,255,0.6); font-size: 13.5px;
+  font-weight: 500; cursor: pointer; border-bottom: 3px solid transparent;
+  display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+}
+.fw-tab.active { color: #fff; border-bottom-color: var(--blue-bright); }
+.fw-tab:hover { color: #fff; }
+
+.fw-content { padding: 32px 40px; display: grid; grid-template-columns: 1fr 340px; gap: 28px; }
+.fw-info-box { background: #fff; border-radius: 10px; border: 1px solid var(--border); padding: 24px; }
+.fw-info-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.fw-info-title .icon { color: var(--blue); }
+.fw-info-desc { font-size: 13px; color: var(--text-mid); margin-bottom: 20px; }
+.ip-table { width: 100%; border-collapse: collapse; }
+.ip-table th {
+  background: var(--navy-dark); color: #fff; padding: 10px 16px;
+  font-size: 12.5px; font-weight: 600; text-align: left;
+}
+.ip-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+.env-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
+.env-staging { background: #fef3c7; color: #d97706; }
+.env-prod { background: #dcfce7; color: #15803d; }
+.ip-val { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+.proto-badge { background: #dbeafe; color: #1d4ed8; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+
+.token-steps {
+  background: var(--navy-dark); border-radius: 10px; padding: 20px;
+  color: rgba(255,255,255,0.85); margin-top: 20px;
+}
+.token-steps h4 { color: var(--cyan); font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.token-steps ol { padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; line-height: 1.5; }
+
+.fw-form-box { background: #fff; border-radius: 10px; border: 1px solid var(--border); padding: 24px; align-self: start; }
+.fw-form-title { font-size: 15px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.fw-form .form-group { margin-bottom: 16px; }
+.fw-form label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-mid); }
+.fw-form input, .fw-form textarea {
+  width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+  border-radius: 6px; font-size: 13px; outline: none; font-family: inherit; transition: border-color 0.2s;
+}
+.fw-form input:focus, .fw-form textarea:focus { border-color: var(--blue); }
+.btn-fw { width: 100%; padding: 12px; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-fw:hover { background: #1a5fb8; }
+
+/* ===== ADMIN PAGE ===== */
+.admin-nav {
+  background: var(--navy-dark); padding: 12px 28px;
+  display: flex; align-items: center; gap: 16px; color: rgba(255,255,255,0.7); font-size: 13px;
+}
+.admin-nav-title { color: #fff; font-weight: 700; font-size: 14px; }
+.admin-nav span { color: rgba(255,255,255,0.4); }
+
+.admin-body { padding: 0; }
+.admin-tabs { display: flex; background: #fff; border-bottom: 2px solid var(--border); padding: 0 28px; }
+.admin-tab { padding: 14px 20px; font-size: 13.5px; font-weight: 500; cursor: pointer; color: var(--text-light); border-bottom: 3px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: 8px; transition: all 0.15s; }
+.admin-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+.admin-tab:hover { color: var(--text-dark); }
+
+.admin-content { padding: 28px; }
+.admin-section-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+.filter-row { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-chip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: #fff; border: 1.5px solid var(--border); border-radius: 6px; font-size: 12.5px; cursor: pointer; transition: all 0.15s; }
+.filter-chip input[type=checkbox] { cursor: pointer; }
+.filter-chip:hover { border-color: var(--blue); }
+
+.data-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.data-table th { background: var(--navy-dark); color: #fff; padding: 11px 14px; font-size: 12.5px; font-weight: 600; text-align: left; white-space: nowrap; }
+.data-table td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #f0f4f8; vertical-align: middle; }
+.data-table tr:hover td { background: #fafbff; }
+.data-table tr:last-child td { border-bottom: none; }
+.req-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--blue); }
+.action-btns { display: flex; gap: 6px; align-items: center; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.badge-pending { background: #fef3c7; color: #d97706; }
+.badge-approved { background: #dcfce7; color: #15803d; }
+.badge-rejected { background: #fee2e2; color: #dc2626; }
+.badge-inprogress { background: #dbeafe; color: #1d4ed8; }
+.badge-error { background: #fce7f3; color: #9d174d; }
+.token-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-mid); }
+
+/* ===== COMMUNITY PAGE ===== */
+.community-hero { background: linear-gradient(135deg, var(--navy-dark), var(--navy)); padding: 32px 48px; color: #fff; }
+.community-hero h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.community-hero p { color: rgba(255,255,255,0.7); font-size: 14px; }
+
+.community-tabs { display: flex; background: #fff; border-bottom: 2px solid var(--border); padding: 0 48px; }
+.community-tab { padding: 14px 20px; font-size: 13.5px; cursor: pointer; color: var(--text-light); border-bottom: 3px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: 8px; font-weight: 500; transition: all 0.15s; }
+.community-tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+.community-tab:hover { color: var(--text-dark); }
+
+.community-body { padding: 32px 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.comm-card { background: #fff; border-radius: 10px; border: 1px solid var(--border); padding: 24px; }
+.comm-card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.notice-item { padding: 12px 0; border-bottom: 1px solid #f0f4f8; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.notice-item:last-child { border-bottom: none; }
+.notice-item:hover .notice-title { color: var(--blue); }
+.notice-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+.tag-notice { background: #dbeafe; color: #1d4ed8; }
+.tag-update { background: #dcfce7; color: #15803d; }
+.tag-new { background: #fee2e2; color: #dc2626; }
+.notice-info { flex: 1; }
+.notice-title { font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+.notice-date { font-size: 12px; color: var(--text-light); }
+.qa-item { padding: 14px 0; border-bottom: 1px solid #f0f4f8; }
+.qa-item:last-child { border-bottom: none; }
+.qa-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d; margin-bottom: 6px; }
+.qa-q { font-size: 13.5px; font-weight: 600; margin-bottom: 4px; }
+.qa-a { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
+.btn-ask { width: 100%; padding: 11px; background: #fff; border: 1.5px solid var(--blue); color: var(--blue); border-radius: 8px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-ask:hover { background: #eef4ff; }
+
+.tip-bar { background: #fffbeb; border-top: 1px solid #fde68a; padding: 12px 48px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: #92400e; }
+.tip-label { background: #f59e0b; color: #fff; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+
+/* Rejection modal */
+.reject-modal { background: #fff; border-radius: 10px; padding: 28px; width: 420px; }
+.reject-modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.reject-modal h3 .warn { color: var(--warning); }
+.reject-modal textarea { width: 100%; height: 90px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 6px; margin: 16px 0 12px; font-family: inherit; font-size: 13px; resize: none; outline: none; }
+.reject-modal textarea:focus { border-color: var(--blue); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c8d4e0; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN PAGE ===== -->
+<div id="page-login">
+  <div class="login-left">
+    <div>
+      <div class="login-brand">Hanwha Hotel&Resort</div>
+      <div class="login-title">API 연동<br>Portal</div>
+    </div>
+    <ul class="login-features">
+      <li>API 정보 등합 제공</li>
+      <li>방화벽 해제 신청</li>
+      <li>인증 토큰 발급</li>
+      <li>AI 챗봇 문의</li>
+    </ul>
+    <div></div>
+  </div>
+  <div class="login-right">
+    <div class="login-box">
+      <h2>파트너사 로그인</h2>
+      <p>등록된 파트너사 계정으로 로그인하세요</p>
+      <div class="login-form">
+        <div class="form-group">
+          <label>파트너사 코드</label>
+          <input type="text" placeholder="업체 코드를 입력하세요">
+        </div>
+        <div class="form-group">
+          <label>비밀번호</label>
+          <input type="password" placeholder="비밀번호를 입력하세요">
+        </div>
+        <button class="btn-login" onclick="goPortal()">로그인</button>
+        <div class="login-divider">파트너사 코드가 없으신가요?</div>
+        <button class="btn-partner-apply" onclick="openModal('modal-apply')">
+          🏢 파트너사 코드 신청
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PORTAL LAYOUT ===== -->
+<div id="portal-layout" class="hidden">
+  <nav class="top-nav">
+    <div class="nav-logo" onclick="showPage('home')"><span>H</span>API Portal</div>
+    <div class="nav-tabs">
+      <div class="nav-tab" id="tab-home" onclick="showPage('home')">Portal</div>
+      <div class="nav-tab" id="tab-start" onclick="showPage('start')">시작하기</div>
+      <div class="nav-tab" id="tab-api" onclick="showPage('api')">API</div>
+      <div class="nav-tab" id="tab-fw" onclick="showPage('fw')">방화벽/토큰</div>
+      <div class="nav-tab" id="tab-community" onclick="showPage('community')">커뮤니티</div>
+      <div class="nav-tab" id="tab-admin" onclick="showPage('admin')">관리자</div>
+    </div>
+    <div class="nav-right">
+      <button class="nav-user" onclick="showPage('admin')">㈜여기눈자 ▾</button>
+      <button class="btn-ai">🤖 AI 문의</button>
+    </div>
+  </nav>
+
+  <!-- HOME PAGE -->
+  <div id="page-home" class="page">
+    <div class="home-hero">
+      <h1>한화호텔앤드리조트 API Portal에 오신 것을 환영합니다</h1>
+      <p>한화리조트 서비스 연동을 위한 모든 API 정보와 가이드를 제공합니다.</p>
+      <button class="btn-hero" onclick="showPage('api')">API 찾아보기</button>
+    </div>
+    <div class="home-body">
+      <div class="section-title">API 사용 퀵 가이드</div>
+      <div class="guide-cards">
+        <div class="guide-card">
+          <div class="step-num">01</div>
+          <h3>파트너사 등록</h3>
+          <p>한화호텔앤드리조트 파트너사 코드 발급</p>
+          <span class="arrow">›</span>
+        </div>
+        <div class="guide-card">
+          <div class="step-num">02</div>
+          <h3>통신 정보 확인</h3>
+          <p>IP/URL 확인 및 방화벽포트 허용 설정</p>
+          <span class="arrow">›</span>
+        </div>
+        <div class="guide-card" onclick="showPage('fw')">
+          <div class="step-num">03</div>
+          <h3>방화벽 해제/토큰 발급 신청</h3>
+          <p>한화리조트 서버에 접속하기 위한 방화벽 해제 및 토큰 발급 신청</p>
+          <span class="arrow">›</span>
+        </div>
+        <div class="guide-card" onclick="showPage('api')">
+          <div class="step-num">04</div>
+          <h3>API 연동 개발 및 테스트</h3>
+          <p>API 문서 참고하여 연동 개발 진행</p>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+      <div class="home-stats">
+        <div class="stat-item"><span class="stat-icon">📋</span> API 명세 총 28개</div>
+        <div class="stat-item"><span class="stat-icon">🔑</span> JWT 인증 방식</div>
+        <div class="stat-item"><span class="stat-icon">🔒</span> TLS 1.2 이상 지원</div>
+        <div class="stat-item"><span class="stat-icon">⚡</span> 24/7 서비스 운영</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API PAGE -->
+  <div id="page-api" class="page">
+    <div class="api-layout">
+      <aside class="api-sidebar">
+        <input class="sidebar-search" placeholder="🔍 API 검색">
+        <div class="sidebar-group">
+          <div class="sidebar-group-title">리조트</div>
+          <div class="sidebar-sub">Header</div>
+          <div class="sidebar-item active" onclick="showApiDoc('condo')">콘도예약</div>
+          <div class="sidebar-item" onclick="showApiDoc('golf')">골프예약</div>
+          <div class="sidebar-item" onclick="showApiDoc('product')">상품/쿠폰</div>
+          <div class="sidebar-item" onclick="showApiDoc('hlive')">H-LIVE 포인트</div>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-group-title">에스테이트</div>
+          <div class="sidebar-sub">Header</div>
+          <div class="sidebar-item" onclick="showApiDoc('estate')">숙박 예약</div>
+          <div class="sidebar-item" onclick="showApiDoc('estate2')">부대시설</div>
+        </div>
+        <div class="sidebar-group">
+          <div class="sidebar-group-title">공통</div>
+          <div class="sidebar-item" onclick="showApiDoc('common')">에러 코드</div>
+          <div class="sidebar-item" onclick="showApiDoc('auth')">인증</div>
+        </div>
+      </aside>
+
+      <div class="api-content" id="api-doc-area">
+        <!-- condo doc (default) -->
+        <div id="doc-condo">
+          <div class="breadcrumb">API › 리조트 › <span>콘도예약</span></div>
+          <div class="api-page-title">콘도 예약 API</div>
+          <div class="api-page-desc">한화호텔앤드리조트 콘도 객실 예약을 생성·조회·변경·취소하는 API입니다.<br>파트너사 시스템에서 실시간 예약 처리가 가능합니다.</div>
+
+          <div class="api-section">
+            <div class="api-section-header" onclick="toggleSection(this)">
+              <h3>예약 등록</h3>
+              <span class="api-section-toggle">▼ 접기</span>
+            </div>
+            <div class="api-section-body">
+              <div class="api-url"><span class="method-badge method-post">POST</span>/api/v1/resort/condo/reserve</div>
+              <div class="tab-group">
+                <button class="tab-btn active" onclick="switchTab(this, 'params-reg')">▼ 요청 파라미터</button>
+                <button class="tab-btn" onclick="switchTab(this, 'res-reg')">▼ 응답 예시</button>
+              </div>
+              <div id="params-reg">
+                <table class="param-table">
+                  <thead><tr><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead>
+                  <tbody>
+                    <tr><td>partnerId *</td><td class="param-type">String</td><td class="param-req">Y</td><td>파트너사 고유 코드</td></tr>
+                    <tr><td>checkIn</td><td class="param-type">String</td><td class="param-req">Y</td><td>입실일 (YYYY-MM-DD)</td></tr>
+                    <tr><td>checkOut</td><td class="param-type">String</td><td class="param-req">Y</td><td>퇴실일 (YYYY-MM-DD)</td></tr>
+                    <tr><td>roomType</td><td class="param-type">String</td><td>N</td><td>객실 유형 코드 (기본: STANDARD)</td></tr>
+                    <tr><td>guestCount</td><td class="param-type">Integer</td><td>N</td><td>투숙 인원 수</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div id="res-reg" class="hidden">
+                <div class="code-block"><span class="code-comment">// 예약 등록 성공 응답 (HTTP 200)</span>
+{
+  <span class="code-key">"resultCode"</span>: <span class="code-string">"0000"</span>,
+  <span class="code-key">"resultMsg"</span>: <span class="code-string">"예약이 완료되었습니다."</span>,
+  <span class="code-key">"data"</span>: {
+    <span class="code-key">"reservationId"</span>: <span class="code-string">"RSV-20250801-000123"</span>,
+    <span class="code-key">"status"</span>: <span class="code-string">"CONFIRMED"</span>,
+    <span class="code-key">"checkIn"</span>: <span class="code-string">"2025-09-01"</span>, <span class="code-key">"checkOut"</span>: <span class="code-string">"2025-09-03"</span>
+  }
+}
+
+<span class="code-comment">// 에러 응답 (HTTP 400)</span>
+{ <span class="code-key">"resultCode"</span>: <span class="code-string">"001"</span>, <span class="code-key">"resultMsg"</span>: <span class="code-string">"유효하지 않은 파트너사 코드입니다."</span> }</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="api-section">
+            <div class="api-section-header" onclick="toggleSection(this)">
+              <h3>예약 조회</h3>
+              <span class="api-section-toggle">▶ 펼치기</span>
+            </div>
+            <div class="api-section-body hidden">
+              <div class="api-url"><span class="method-badge method-get">GET</span>/api/v1/resort/condo/reserve/{id}</div>
+              <table class="param-table">
+                <thead><tr><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead>
+                <tbody>
+                  <tr><td>id</td><td class="param-type">String</td><td class="param-req">Y</td><td>예약 ID (Path Variable)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="api-section">
+            <div class="api-section-header" onclick="toggleSection(this)">
+              <h3>예약 취소</h3>
+              <span class="api-section-toggle">▶ 펼치기</span>
+            </div>
+            <div class="api-section-body hidden">
+              <div class="api-url"><span class="method-badge method-delete">DELETE</span>/api/v1/resort/condo/reserve/{id}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- golf doc -->
+        <div id="doc-golf" class="hidden">
+          <div class="breadcrumb">API › 리조트 › <span>골프예약</span></div>
+          <div class="api-page-title">골프 예약 API</div>
+          <div class="api-page-desc">한화 골프클럽 티타임 예약을 관리하는 API입니다.</div>
+          <div class="api-section">
+            <div class="api-section-header" onclick="toggleSection(this)">
+              <h3>티타임 예약</h3><span class="api-section-toggle">▼ 접기</span>
+            </div>
+            <div class="api-section-body">
+              <div class="api-url"><span class="method-badge method-post">POST</span>/api/v1/resort/golf/reserve</div>
+              <table class="param-table">
+                <thead><tr><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead>
+                <tbody>
+                  <tr><td>partnerId</td><td class="param-type">String</td><td class="param-req">Y</td><td>파트너사 코드</td></tr>
+                  <tr><td>teeDate</td><td class="param-type">String</td><td class="param-req">Y</td><td>티타임 날짜 (YYYY-MM-DD)</td></tr>
+                  <tr><td>teeTime</td><td class="param-type">String</td><td class="param-req">Y</td><td>티타임 시간 (HH:mm)</td></tr>
+                  <tr><td>playerCount</td><td class="param-type">Integer</td><td>N</td><td>플레이어 수 (기본: 4)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- product doc -->
+        <div id="doc-product" class="hidden">
+          <div class="breadcrumb">API › 리조트 › <span>상품/쿠폰</span></div>
+          <div class="api-page-title">상품/쿠폰 API</div>
+          <div class="api-page-desc">리조트 상품 조회 및 쿠폰 적용 API입니다.</div>
+          <div class="api-section">
+            <div class="api-section-header" onclick="toggleSection(this)">
+              <h3>상품 목록 조회</h3><span class="api-section-toggle">▼ 접기</span>
+            </div>
+            <div class="api-section-body">
+              <div class="api-url"><span class="method-badge method-get">GET</span>/api/v1/resort/products</div>
+              <table class="param-table">
+                <thead><tr><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead>
+                <tbody>
+                  <tr><td>category</td><td class="param-type">String</td><td>N</td><td>상품 카테고리 (ROOM/GOLF/PACKAGE)</td></tr>
+                  <tr><td>startDate</td><td class="param-type">String</td><td>N</td><td>조회 시작일</td></tr>
+                  <tr><td>endDate</td><td class="param-type">String</td><td>N</td><td>조회 종료일</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- other docs placeholder -->
+        <div id="doc-hlive" class="hidden">
+          <div class="breadcrumb">API › 리조트 › <span>H-LIVE 포인트</span></div>
+          <div class="api-page-title">H-LIVE 포인트 API</div>
+          <div class="api-page-desc">H-LIVE 멤버십 포인트 조회 및 적립/사용 API입니다.</div>
+          <div class="api-section"><div class="api-section-header" onclick="toggleSection(this)"><h3>포인트 조회</h3><span class="api-section-toggle">▼ 접기</span></div><div class="api-section-body"><div class="api-url"><span class="method-badge method-get">GET</span>/api/v1/hlive/points/{memberId}</div></div></div>
+        </div>
+        <div id="doc-estate" class="hidden">
+          <div class="breadcrumb">API › 에스테이트 › <span>숙박 예약</span></div>
+          <div class="api-page-title">에스테이트 숙박 예약 API</div>
+          <div class="api-page-desc">에스테이트 객실 예약 관련 API입니다.</div>
+          <div class="api-section"><div class="api-section-header" onclick="toggleSection(this)"><h3>객실 예약</h3><span class="api-section-toggle">▼ 접기</span></div><div class="api-section-body"><div class="api-url"><span class="method-badge method-post">POST</span>/api/v1/estate/reserve</div></div></div>
+        </div>
+        <div id="doc-estate2" class="hidden">
+          <div class="breadcrumb">API › 에스테이트 › <span>부대시설</span></div>
+          <div class="api-page-title">부대시설 예약 API</div>
+          <div class="api-page-desc">에스테이트 내 부대시설(레스토랑, 스파 등) 예약 API입니다.</div>
+          <div class="api-section"><div class="api-section-header" onclick="toggleSection(this)"><h3>부대시설 목록</h3><span class="api-section-toggle">▼ 접기</span></div><div class="api-section-body"><div class="api-url"><span class="method-badge method-get">GET</span>/api/v1/estate/facilities</div></div></div>
+        </div>
+        <div id="doc-common" class="hidden">
+          <div class="breadcrumb">API › 공통 › <span>에러 코드</span></div>
+          <div class="api-page-title">공통 에러 코드</div>
+          <div class="api-page-desc">모든 API에서 공통으로 사용하는 에러 코드 정의입니다.</div>
+          <div class="api-section"><div class="api-section-header"><h3>에러 코드 목록</h3></div><div class="api-section-body"><table class="param-table"><thead><tr><th>코드</th><th>HTTP</th><th>설명</th></tr></thead><tbody><tr><td class="param-type">0000</td><td>200</td><td>성공</td></tr><tr><td class="param-type">0001</td><td>400</td><td>유효하지 않은 파트너사 코드</td></tr><tr><td class="param-type">0002</td><td>401</td><td>인증 토큰 만료</td></tr><tr><td class="param-type">0003</td><td>403</td><td>접근 권한 없음</td></tr><tr><td class="param-type">0004</td><td>404</td><td>리소스를 찾을 수 없음</td></tr><tr><td class="param-type">9999</td><td>500</td><td>서버 내부 오류</td></tr></tbody></table></div></div>
+        </div>
+        <div id="doc-auth" class="hidden">
+          <div class="breadcrumb">API › 공통 › <span>인증</span></div>
+          <div class="api-page-title">인증 API</div>
+          <div class="api-page-desc">JWT 토큰 발급 및 갱신 API입니다.</div>
+          <div class="api-section"><div class="api-section-header" onclick="toggleSection(this)"><h3>토큰 발급</h3><span class="api-section-toggle">▼ 접기</span></div><div class="api-section-body"><div class="api-url"><span class="method-badge method-post">POST</span>/api/v1/auth/token</div><table class="param-table"><thead><tr><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead><tbody><tr><td>partnerId</td><td class="param-type">String</td><td class="param-req">Y</td><td>파트너사 코드</td></tr><tr><td>partnerKey</td><td class="param-type">String</td><td class="param-req">Y</td><td>파트너사 Secret Key</td></tr></tbody></table></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREWALL / TOKEN PAGE -->
+  <div id="page-fw" class="page">
+    <div class="fw-layout">
+      <div class="fw-tabs">
+        <div class="fw-tab active">🛡 한화리조트 IP/URL 정보</div>
+        <div class="fw-tab">🔓 방화벽 해제 신청</div>
+        <div class="fw-tab">🔑 인증 토큰 발급</div>
+      </div>
+      <div class="fw-content">
+        <div>
+          <div class="fw-info-box">
+            <div class="fw-info-title"><span class="icon">ℹ</span> 한화 리조트 IP / URL 정보</div>
+            <div class="fw-info-desc">파트너사 측에서 아래 IP/URL을 방화벽에서 허용해주세요.</div>
+            <table class="ip-table">
+              <thead>
+                <tr><th>환경</th><th>NAT IP</th><th>URL</th><th>PORT</th><th>프로토콜</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="env-badge env-staging">스테이징</span></td>
+                  <td class="ip-val">10.10.10.100<br>10.10.10.101</td>
+                  <td class="ip-val">api-stg.resort.co.kr</td>
+                  <td>443</td>
+                  <td><span class="proto-badge">TLS 1.2</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-badge env-prod">운영</span></td>
+                  <td class="ip-val">203.230.xxx.10<br>203.230.xxx.11</td>
+                  <td class="ip-val">api.resort.co.kr</td>
+                  <td>443</td>
+                  <td><span class="proto-badge">TLS 1.2</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="token-steps">
+              <h4>🔑 인증 토큰 발급 절차</h4>
+              <ol>
+                <li>방화벽 해제 및 토큰 발급 신청</li>
+                <li>관리자 검토 및 승인 (1~2 영업일)</li>
+                <li>방화벽 해제 완료되면 담당자 이메일로 토큰 정보 발송</li>
+                <li>API 호출 시 Transaction Header에 토큰 포함</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div class="fw-form-box">
+          <div class="fw-form-title">🔓 🔑 방화벽 해제 및 토큰 발급 신청</div>
+          <div class="fw-form">
+            <div class="form-group">
+              <label>파트너사명</label>
+              <input type="text" value="㈜여기눈자" readonly style="background:#f8fafc">
+            </div>
+            <div class="form-group">
+              <label>신청 IP</label>
+              <input type="text" placeholder="업체 서버 IP를 입력하세요">
+            </div>
+            <div class="form-group">
+              <label>신청 PORT</label>
+              <input type="text" placeholder="예) 443, 8443">
+            </div>
+            <div class="form-group">
+              <label>신청 사유</label>
+              <textarea style="height:80px">API 호출을 위한 방화벽 해제 및 토큰 발급을 요청합니다.</textarea>
+            </div>
+            <button class="btn-fw">🔓 🔑 방화벽 해제 및 토큰 발급 신청</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PAGE -->
+  <div id="page-admin" class="page">
+    <div class="admin-nav">
+      <span class="admin-nav-title">⚙ 관리자 페이지</span>
+      <span>|</span>
+      <span>방화벽·토큰 요청 관리</span>
+      <div style="margin-left:auto"><button class="btn btn-primary btn-sm">관리자 정발말</button></div>
+    </div>
+    <div class="admin-body">
+      <div class="admin-tabs">
+        <div class="admin-tab">👤 파트너사 코드 신청</div>
+        <div class="admin-tab active">🔓 방화벽·토큰 요청 목록</div>
+        <div class="admin-tab">📋 처리 내역</div>
+      </div>
+      <div class="admin-content">
+        <div class="admin-section-title">방화벽 해제 및 토큰 발급 요청 목록</div>
+        <div class="filter-row">
+          <label class="filter-chip"><input type="checkbox"> 관리자 승인 대기</label>
+          <label class="filter-chip"><input type="checkbox"> 관리자 반려</label>
+          <label class="filter-chip"><input type="checkbox"> 결제상신 대기</label>
+          <label class="filter-chip"><input type="checkbox"> 결제 진행중</label>
+          <label class="filter-chip"><input type="checkbox"> 결제 완료</label>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>요청번호</th><th>파트너사명</th><th>담당자연락처</th>
+              <th>신청IP</th><th>신청PORT</th><th>신청일시</th>
+              <th>승인</th><th>결재상태</th><th>토큰</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="req-num">RQ-2026-001</td>
+              <td>㈜여기눈자</td><td>admin@ptnA.com</td>
+              <td class="ip-val">1.2.3.4</td><td>443</td>
+              <td>2026-08-01 14:22</td>
+              <td><div class="action-btns"><button class="btn btn-success btn-sm">승인</button><button class="btn btn-danger btn-sm" onclick="openRejectModal()">반려</button></div></td>
+              <td><span class="badge badge-pending">대기</span></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="req-num">RQ-2026-002</td>
+              <td>㈜저기눈자</td><td>biz@ptnB.kr</td>
+              <td class="ip-val">5.6.7.8</td><td>8443</td>
+              <td>2026-08-02 09:10</td>
+              <td><span style="color:var(--danger);font-size:12px;font-weight:600">반려<br><small style="color:var(--text-light);font-weight:400">사유: IP 형식 오류</small></span></td>
+              <td>—</td><td>—</td>
+            </tr>
+            <tr>
+              <td class="req-num">RQ-2026-003</td>
+              <td>㈜거기눈자</td><td>it@ptnC.co.kr</td>
+              <td class="ip-val">9.10.11.12</td><td>443</td>
+              <td>2026-08-03 11:00</td>
+              <td><span class="badge badge-approved">승인완료</span></td>
+              <td><button class="btn btn-primary btn-sm">결제상신</button></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="req-num">RQ-2026-004</td>
+              <td>㈜에헤라</td><td>dev@ptnD.net</td>
+              <td class="ip-val">13.14.15.16</td><td>443</td>
+              <td>2026-08-04 15:30</td>
+              <td><span class="badge badge-approved">승인완료</span></td>
+              <td><span class="badge badge-inprogress">진행중</span></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td class="req-num">RQ-2026-005</td>
+              <td>㈜디아</td><td>info@ptnE.com</td>
+              <td class="ip-val">17.18.19.20</td><td>443</td>
+              <td>2026-07-28 10:05</td>
+              <td><span class="badge badge-approved">승인완료</span></td>
+              <td><span class="badge badge-approved">결재완료</span></td>
+              <td class="token-val">TK-E-2507001</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMUNITY PAGE -->
+  <div id="page-community" class="page">
+    <div class="community-hero">
+      <h1>커뮤니티</h1>
+      <p>공지사항을 확인하고 궁금한 점을 해결하세요.</p>
+    </div>
+    <div class="community-tabs">
+      <div class="community-tab active">📢 공지사항</div>
+      <div class="community-tab">💡 TIP &amp; 노하우</div>
+      <div class="community-tab">❓ Q&amp;A 게시판</div>
+      <div class="community-tab">🔖 자주 묻는 질문</div>
+    </div>
+    <div class="community-body">
+      <div class="comm-card">
+        <div class="comm-card-title">📢 공지사항</div>
+        <div class="notice-item">
+          <span class="notice-tag tag-new">공지 NEW</span>
+          <div class="notice-info">
+            <div class="notice-title">[필독] API 인증 방식 변경 안내 (Bearer Token)</div>
+            <div class="notice-date">2025.08.01</div>
+          </div>
+        </div>
+        <div class="notice-item">
+          <span class="notice-tag tag-notice">공지</span>
+          <div class="notice-info">
+            <div class="notice-title">스테이징 서버 점검 일정 안내 (8/15 02:00~06:00)</div>
+            <div class="notice-date">2025.07.28</div>
+          </div>
+        </div>
+        <div class="notice-item">
+          <span class="notice-tag tag-update">업데이트</span>
+          <div class="notice-info">
+            <div class="notice-title">콘도예약 API v2.1 배포 안내 – 파라미터 추가</div>
+            <div class="notice-date">2025.07.20</div>
+          </div>
+        </div>
+        <div class="notice-item">
+          <span class="notice-tag tag-notice">공지</span>
+          <div class="notice-info">
+            <div class="notice-title">추석 연휴 운영 안내 (9/15~9/17 긴급 대응팀 운영)</div>
+            <div class="notice-date">2025.07.10</div>
+          </div>
+        </div>
+      </div>
+      <div class="comm-card">
+        <div class="comm-card-title">❓ Q&amp;A 게시판</div>
+        <div class="qa-item">
+          <div class="qa-badge">답변완료</div>
+          <div class="qa-q">Q. 콘도예약 API 호출 시 401 오류가 발생합니다</div>
+          <div class="qa-a">A. 토큰 만료 여부를 확인하고 재발급 신청해주세요.</div>
+        </div>
+        <div class="qa-item">
+          <div class="qa-badge">답변완료</div>
+          <div class="qa-q">Q. 방화벽 해제 처리 기간은 얼마나 걸리나요?</div>
+          <div class="qa-a">A. 신청 후 1~2 영업일 이내 처리됩니다.</div>
+        </div>
+        <div class="qa-item">
+          <div class="qa-badge" style="background:#fef3c7;color:#d97706">답변대기</div>
+          <div class="qa-q">Q. 골프 예약 API에서 예약 취소 시 환불 처리는 어떻게 되나요?</div>
+          <div class="qa-a" style="color:var(--text-light)">A. 답변을 준비 중입니다.</div>
+        </div>
+        <button class="btn-ask">✏ 질문 등록하기</button>
+      </div>
+    </div>
+    <div class="tip-bar">
+      <span class="tip-label">TIP</span>
+      API 오류 발생 시 HTTP 상태코드와 에러 메시지를 함께 Q&A에 남겨주시면 빠른 답변이 가능합니다. &nbsp;|&nbsp; 반복 오류는 AI 챗봇에 먼저 문의해보세요!
+    </div>
+  </div>
+
+  <!-- START PAGE -->
+  <div id="page-start" class="page">
+    <div class="home-hero">
+      <h1>시작하기</h1>
+      <p>API 연동을 위한 단계별 가이드를 제공합니다.</p>
+    </div>
+    <div class="home-body">
+      <div class="section-title">연동 절차</div>
+      <div class="guide-cards">
+        <div class="guide-card"><div class="step-num">01</div><h3>API 개요</h3><p>연동 시작 전 전체 개요 및 기본 구조를 확인하세요.</p></div>
+        <div class="guide-card"><div class="step-num">02</div><h3>개발 환경 안내</h3><p>스테이징/운영 환경별 접속 정보 및 설정 방법을 안내합니다.</p></div>
+        <div class="guide-card"><div class="step-num">03</div><h3>호출 기본 규칙</h3><p>공통 Header, 인증 방식, 요청/응답 구조를 확인하세요.</p></div>
+        <div class="guide-card"><div class="step-num">04</div><h3>샘플 JSON</h3><p>각 API별 요청/응답 샘플 데이터를 제공합니다.</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== MODALS ===== -->
+<!-- Partner Apply Modal -->
+<div id="modal-apply" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🏢 <span>파트너사 코드 신청</span></div>
+      <button class="modal-close" onclick="closeModal('modal-apply')">✕</button>
+    </div>
+    <div class="modal-grid">
+      <div class="form-group">
+        <label>업체명 <span class="req">*</span></label>
+        <input type="text" placeholder="업체명을 입력하세요">
+      </div>
+      <div class="form-group">
+        <label>담당자명 <span class="req">*</span></label>
+        <input type="text" placeholder="담당자 성함을 입력하세요">
+      </div>
+      <div class="form-group">
+        <label>담당자 이메일 <span class="req">*</span></label>
+        <input type="email" placeholder="example@partner.co.kr">
+      </div>
+      <div class="form-group">
+        <label>담당자 연락처 <span class="req">*</span></label>
+        <input type="text" placeholder="010-0000-0000">
+      </div>
+      <div class="form-group modal-full">
+        <label>연동 목적</label>
+        <textarea placeholder="API 연동 목적을 간략히 기재해주세요"></textarea>
+      </div>
+    </div>
+    <div class="modal-notice">
+      승인이 완료되면 파트너사 담당자 이메일로 파트너사 코드가 발급됩니다.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-apply')">취소</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-apply')">신청하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="modal-reject" class="modal-overlay hidden">
+  <div class="reject-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h3><span class="warn">⚠</span> 반려 사유 입력</h3>
+      <button class="modal-close" onclick="closeModal('modal-reject')">✕</button>
+    </div>
+    <textarea placeholder="반려 사유를 입력해 주세요."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-reject')">취소</button>
+      <button class="btn btn-danger" onclick="closeModal('modal-reject')">반려 처리</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== NAVIGATION =====
+function goPortal() {
+  document.getElementById('page-login').classList.add('hidden');
+  document.getElementById('portal-layout').classList.remove('hidden');
+  showPage('home');
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const tab = document.getElementById('tab-' + name);
+  if (tab) tab.classList.add('active');
+}
+
+// ===== API DOCS =====
+const allDocs = ['condo','golf','product','hlive','estate','estate2','common','auth'];
+function showApiDoc(name) {
+  allDocs.forEach(d => document.getElementById('doc-' + d).classList.add('hidden'));
+  document.getElementById('doc-' + name).classList.remove('hidden');
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+// ===== ACCORDION =====
+function toggleSection(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.api-section-toggle');
+  if (body.classList.contains('hidden')) {
+    body.classList.remove('hidden');
+    toggle.textContent = '▼ 접기';
+  } else {
+    body.classList.add('hidden');
+    toggle.textContent = '▶ 펼치기';
+  }
+}
+
+// ===== TABS =====
+function switchTab(btn, targetId) {
+  const group = btn.closest('.api-section-body');
+  group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // hide all tab panels in this section
+  const panels = ['params-reg', 'res-reg'];
+  panels.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('hidden');
+  });
+  const target = document.getElementById(targetId);
+  if (target) target.classList.remove('hidden');
+}
+
+// ===== MODALS =====
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function openRejectModal() { openModal('modal-reject'); }
+
+// close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
+  });
+});
+</script>
+</body>
+</html>

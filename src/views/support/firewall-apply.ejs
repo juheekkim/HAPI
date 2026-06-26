@@ -1,0 +1,284 @@
+<div class="community-hero">
+  <h1>운영 지원</h1>
+  <p>공지사항을 확인하고 궁금한 점을 해결하세요.</p>
+</div>
+
+<div class="community-tabs">
+  <a href="/support" class="community-tab">📢 공지사항</a>
+  <a href="/support/inquiry" class="community-tab">✏ 문의하기</a>
+  <a href="/support/firewall-apply" class="community-tab active">🔒 방화벽·토큰 신청</a>
+</div>
+
+<div style="padding: 24px 32px; display: flex; gap: 24px; align-items: stretch;">
+
+  <!-- 왼쪽: 안내 메시지 -->
+  <div style="width: 700px; flex-shrink: 0; background: #f0f7ff; border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 24px 28px;">
+    <div style="font-size: 15px; font-weight: 700; color: #1a3a6b; margin-bottom: 12px;">📋 방화벽 신청 전 꼭 확인해 주세요!</div>
+    <p style="color: #374151; line-height: 1.8; margin-bottom: 12px;">
+      서비스를 원활하게 이용하시려면 아래 세 단계를 순서대로 진행해 주시기 바랍니다.<br>
+      진행 중 문의는 언제든지 <a href="/support/inquiry" style="color:#1e6fce;text-decoration:underline;font-weight:600;">문의하기</a> 게시판을 이용해 주세요😊
+    </p>
+
+    <div style="background: #fff; border-radius: 8px; border: 1px solid #dde3ea; padding: 22px 24px; margin-bottom: 12px;">
+      <div style="font-weight: 700; color: #1e6fce; margin-bottom: 12px;">Step 1. 한화리조트 NAT IP 허용 요청</div>
+      <p style="color: #4a5568; font-size: 13px; margin-bottom: 14px;">
+        한화리조트 서버에서 귀사 서버로 접근할 수 있도록, 아래 IP를 귀사 방화벽에 허용해 주시기 바랍니다. (8EA)
+      </p>
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <code id="nat-ip-list" style="background: #0d2244; color: #7dd3fc; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-family: monospace; letter-spacing: 0.3px; flex: 1; min-width: 0; white-space: nowrap; overflow-x: auto;">218.146.32.3, 218.146.32.4, 218.146.32.6, 218.146.32.7, 218.146.32.8, 218.146.32.9, 218.146.32.10, 218.146.32.11</code>
+        <button type="button" id="copy-nat-btn" onclick="copyNatIPs()" style="flex-shrink: 0; padding: 7px 16px; background: #1e6fce; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;">📋 전체 복사</button>
+      </div>
+      <script>
+        function copyNatIPs() {
+          const text = document.getElementById('nat-ip-list').textContent;
+          navigator.clipboard.writeText(text).then(function() {
+            const btn = document.getElementById('copy-nat-btn');
+            btn.textContent = '✅ 복사됨!';
+            btn.style.background = '#15803d';
+            setTimeout(function() { btn.textContent = '📋 전체 복사'; btn.style.background = '#1e6fce'; }, 2000);
+          }).catch(function() {
+            const range = document.createRange();
+            range.selectNode(document.getElementById('nat-ip-list'));
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            const btn = document.getElementById('copy-nat-btn');
+            btn.textContent = '✅ 복사됨!';
+            btn.style.background = '#15803d';
+            setTimeout(function() { btn.textContent = '📋 전체 복사'; btn.style.background = '#1e6fce'; }, 2000);
+          });
+        }
+      </script>
+    </div>
+
+    <div style="background: #fff; border-radius: 8px; border: 1px solid #dde3ea; padding: 22px 24px; margin-bottom: 12px;">
+      <div style="font-weight: 700; color: #1e6fce; margin-bottom: 12px;">Step 2. 파트너사 접근 허용 신청 (개발서버)</div>
+      <p style="color: #4a5568; font-size: 13px;">
+        개발서버 연동을 위해 귀사 서버 정보를 우측 양식에 입력해 주세요.<br>
+        검토가 완료되면 메일로 알려드리겠습니다.<br>
+        ※ 개발 서버의 경우 도메인 등록이 되어있지 않아 hosts 등록 후 접속 바랍니다.
+      </p>
+    </div>
+
+    <div style="background: #fff; border-radius: 8px; border: 1px solid #dde3ea; padding: 22px 24px;">
+      <div style="font-weight: 700; color: #1e6fce; margin-bottom: 12px;">Step 3. 파트너사 접근 허용 신청 (운영서버)</div>
+      <p style="color: #4a5568; font-size: 13px;">
+        개발서버 연동 및 기본 테스트 완료 후, 운영서버 방화벽 신청을 진행해주세요.<br>
+        운영서버 신청은 한화리조트 담당자와 사전 협의 후 접수 부탁드립니다.
+      </p>
+    </div>
+  </div>
+  <!-- 왼쪽 끝 -->
+
+  <!-- 오른쪽: 신청 폼 + 내역 테이블 -->
+  <div style="flex: 1; min-width: 0;">
+
+    <!-- 성공/오류 메시지 -->
+    <% if (success) { %>
+    <div style="background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; color: #15803d; font-size: 14px;">
+      ✅ 신청이 정상적으로 접수되었습니다. 검토 후 처리 결과를 안내해 드리겠습니다.
+    </div>
+    <% } %>
+    <% if (error) { %>
+    <div style="background: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; color: #dc2626; font-size: 14px;">
+      ⚠ <%= error %>
+    </div>
+    <% } %>
+
+    <!-- 신청 폼 -->
+    <div class="comm-card" style="margin-bottom: 20px;">
+      <div class="comm-card-title">🛡 방화벽 해제 신청</div>
+      <form action="/support/firewall-apply" method="POST">
+        <div style="display: grid; grid-template-columns: 2fr 3fr; gap: 16px; margin-bottom: 16px; align-items: stretch;">
+
+          <!-- SOURCE 그룹 -->
+          <div style="display:flex; flex-direction:column;">
+            <div style="font-size: 11px; font-weight: 800; color: #1a3a6b; letter-spacing: 0.08em; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #1a3a6b;">SOURCE</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #4a5568; margin-bottom: 5px;">IP <span style="color: #ef4444;">*</span></label>
+                <input
+                  type="text"
+                  name="source_ip"
+                  required
+                  placeholder="ex) 192.168.1.10"
+                  style="width:100%; padding: 9px 12px; border: 1.5px solid #dde3ea; border-radius: 6px; font-size: 13px; font-family: monospace; outline: none; transition: border-color 0.2s;"
+                  onfocus="this.style.borderColor='#2680eb'" onblur="this.style.borderColor='#dde3ea'"
+                />
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #4a5568; margin-bottom: 5px;">Hostname <span style="color: #ef4444;">*</span></label>
+                <input
+                  type="text"
+                  name="source_hostname"
+                  required
+                  placeholder="ex) server.company.com"
+                  style="width:100%; padding: 9px 12px; border: 1.5px solid #dde3ea; border-radius: 6px; font-size: 13px; font-family: monospace; outline: none; transition: border-color 0.2s;"
+                  onfocus="this.style.borderColor='#2680eb'" onblur="this.style.borderColor='#dde3ea'"
+                />
+              </div>
+            </div>
+            <!-- 비고: SOURCE 하단 -->
+            <div style="display:flex; flex-direction:column; flex:1; margin-top:4px;">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: #4a5568; margin-bottom: 5px;">비고</label>
+              <textarea
+                name="note"
+                placeholder="전달하실 내용이 있으시면 입력해 주세요."
+                style="flex:1; width:100%; min-height:60px; padding: 9px 12px; border: 1.5px solid #dde3ea; border-radius: 6px; font-size: 13px; font-family: inherit; outline: none; resize: vertical; transition: border-color 0.2s;"
+                onfocus="this.style.borderColor='#2680eb'" onblur="this.style.borderColor='#dde3ea'"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- DESTINATION 그룹 -->
+          <div>
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 2px solid #dde3ea;">
+              <span style="font-size: 11px; font-weight: 800; color: #8a9bb0; letter-spacing: 0.08em;">DESTINATION</span>
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #1e6fce; cursor: pointer;">
+                <input type="radio" name="dest_env" value="dev" onchange="updateDest(this.value)" checked style="accent-color: #1e6fce;" />
+                개발서버
+              </label>
+              <label style="display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #7c3aed; cursor: pointer;">
+                <input type="radio" name="dest_env" value="prod" onchange="updateDest(this.value)" style="accent-color: #7c3aed;" />
+                운영서버
+              </label>
+            </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr 3fr; gap: 10px;">
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #8a9bb0; margin-bottom: 5px;">IP</label>
+                <input type="text" id="dest_ip" name="dest_ip" value="211.197.235.21" readonly
+                  style="width:100%; padding: 9px 12px; border: 1.5px solid #dde3ea; border-radius: 6px; font-size: 13px; font-family: monospace; background: #f8fafc; color: #8a9bb0; cursor: not-allowed;" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #8a9bb0; margin-bottom: 5px;">Port(s)</label>
+                <input type="text" id="dest_port" name="dest_port" value="80" readonly
+                  style="width:100%; padding: 9px 12px; border: 1.5px solid #dde3ea; border-radius: 6px; font-size: 13px; font-family: monospace; background: #f8fafc; color: #8a9bb0; cursor: not-allowed;" />
+              </div>
+              <div>
+                <label style="display: block; font-size: 12px; font-weight: 700; color: #8a9bb0; margin-bottom: 5px;">Hostname</label>
+                <input type="text" id="dest_hostname" name="dest_hostname" value="exgatedev.hanwharesort.co.kr" readonly
+                  style="width:100%; padding: 9px 12px; border: 1.5px solid #dde3ea; border-radius: 6px; font-size: 13px; font-family: monospace; background: #f8fafc; color: #8a9bb0; cursor: not-allowed;" />
+              </div>
+            </div>
+            <div style="margin-top: 8px;">
+              <label style="display: block; font-size: 12px; font-weight: 700; color: #8a9bb0; margin-bottom: 5px;">URL</label>
+              <input type="text" id="dest_url" value="https://exgatedev.hanwharesort.co.kr:443/iGate/LCB/json.jdo" readonly
+                style="width:100%; padding: 9px 12px; border: 1.5px solid #dde3ea; border-radius: 6px; font-size: 13px; font-family: monospace; background: #f8fafc; color: #8a9bb0; cursor: not-allowed;" />
+            </div>
+            <!-- 신청 등록 버튼: URL 하단 -->
+            <div style="margin-top: 14px;">
+              <button type="submit" class="btn btn-primary">신청 등록</button>
+            </div>
+          </div>
+
+        </div>
+
+        <script>
+          const DEST = {
+            dev:  { ip: '211.197.235.21',  port: '443', hostname: 'exgatedev.hanwharesort.co.kr', url: 'https://exgatedev.hanwharesort.co.kr:443/iGate/LCB/json.jdo' },
+            prod: { ip: '211.197.235.53',  port: '443', hostname: 'exgate.hanwharesort.co.kr',    url: 'https://exgate.hanwharesort.co.kr:443/iGate/LCB/json.jdo' },
+          };
+          function updateDest(env) {
+            document.getElementById('dest_ip').value       = DEST[env].ip;
+            document.getElementById('dest_port').value     = DEST[env].port;
+            document.getElementById('dest_hostname').value = DEST[env].hostname;
+            document.getElementById('dest_url').value      = DEST[env].url;
+          }
+        </script>
+
+      </form>
+    </div>
+
+    <!-- 신청 내역 테이블 -->
+    <div class="comm-card">
+      <div class="comm-card-title">📄 나의 신청 내역</div>
+      <div style="overflow-x:auto;">
+        <style>
+          #history-table thead th { background: #f0f7ff !important; color: #5a7194 !important; font-weight: 600; border: 1px solid #5a7194 !important; }
+          #history-table tbody td { border: 1px solid #5a7194; }
+          #history-table { border: 1px solid #5a7194; }
+        </style>
+        <table id="history-table" class="data-table" style="font-size:13px;">
+          <thead>
+            <tr>
+              <th rowspan="2" style="width:44px; vertical-align:middle; text-align:center;">No</th>
+              <th colspan="2" style="text-align:center; letter-spacing:0.05em;">SOURCE</th>
+              <th colspan="3" style="text-align:center; letter-spacing:0.05em;">DESTINATION</th>
+              <th rowspan="2" style="vertical-align:middle; text-align:center; white-space:nowrap;">신청일자</th>
+              <th rowspan="2" style="vertical-align:middle; text-align:center; white-space:nowrap;">처리일자</th>
+              <th rowspan="2" style="vertical-align:middle; text-align:center;">상태</th>
+              <th rowspan="2" style="vertical-align:middle; text-align:center;">비고</th>
+            </tr>
+            <tr>
+              <th style="text-align:center; font-size:11.5px;">IP</th>
+              <th style="text-align:center; font-size:11.5px;">Hostname</th>
+              <th style="text-align:center; font-size:11.5px;">IP</th>
+              <th style="text-align:center; font-size:11.5px;">Port(s)</th>
+              <th style="text-align:center; font-size:11.5px;">Hostname</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (applies.length === 0) { %>
+            <tr>
+              <td colspan="10" style="text-align:center; color:#8a9bb0; padding:32px;">신청 내역이 없습니다.</td>
+            </tr>
+            <% } %>
+            <% applies.forEach((item, idx) => { %>
+            <tr>
+              <td style="text-align:center; color:#8a9bb0;"><%= idx + 1 %></td>
+              <td style="color:#1a2332;"><%= item.source_ip %></td>
+              <td style="color:#1a2332;"><%= item.source_hostname %></td>
+              <td style="color:#8a9bb0;"><%= item.dest_ip || '-' %></td>
+              <td style="color:#8a9bb0; text-align:center;"><%= item.dest_port || '443' %></td>
+              <td style="color:#8a9bb0;"><%= item.dest_hostname || '-' %></td>
+              <td style="font-size:12px; color:#4a5568; white-space:nowrap; text-align:center;">
+                <% if (item.requested_at) {
+                     const d = new Date(item.requested_at);
+                     const y = d.getFullYear();
+                     const m = String(d.getMonth()+1).padStart(2,'0');
+                     const day = String(d.getDate()).padStart(2,'0');
+                %>
+                <%= y %>.<%= m %>.<%= day %>
+                <% } else { %>-<% } %>
+              </td>
+              <td style="font-size:12px; color:#4a5568; white-space:nowrap; text-align:center;">
+                <% if (item.approved_at) {
+                     const da = new Date(item.approved_at);
+                     const ya = da.getFullYear();
+                     const ma = String(da.getMonth()+1).padStart(2,'0');
+                     const daya = String(da.getDate()).padStart(2,'0');
+                %>
+                <%= ya %>.<%= ma %>.<%= daya %>
+                <% } else { %>-<% } %>
+              </td>
+              <td style="text-align:center;">
+                <% if (item.approval_status === 'approved') { %>
+                  <span class="badge badge-approved">승인완료</span>
+                <% } else if (item.approval_status === 'rejected') { %>
+                  <span class="badge badge-rejected">반려</span>
+                <% } else { %>
+                  <span class="badge badge-pending">검토중</span>
+                <% } %>
+              </td>
+              <td style="text-align:center;">
+                <% if (item.note) { %>
+                <div class="fw-note-wrap">
+                  <span class="fw-note-icon">📝</span>
+                  <div class="fw-note-tooltip"><%= item.note %></div>
+                </div>
+                <% } else { %>
+                <span style="color:#c8d4e0;">—</span>
+                <% } %>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  <!-- 오른쪽 끝 -->
+
+</div>

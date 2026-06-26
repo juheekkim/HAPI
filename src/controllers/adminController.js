@@ -1,0 +1,234 @@
+'use strict';
+
+const bcrypt = require('bcrypt');
+const partnerModel = require('../models/partnerModel');
+const firewallModel = require('../models/firewallModel');
+const partnerFirewallApplyModel = require('../models/partnerFirewallApplyModel');
+const userModel = require('../models/userModel');
+const inquiryModel = require('../models/inquiryModel');
+const noticeModel = require('../models/noticeModel');
+
+const adminController = {
+  index(req, res) {
+    res.redirect('/admin/partners');
+  },
+
+  async partners(req, res) {
+    try {
+      const partners = await partnerModel.getAll();
+      res.render('admin/partners', {
+        title: '파트너사 관리',
+        currentMenu: 'admin',
+        activeTab: 'partners',
+        partners,
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/partners', {
+        title: '파트너사 관리',
+        currentMenu: 'admin',
+        activeTab: 'partners',
+        partners: [],
+      });
+    }
+  },
+
+  async approvePartner(req, res) {
+    try {
+      const partner = await partnerModel.getById(req.params.id);
+      const code = String(Math.floor(10000000 + Math.random() * 90000000));
+      await partnerModel.updateStatus(req.params.id, 'approved', null, code);
+      // 파트너사 로그인 계정 생성 (초기 PW = partner_code)
+      const hash = await bcrypt.hash(code, 10);
+      await userModel.create({
+        username: code,
+        passwordHash: hash,
+        name: partner ? partner.manager_name : '파트너',
+        role: 'partner',
+        partnerId: Number(req.params.id),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/partners');
+  },
+
+  async rejectPartner(req, res) {
+    const { reason } = req.body;
+    try {
+      await partnerModel.updateStatus(req.params.id, 'rejected', reason);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/partners');
+  },
+
+  async firewall(req, res) {
+    try {
+      const requests = await partnerFirewallApplyModel.getAll();
+      res.render('admin/firewall', {
+        title: '방화벽·토큰 요청',
+        currentMenu: 'admin',
+        activeTab: 'firewall',
+        requests,
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/firewall', {
+        title: '방화벽·토큰 요청',
+        currentMenu: 'admin',
+        activeTab: 'firewall',
+        requests: [],
+      });
+    }
+  },
+
+  async approveFirewall(req, res) {
+    try {
+      await partnerFirewallApplyModel.approve(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/firewall');
+  },
+
+  async rejectFirewall(req, res) {
+    const { reason } = req.body;
+    try {
+      await partnerFirewallApplyModel.reject(req.params.id, reason);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/firewall');
+  },
+
+  async issueToken(req, res) {
+    try {
+      await firewallModel.issueToken(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/firewall');
+  },
+
+  async inquiries(req, res) {
+    try {
+      const inquiries = await inquiryModel.getAll();
+      res.render('admin/inquiries', {
+        title: '문의 확인',
+        currentMenu: 'admin',
+        activeTab: 'inquiries',
+        inquiries,
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/inquiries', {
+        title: '문의 확인',
+        currentMenu: 'admin',
+        activeTab: 'inquiries',
+        inquiries: [],
+      });
+    }
+  },
+
+  async createInquiry(req, res) {
+    const { question, answer } = req.body;
+    try {
+      await inquiryModel.createByAdmin({ userId: req.session.user.id, question, answer });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/inquiries');
+  },
+
+  async answerInquiry(req, res) {
+    const { answer } = req.body;
+    try {
+      await inquiryModel.answer(req.params.id, answer);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/inquiries');
+  },
+
+  async toggleFaq(req, res) {
+    try {
+      await inquiryModel.toggleFaq(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/inquiries');
+  },
+
+  async notices(req, res) {
+    try {
+      const notices = await noticeModel.getAllForAdmin();
+      res.render('admin/notices', {
+        title: '공지사항 관리',
+        currentMenu: 'admin',
+        activeTab: 'notices',
+        notices,
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/notices', {
+        title: '공지사항 관리',
+        currentMenu: 'admin',
+        activeTab: 'notices',
+        notices: [],
+      });
+    }
+  },
+
+  async createNotice(req, res) {
+    const { tag, tag_type, title, content, is_visible } = req.body;
+    try {
+      await noticeModel.create({
+        tag,
+        tagType: tag_type,
+        title,
+        content,
+        isVisible: is_visible === 'true',
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/notices');
+  },
+
+  async updateNotice(req, res) {
+    const { tag, tag_type, title, content, is_visible } = req.body;
+    try {
+      await noticeModel.update(req.params.id, {
+        tag,
+        tagType: tag_type,
+        title,
+        content,
+        isVisible: is_visible === 'true',
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/notices');
+  },
+
+  async deleteNotice(req, res) {
+    try {
+      await noticeModel.delete(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/notices');
+  },
+
+  async toggleNoticeVisible(req, res) {
+    try {
+      await noticeModel.toggleVisible(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/notices');
+  },
+};
+
+module.exports = adminController;

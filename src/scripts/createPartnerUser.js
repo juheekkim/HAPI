@@ -3,7 +3,7 @@
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 
-const pool = new Pool({ connectionString: 'postgresql://postgres:hapi1234@localhost:5432/hapi_db' });
+const pool = new Pool({ connectionString: 'postgresql://postgres:postgres@localhost:5432/hapi_db' });
 
 async function run() {
   const code = '61396454';

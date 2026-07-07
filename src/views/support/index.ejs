@@ -11,17 +11,28 @@
 
 <div class="community-body">
   <!-- 공지사항 -->
+  <% const fmtNoticeDate = (d) => {
+       if (!d) return '-';
+       const dt = new Date(d);
+       return isNaN(dt) ? d : dt.toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).replace('T', ' ').slice(0, 16);
+     }; %>
   <div class="comm-card">
     <div class="comm-card-title">📢 공지사항</div>
     <% if (notices.length === 0) { %>
     <p style="color:#8a9bb0;font-size:13px;padding:12px 0">등록된 공지사항이 없습니다.</p>
     <% } %>
     <% notices.forEach(n => { %>
-    <div class="notice-item">
-      <span class="notice-tag tag-<%= n.tag_type %>"><%= n.tag %></span>
-      <div class="notice-info">
-        <div class="notice-title"><%= n.title %></div>
-        <div class="notice-date"><%= n.created_at %></div>
+    <div class="notice-item" style="flex-direction:column;align-items:stretch;" onclick="toggleNotice(<%= n.id %>)">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <span class="notice-tag tag-<%= n.tag_type %>"><%= n.tag %></span>
+        <div class="notice-info">
+          <div class="notice-title"><%= n.title %></div>
+          <div class="notice-date"><%= fmtNoticeDate(n.created_at) %></div>
+        </div>
+        <span id="notice-arrow-<%= n.id %>" style="color:#8a9bb0;font-size:11px;margin-left:auto;flex-shrink:0;transition:transform .15s;">▼</span>
+      </div>
+      <div id="notice-body-<%= n.id %>" style="display:none;margin-top:10px;padding:12px 14px;background:#f0f7ff;border-left:3px solid #2680eb;border-radius:0 6px 6px 0;font-size:13px;color:#374151;white-space:pre-wrap;">
+        <%= n.content || '내용이 없습니다.' %>
       </div>
     </div>
     <% }) %>
@@ -46,3 +57,14 @@
   <span class="tip-label">TIP</span>
   API 오류 발생 시 HTTP 상태코드와 에러 메시지를 함께 <a href="/support/inquiry" style="color:#2680eb;text-decoration:underline;">문의하기</a>에 남겨주시면 빠른 답변이 가능합니다.
 </div>
+
+<script>
+function toggleNotice(id) {
+  const body = document.getElementById('notice-body-' + id);
+  const arrow = document.getElementById('notice-arrow-' + id);
+  if (!body) return;
+  const isOpen = body.style.display === 'block';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+</script>

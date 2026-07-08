@@ -180,6 +180,45 @@ const apiSpecModel = {
     }
     return STATIC_SPECS;
   },
+
+  // 관리자 화면 전용 — STATIC fallback 없이 DB 실제 상태만 반환
+  async getAllForAdmin() {
+    const result = await pool.query('SELECT * FROM api_specs ORDER BY display_order, id');
+    return result.rows.map((r) => ({
+      ...r,
+      endpoints: r.endpoints || [],
+      errorCodes: r.error_codes || [],
+    }));
+  },
+
+  async getById(id) {
+    const result = await pool.query('SELECT * FROM api_specs WHERE id=$1', [id]);
+    const row = result.rows[0];
+    if (!row) return null;
+    return { ...row, endpoints: row.endpoints || [], errorCodes: row.error_codes || [] };
+  },
+
+  async create({ category, domain, name, description, endpoints, displayOrder }) {
+    const result = await pool.query(
+      `INSERT INTO api_specs (category, domain, name, description, endpoints, display_order)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [category, domain, name, description, JSON.stringify(endpoints || []), displayOrder || 0]
+    );
+    return result.rows[0];
+  },
+
+  async update(id, { category, domain, name, description, endpoints, displayOrder }) {
+    const result = await pool.query(
+      `UPDATE api_specs SET category=$1, domain=$2, name=$3, description=$4, endpoints=$5, display_order=$6
+       WHERE id=$7 RETURNING *`,
+      [category, domain, name, description, JSON.stringify(endpoints || []), displayOrder || 0, id]
+    );
+    return result.rows[0];
+  },
+
+  async delete(id) {
+    await pool.query('DELETE FROM api_specs WHERE id=$1', [id]);
+  },
 };
 
 module.exports = apiSpecModel;

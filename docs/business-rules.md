@@ -40,11 +40,17 @@
 - 전 파트너/관리자 조회 가능(로그인 필요). `?doc=<domain>`으로 스펙 선택, 없으면 `specs[0]`.
 - 데이터 소스: `api_specs`(있으면) 아니면 STATIC_SPECS.
 
-## 7. 예외 / 에지 케이스
+## 7. API 스펙 등록/관리 (Admin)
+- 관리자는 `/admin/apis`에서 `api_specs`를 직접 CRUD한다(카테고리/도메인 코드/명칭/설명 + 엔드포인트별 Request 파라미터/Response 예시).
+- `domain`은 `UNIQUE` 제약이 있어 중복 등록 시 폼으로 되돌아가 에러 메시지를 보여준다(다른 admin 모듈과 달리 실패를 조용히 무시하지 않음).
+- **중요**: `apiSpecModel.getAll()`(API Reference가 사용)은 `api_specs`에 **1건이라도 저장되어 있으면 STATIC_SPECS 폴백을 더 이상 반환하지 않는다.** 즉 관리자가 API를 처음 등록하는 순간부터 기존 데모용 STATIC_SPECS 화면은 보이지 않게 되고 DB에 등록된 내용만 노출된다.
+- 등록된 API는 API Reference 화면(`/api-reference?doc=<domain>`)에서 바로 조회 가능하나, 좌측 사이드바는 하드코딩된 domain 목록이라 새 domain이 자동으로 사이드바에 추가되지는 않는다 — **[Needs verification: 사이드바 동적화 필요 여부]**.
+
+## 8. 예외 / 에지 케이스
 - DB 미연결·쿼리 오류: 다수 조회 모델이 STATIC fallback 반환하고 화면은 정상 렌더(에러 숨김) → 운영 시 오해 소지, 로깅만 수행.
 - 입력 검증: 로그인은 빈값 체크. 그 외 폼(신청/문의/방화벽)은 서버측 강한 검증이 약함 → 보강 대상 **[Needs verification]**.
 - 파트너 중복 신청/재승인 방지 규칙: 코드에 명시 없음 **[Needs verification]**.
 
-## 8. 시스템 이동 조건 (메뉴 분기)
+## 9. 시스템 이동 조건 (메뉴 분기)
 - 헤더 메뉴는 로그인 사용자 공통, `role==='admin'`일 때만 "관리자" 탭 노출.
 - 별도 포탈(파트너 전용/관리자 전용) URL 분리는 없고 단일 포털에서 권한으로 분기. 세부는 `docs/menu-routing.md`.

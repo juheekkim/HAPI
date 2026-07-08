@@ -32,6 +32,7 @@
 - `GET /admin/firewall`, `POST /admin/firewall/:id/approve`, `POST /admin/firewall/:id/reject`, `POST /admin/firewall/:id/issue-token`
 - `GET /admin/inquiries`, `POST /admin/inquiries`, `POST /admin/inquiries/:id/answer`, `POST /admin/inquiries/:id/toggle-faq`
 - `GET /admin/notices`, `POST /admin/notices`, `POST /admin/notices/:id/update`, `POST /admin/notices/:id/delete`, `POST /admin/notices/:id/toggle-visible`
+- `GET /admin/apis`(목록), `GET /admin/apis/new`(등록 폼), `GET /admin/apis/:id/edit`(수정 폼), `POST /admin/apis`(등록), `POST /admin/apis/:id/update`(수정), `POST /admin/apis/:id/delete`(삭제)
 
 ### 루트/에러
 - `GET /` → 로그인 시 `/home`, 아니면 `/auth/login`

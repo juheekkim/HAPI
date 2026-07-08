@@ -26,5 +26,11 @@ router.post('/notices', adminController.createNotice);
 router.post('/notices/:id/update', adminController.updateNotice);
 router.post('/notices/:id/delete', adminController.deleteNotice);
 router.post('/notices/:id/toggle-visible', adminController.toggleNoticeVisible);
+router.get('/apis', adminController.apis);
+router.get('/apis/new', adminController.newApiForm);
+router.get('/apis/:id/edit', adminController.editApiForm);
+router.post('/apis', adminController.createApi);
+router.post('/apis/:id/update', adminController.updateApi);
+router.post('/apis/:id/delete', adminController.deleteApi);
 
 module.exports = router;

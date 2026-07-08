@@ -53,6 +53,7 @@ Browser ──HTTP──▶ Express (app.js)
 - 로그인(세션) → 메뉴 접근(전 메뉴 인증 필요, `/admin`은 admin 전용).
 - 방화벽/토큰 신청(support) → 관리자 승인 시 토큰 채번(`HWR########`).
 - 공지/문의: 관리자가 등록·답변, FAQ 노출 토글.
+- API 스펙: 관리자가 `/admin/apis`에서 명칭·설명·Request/Response 파라미터를 직접 등록·수정 → API Reference 화면에 즉시 반영.
 
 ## 7. 외부 시스템 연계
 - 포털이 문서화하는 리조트 API(콘도/골프/상품/H-LIVE 포인트/에스테이트/공통 인증·에러)는 **외부 백엔드 API이며 이 저장소에 구현체는 없다.** `api_specs`(DB) 또는 `apiSpecModel`의 STATIC_SPECS로 스펙만 제공. 실제 게이트웨이/인증 서버 연계는 **[Needs verification]**.

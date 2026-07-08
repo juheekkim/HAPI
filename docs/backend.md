@@ -15,7 +15,7 @@
 - `auth`: `GET/POST /login`, `POST /logout`, `GET/POST /apply`.
 - `home`,`guide`,`api-reference`: `isAuthenticated` 후 `GET /`.
 - `support`: `/`, `/inquiry`(GET/POST), `/firewall-apply`(GET/POST). 모두 `isAuthenticated`.
-- `admin`: `router.use(isAuthenticated, isAdmin)` 후 partners/firewall/inquiries/notices CRUD·상태변경.
+- `admin`: `router.use(isAuthenticated, isAdmin)` 후 partners/firewall/inquiries/notices CRUD·상태변경, **apis**(`/admin/apis`) CRUD(등록/수정/삭제 + 목록/폼).
 
 ## 컨트롤러 규약
 - `'use strict'`, 객체 리터럴로 핸들러 export.
@@ -25,6 +25,8 @@
 ## 모델 규약
 - 파라미터 바인딩(`$1,$2,...`)만 사용. `RETURNING *`로 생성 결과 반환.
 - 일부 조회 모델은 DB 오류/빈 결과 시 **STATIC fallback**(데모): `partnerModel`, `noticeModel`, `inquiryModel.getRecent`, `firewallModel`, `apiSpecModel`. 신규 조회 추가 시 이 패턴 유지 여부 판단.
+- 관리자 전용 목록(`getAllForAdmin` 계열: `noticeModel`, `apiSpecModel`)은 fallback 없이 DB 실제 상태만 반환 — 관리 화면에서 STATIC 데모 데이터가 실 데이터처럼 보이지 않게 함.
+- `apiSpecModel`은 조회(`getAll`, fallback 있음)와 Admin CRUD(`getAllForAdmin/getById/create/update/delete`, fallback 없음)를 함께 제공하는 **API Reference·Admin 공유 모델**이다. `domain UNIQUE` 위반은 그대로 throw하고 컨트롤러가 `err.code === '23505'`로 판별해 사용자 메시지로 변환한다.
 - 채번: 파트너 코드=8자리 숫자, 방화벽 토큰=`HWR########`(applies) / `HNRTK-XXXXXXXX`(firewall_requests, crypto).
 
 ## 인증/보안

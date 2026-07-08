@@ -7,6 +7,7 @@ const partnerFirewallApplyModel = require('../models/partnerFirewallApplyModel')
 const userModel = require('../models/userModel');
 const inquiryModel = require('../models/inquiryModel');
 const noticeModel = require('../models/noticeModel');
+const apiSpecModel = require('../models/apiSpecModel');
 
 const adminController = {
   index(req, res) {
@@ -228,6 +229,134 @@ const adminController = {
       console.error(err);
     }
     res.redirect('/admin/notices');
+  },
+
+  async apis(req, res) {
+    try {
+      const apis = await apiSpecModel.getAllForAdmin();
+      res.render('admin/apis', {
+        title: 'API 등록/관리',
+        currentMenu: 'admin',
+        activeTab: 'apis',
+        apis,
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/apis', {
+        title: 'API 등록/관리',
+        currentMenu: 'admin',
+        activeTab: 'apis',
+        apis: [],
+      });
+    }
+  },
+
+  newApiForm(req, res) {
+    res.render('admin/api-form', {
+      title: 'API 등록',
+      currentMenu: 'admin',
+      activeTab: 'apis',
+      mode: 'create',
+      apiSpec: null,
+      error: null,
+    });
+  },
+
+  async editApiForm(req, res) {
+    try {
+      const apiSpec = await apiSpecModel.getById(req.params.id);
+      if (!apiSpec) return res.redirect('/admin/apis');
+      res.render('admin/api-form', {
+        title: 'API 수정',
+        currentMenu: 'admin',
+        activeTab: 'apis',
+        mode: 'edit',
+        apiSpec,
+        error: null,
+      });
+    } catch (err) {
+      console.error(err);
+      res.redirect('/admin/apis');
+    }
+  },
+
+  async createApi(req, res) {
+    const { category, domain, name, description, endpoints_json, display_order } = req.body;
+    let endpoints = [];
+    try {
+      endpoints = JSON.parse(endpoints_json || '[]');
+    } catch (err) {
+      console.error(err);
+    }
+    try {
+      await apiSpecModel.create({
+        category,
+        domain,
+        name,
+        description,
+        endpoints,
+        displayOrder: Number(display_order) || 0,
+      });
+      return res.redirect('/admin/apis');
+    } catch (err) {
+      console.error(err);
+      const error =
+        err.code === '23505'
+          ? `이미 등록된 도메인 코드입니다: ${domain}`
+          : 'API 등록 중 오류가 발생했습니다.';
+      return res.render('admin/api-form', {
+        title: 'API 등록',
+        currentMenu: 'admin',
+        activeTab: 'apis',
+        mode: 'create',
+        apiSpec: { category, domain, name, description, display_order, endpoints },
+        error,
+      });
+    }
+  },
+
+  async updateApi(req, res) {
+    const { category, domain, name, description, endpoints_json, display_order } = req.body;
+    let endpoints = [];
+    try {
+      endpoints = JSON.parse(endpoints_json || '[]');
+    } catch (err) {
+      console.error(err);
+    }
+    try {
+      await apiSpecModel.update(req.params.id, {
+        category,
+        domain,
+        name,
+        description,
+        endpoints,
+        displayOrder: Number(display_order) || 0,
+      });
+      return res.redirect('/admin/apis');
+    } catch (err) {
+      console.error(err);
+      const error =
+        err.code === '23505'
+          ? `이미 등록된 도메인 코드입니다: ${domain}`
+          : 'API 수정 중 오류가 발생했습니다.';
+      return res.render('admin/api-form', {
+        title: 'API 수정',
+        currentMenu: 'admin',
+        activeTab: 'apis',
+        mode: 'edit',
+        apiSpec: { id: req.params.id, category, domain, name, description, display_order, endpoints },
+        error,
+      });
+    }
+  },
+
+  async deleteApi(req, res) {
+    try {
+      await apiSpecModel.delete(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/apis');
   },
 };
 

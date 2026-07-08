@@ -1,0 +1,194 @@
+<div class="admin-nav">
+  <span class="admin-nav-title">⚙ 관리자 페이지</span>
+  <span>|</span>
+  <span><%= mode === 'edit' ? 'API 수정' : 'API 등록' %></span>
+</div>
+
+<div class="admin-tabs">
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
+  <a href="/admin/apis" class="admin-tab active">🧩 API 등록/관리</a>
+</div>
+
+<div class="admin-content">
+  <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <span><%= mode === 'edit' ? 'API 수정' : '새 API 등록' %></span>
+    <a href="/admin/apis" style="font-size:13px;color:#4a5568;">← 목록으로</a>
+  </div>
+
+  <% if (error) { %>
+  <div style="background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+    ⚠ <%= error %>
+  </div>
+  <% } %>
+
+  <form id="apiForm" method="POST"
+    action="<%= mode === 'edit' ? '/admin/apis/' + apiSpec.id + '/update' : '/admin/apis' %>">
+
+    <div style="border:1px solid #dde3ea;border-radius:8px;padding:20px;margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:160px 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">카테고리</label>
+          <select name="category" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+            <option value="resort" <%= apiSpec && apiSpec.category === 'resort' ? 'selected' : '' %>>리조트</option>
+            <option value="estate" <%= apiSpec && apiSpec.category === 'estate' ? 'selected' : '' %>>에스테이트</option>
+            <option value="common" <%= apiSpec && apiSpec.category === 'common' ? 'selected' : '' %>>공통</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">도메인 코드 (고유값, 예: condo)</label>
+          <input type="text" name="domain" required placeholder="예: condo"
+            value="<%= apiSpec ? apiSpec.domain : '' %>"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:monospace;">
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">API 명칭</label>
+        <input type="text" name="name" required placeholder="예: 콘도 예약 API"
+          value="<%= apiSpec ? apiSpec.name : '' %>"
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">설명</label>
+        <textarea name="description" rows="3" placeholder="API 설명"
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;resize:vertical;box-sizing:border-box;"><%= apiSpec ? apiSpec.description : '' %></textarea>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">노출 순서 (숫자가 작을수록 먼저 표시)</label>
+        <input type="number" name="display_order" value="<%= apiSpec && apiSpec.display_order != null ? apiSpec.display_order : 0 %>"
+          style="width:120px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      </div>
+    </div>
+
+    <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Request / Response 엔드포인트</span>
+      <button type="button" class="btn btn-primary btn-sm" onclick="addEndpoint()">+ 엔드포인트 추가</button>
+    </div>
+
+    <div id="endpointsContainer"></div>
+
+    <input type="hidden" name="endpoints_json" id="endpointsJson">
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <a href="/admin/apis" class="btn btn-sm" style="border:1px solid #d1d5db;background:#fff;color:#374151;">취소</a>
+      <button type="submit" class="btn btn-primary btn-sm"><%= mode === 'edit' ? '저장' : '등록' %></button>
+    </div>
+  </form>
+</div>
+
+<!-- 엔드포인트 블록 템플릿 -->
+<template id="endpointTemplate">
+  <div class="endpoint-block" style="border:1px solid #dde3ea;border-radius:8px;padding:16px;margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <strong style="color:#1e40af;font-size:13px;">엔드포인트</strong>
+      <button type="button" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;"
+        onclick="this.closest('.endpoint-block').remove()">엔드포인트 삭제</button>
+    </div>
+    <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <select class="ep-method" style="padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option><option>PATCH</option>
+      </select>
+      <input type="text" class="ep-url" placeholder="/api/v1/resort/condo/reserve"
+        style="padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-family:monospace;box-sizing:border-box;">
+      <input type="text" class="ep-description" placeholder="엔드포인트 설명 (예: 예약 등록)"
+        style="padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+    </div>
+    <div class="ep-params-wrap" style="margin-bottom:12px;">
+      <table class="param-table">
+        <thead>
+          <tr>
+            <th>파라미터명</th>
+            <th style="width:120px;">Data Type</th>
+            <th style="width:60px;">필수</th>
+            <th>설명</th>
+            <th style="width:60px;"></th>
+          </tr>
+        </thead>
+        <tbody class="ep-params-body"></tbody>
+      </table>
+      <button type="button" class="btn btn-sm" style="margin-top:8px;"
+        onclick="addParamRow(this.parentElement.querySelector('.ep-params-body'))">+ 파라미터 추가</button>
+    </div>
+    <div>
+      <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">응답 예시 (JSON, 선택)</label>
+      <textarea class="ep-response" rows="4" placeholder='{ "resultCode": "0000", "data": { ... } }'
+        style="width:100%;font-family:monospace;font-size:12px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;box-sizing:border-box;"></textarea>
+    </div>
+  </div>
+</template>
+
+<!-- 파라미터 행 템플릿 -->
+<template id="paramRowTemplate">
+  <tr class="param-row">
+    <td><input type="text" class="param-name" placeholder="파라미터명"
+      style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;box-sizing:border-box;"></td>
+    <td>
+      <select class="param-type" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;box-sizing:border-box;">
+        <option>String</option><option>Integer</option><option>Number</option><option>Boolean</option><option>Object</option><option>Array</option>
+      </select>
+    </td>
+    <td style="text-align:center;"><input type="checkbox" class="param-required"></td>
+    <td><input type="text" class="param-desc" placeholder="설명"
+      style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;box-sizing:border-box;"></td>
+    <td style="text-align:center;">
+      <button type="button" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;"
+        onclick="this.closest('tr').remove()">삭제</button>
+    </td>
+  </tr>
+</template>
+
+<script>
+function addParamRow(tbody, param) {
+  const tpl = document.getElementById('paramRowTemplate');
+  const row = tpl.content.firstElementChild.cloneNode(true);
+  if (param) {
+    row.querySelector('.param-name').value = param.name || '';
+    row.querySelector('.param-type').value = param.type || 'String';
+    row.querySelector('.param-required').checked = !!param.required;
+    row.querySelector('.param-desc').value = param.desc || '';
+  }
+  tbody.appendChild(row);
+}
+
+function addEndpoint(endpoint) {
+  const tpl = document.getElementById('endpointTemplate');
+  const block = tpl.content.firstElementChild.cloneNode(true);
+  document.getElementById('endpointsContainer').appendChild(block);
+  if (endpoint) {
+    block.querySelector('.ep-method').value = endpoint.method || 'GET';
+    block.querySelector('.ep-url').value = endpoint.url || '';
+    block.querySelector('.ep-description').value = endpoint.description || '';
+    block.querySelector('.ep-response').value = endpoint.responseExample || '';
+    const tbody = block.querySelector('.ep-params-body');
+    (endpoint.params || []).forEach((p) => addParamRow(tbody, p));
+  }
+  return block;
+}
+
+// 수정 모드일 때 기존 엔드포인트 데이터로 초기화
+const initialEndpoints = <%- JSON.stringify((apiSpec && apiSpec.endpoints) || []).replace(/</g, '\\u003c') %>;
+initialEndpoints.forEach((ep) => addEndpoint(ep));
+
+document.getElementById('apiForm').addEventListener('submit', function () {
+  const blocks = document.querySelectorAll('#endpointsContainer .endpoint-block');
+  const endpoints = Array.from(blocks).map((block) => {
+    const params = Array.from(block.querySelectorAll('.param-row')).map((row) => ({
+      name: row.querySelector('.param-name').value.trim(),
+      type: row.querySelector('.param-type').value,
+      required: row.querySelector('.param-required').checked,
+      desc: row.querySelector('.param-desc').value.trim(),
+    }));
+    return {
+      method: block.querySelector('.ep-method').value,
+      url: block.querySelector('.ep-url').value.trim(),
+      description: block.querySelector('.ep-description').value.trim(),
+      params,
+      responseExample: block.querySelector('.ep-response').value.trim() || null,
+    };
+  });
+  document.getElementById('endpointsJson').value = JSON.stringify(endpoints);
+});
+</script>

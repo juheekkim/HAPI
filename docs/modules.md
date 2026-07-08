@@ -34,8 +34,11 @@
 - 흐름: `/support`(공지+FAQ), `/support/inquiry`(내 문의), `/support/firewall-apply`(방화벽 신청).
 
 ### Admin (관리자)
-- 역할: 파트너사 승인/반려, 방화벽·토큰 요청 처리, 문의 답변/FAQ 토글, 공지 CRUD/노출 토글.
-- 위치: `routes/admin.js`(`isAuthenticated`+`isAdmin`) → `adminController.js` → `partnerModel`, `partnerFirewallApplyModel`, `firewallModel`, `userModel`, `inquiryModel`, `noticeModel` → `views/admin/{partners,firewall,inquiries,notices}.ejs`.
+- 역할: 파트너사 승인/반려, 방화벽·토큰 요청 처리, 문의 답변/FAQ 토글, 공지 CRUD/노출 토글, **API 등록/관리**(API 명칭·설명 및 Request/Response 파라미터 수기 등록·수정·삭제).
+- 위치: `routes/admin.js`(`isAuthenticated`+`isAdmin`) → `adminController.js` → `partnerModel`, `partnerFirewallApplyModel`, `firewallModel`, `userModel`, `inquiryModel`, `noticeModel`, `apiSpecModel` → `views/admin/{partners,firewall,inquiries,notices,apis,api-form}.ejs`.
+- API 등록/관리 서브메뉴(`/admin/apis`): `api_specs` 테이블을 CRUD. 목록은 `apiSpecModel.getAllForAdmin()`(STATIC fallback 없음, DB 실제 상태만 표시). 등록/수정 화면(`api-form.ejs`)은 엔드포인트(HTTP method/URL/설명/응답 예시)와 그 하위 Request 파라미터(파라미터명/타입/필수여부/설명)를 화면에서 동적으로 추가·삭제할 수 있는 폼을 제공하며, 제출 시 `endpoints` JSONB 배열로 직렬화되어 저장된다. 저장되는 구조는 API Reference가 읽는 `apiSpecModel.STATIC_SPECS`/`endpoints` 구조와 동일해 별도 변환 없이 API Reference 화면에 바로 노출된다.
+- **참고**: `views/apiReference/index.ejs`의 좌측 사이드바는 domain 링크가 하드코딩되어 있어, Admin에서 새 `domain`을 등록해도 사이드바에는 자동으로 나타나지 않는다(URL `?doc=<domain>` 직접 접근은 가능). 사이드바를 동적으로 만들려면 API Reference 담당자(박승욱)와 협의가 필요하다.
+- **소유권 메모**: `apiSpecModel.js`는 조회(API Reference, 박승욱)와 등록/관리(Admin, 임가윤) 양쪽에서 함께 사용하는 공유 모델이 되었다. 변경 시 두 모듈에 미치는 영향을 함께 검토한다(`team-ownership.md` 변경 이력 참조).
 
 ### Auth
 - 역할: 로그인/로그아웃, 파트너사 코드 신청.

@@ -30,6 +30,7 @@
 ### api_specs (`01`)
 `id PK`, `category`(`resort`/`estate`/`common`), `domain UNIQUE`, `name`, `description`, `endpoints JSONB`, `error_codes JSONB`, `display_order`, `created_at`.
 - 비었으면 `apiSpecModel.STATIC_SPECS` 반환. 컬럼 `error_codes` → 모델에서 `errorCodes`로 매핑.
+- **Admin이 직접 CRUD**(`/admin/apis`, `adminController.apis/createApi/updateApi/deleteApi` → `apiSpecModel.create/update/delete`). 관리자 목록 화면은 fallback 없는 `apiSpecModel.getAllForAdmin()`을 사용해 DB 실제 상태만 보여준다. `domain UNIQUE` 위반은 `err.code === '23505'`로 잡아 폼에 에러 메시지로 표시(다른 admin 모듈처럼 조용히 무시하지 않음). `endpoints`는 삽입/수정 시 `JSON.stringify`로 직렬화.
 
 ### partner_firewall_applies (`07`) — 실사용
 `id PK`, `user_id → users.id`, `source_ip`, `source_hostname`, `dest_ip`, `dest_hostname`, `dest_port`, `approval_status`(`pending`/`approved`/`rejected`), `reject_reason`, `token`, `note`, `requested_at`, `approved_at`.

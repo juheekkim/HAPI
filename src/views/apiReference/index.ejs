@@ -187,6 +187,20 @@
       <!-- 탭1 끝 -->
 
       <!-- 탭2: 헤더정보 -->
+      <style>
+        /* 헤더정보 테이블(구분/필드명/생성주체/Setting Value)은 컬럼이 많아 실선 없이도 구분되도록
+           옅은 세로 구분선 + 줄무늬만 적용 (공통 .param-table 스타일은 건드리지 않음) */
+        #htab-headers .header-field-table td + td,
+        #htab-headers .header-field-table th + th {
+          border-left: 1px solid rgba(15, 23, 42, 0.06);
+        }
+        #htab-headers .header-field-table tbody tr:nth-child(even) td {
+          background: #f9fafb;
+        }
+        #htab-headers .header-field-table tbody tr:hover td {
+          background: #eef4ff;
+        }
+      </style>
       <div id="htab-headers" style="display:none;">
 
         <!-- 시스템공통헤더 -->
@@ -196,15 +210,7 @@
             <span class="api-section-toggle">▶ 펼치기</span>
           </div>
           <div class="api-section-body" style="display:none;">
-            <table class="param-table">
-              <thead><tr><th>필드명</th><th>Data type</th><th>길이</th><th>필수</th><th>설명</th></tr></thead>
-              <tbody>
-                <tr><td class="mono">sysId</td><td class="mono type-text">String</td><td>10</td><td class="param-req">Y</td><td>시스템 ID (한화리조트에서 발급)</td></tr>
-                <tr><td class="mono">channelId</td><td class="mono type-text">String</td><td>10</td><td class="param-req">Y</td><td>채널 ID</td></tr>
-                <tr><td class="mono">envDiv</td><td class="mono type-text">String</td><td>1</td><td class="param-req">Y</td><td>환경 구분 (D: 개발, P: 운영)</td></tr>
-                <tr><td class="mono">traceId</td><td class="mono type-text">String</td><td>36</td><td>N</td><td>트레이스 ID (UUID 형식, 로그 추적용)</td></tr>
-              </tbody>
-            </table>
+            <%- include('_headerFieldTable', { groups: headerFields.system }) %>
           </div>
         </div>
 
@@ -215,106 +221,7 @@
             <span class="api-section-toggle">▶ 펼치기</span>
           </div>
           <div class="api-section-body" style="display:none;">
-            <p style="font-size:12px; color:#8a9bb0; margin-bottom:12px;">
-              생성주체: <strong style="color:#1a3a6b;">O</strong> 데이터 생성 &nbsp;|&nbsp; <strong>●</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong>△</strong> 필요시 데이터 생성 &nbsp;|&nbsp; <strong>▲</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong style="color:#ef4444;">×</strong> 해당 항목 데이터 사용 안함
-            </p>
-            <table class="param-table" style="font-size:12.5px;">
-              <thead>
-                <tr>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">구분</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">필드명(KO)</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">필드명(EN)</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">항목유형</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">길이</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">Offset</th>
-                  <th colspan="2" style="text-align:center;">생성주체</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">비고</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">Setting Value</th>
-                </tr>
-                <tr>
-                  <th style="text-align:center; font-size:11px;">Request</th>
-                  <th style="text-align:center; font-size:11px;">Response</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td rowspan="4" style="text-align:center; font-weight:600; color:#1a3a6b; vertical-align:middle; background:#f8fafc;">거래공통</td>
-                  <td>표준전문거래유형코드</td><td class="mono type-text">STN_MSG_TR_TP_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">1</td><td style="text-align:center;">0</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">통신유형에 따른 구분코드, default 'O'<br><span style="color:#8a9bb0;">O: 온라인</span></td><td class="mono" style="text-align:center; color:#1a3a6b;">fix = <strong>O</strong></td>
-                </tr>
-                <tr>
-                  <td>시스템타입</td><td class="mono type-text">SYSTEM_TYPE</td><td style="text-align:center;">문자</td><td style="text-align:center;">8</td><td style="text-align:center;">1</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">시스템타입<br><span style="color:#8a9bb0;">리조트FO차세대의 경우 'HABIS'</span></td><td class="mono" style="text-align:center; color:#1a3a6b;">fix = <strong>HABIS</strong></td>
-                </tr>
-                <tr>
-                  <td>화면단축번호</td><td class="mono type-text">SCREEN_SHORTEN_NO</td><td style="text-align:center;">문자</td><td style="text-align:center;">5</td><td style="text-align:center;">9</td><td style="text-align:center;">△</td><td style="text-align:center;">▲</td>
-                  <td style="font-size:12px;">화면호출단축번호</td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>화면ID</td><td class="mono type-text">SCREEN_ID</td><td style="text-align:center;">문자</td><td style="text-align:center;">13</td><td style="text-align:center;">14</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">화면ID<br><span style="color:#8a9bb0;">대분류(3)+중분류(3)+일련번호(4)+화면구분(1)+일련번호(2)</span></td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td rowspan="7" style="text-align:center; font-weight:600; color:#1a3a6b; vertical-align:middle; background:#f8fafc;">사용자<br>정보</td>
-                  <td>법인코드</td><td class="mono type-text">CORP_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">4</td><td style="text-align:center;">27</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">사용자의 법인코드 (전사 코드 참조)</td><td class="mono" style="text-align:center; color:#1a3a6b;">fix = <strong>1000</strong></td>
-                </tr>
-                <tr>
-                  <td>회사코드</td><td class="mono type-text">CMP_NO</td><td style="text-align:center;">문자</td><td style="text-align:center;">4</td><td style="text-align:center;">31</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">사용자의 회사코드 (전사 코드 참조)</td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>사업장코드</td><td class="mono type-text">BRANCH_NO</td><td style="text-align:center;">문자</td><td style="text-align:center;">4</td><td style="text-align:center;">35</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">사용자의 사업장 코드 (전사 코드 참조)</td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>영업장코드</td><td class="mono type-text">LOC_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">4</td><td style="text-align:center;">39</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">사용자의 영업장 코드 (전사 코드 참조)</td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>사용자번호</td><td class="mono type-text">WRKR_NO</td><td style="text-align:center;">문자</td><td style="text-align:center;">20</td><td style="text-align:center;">43</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">사용자의 직원번호</td><td class="mono" style="text-align:center; color:#1a3a6b;">fix = <strong>l1711019</strong></td>
-                </tr>
-                <tr>
-                  <td>개인정보 마스킹 여부</td><td class="mono type-text">PERS_INFO_MASK</td><td style="text-align:center;">문자</td><td style="text-align:center;">20</td><td style="text-align:center;">63</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">사용자의 개인정보 마스킹 여부</td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>마스크권한</td><td class="mono type-text">MASK_AUTH</td><td style="text-align:center;">문자</td><td style="text-align:center;">1</td><td style="text-align:center;">83</td><td style="text-align:center;">O</td><td style="text-align:center;">●</td>
-                  <td style="font-size:12px;">사용자의 개인정보 동의여부</td><td class="mono" style="text-align:center; color:#1a3a6b;">fix = <strong>0</strong></td>
-                </tr>
-                <tr>
-                  <td rowspan="6" style="text-align:center; font-weight:600; color:#1a3a6b; vertical-align:middle; background:#f8fafc;">대외공통</td>
-                  <td>대외거래구분코드</td><td class="mono type-text">OSDE_TR_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">1</td><td style="text-align:center;">84</td><td style="text-align:center;">△</td><td style="text-align:center;">▲</td>
-                  <td style="font-size:12px;">대외 거래의 종류를 구분하기 위한 코드<br><span style="color:#8a9bb0;">'O'=온라인, 'B'=배치</span></td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>대외거래기관구분코드</td><td class="mono type-text">OSDE_TR_ORG_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">6</td><td style="text-align:center;">85</td><td style="text-align:center;">△</td><td style="text-align:center;">▲</td>
-                  <td style="font-size:12px;">대외 거래의 기관을 구분하기 위한 코드<br><span style="color:#8a9bb0;">대외계 체계에 따름, 예탁원전문일 경우 탈급받은 코드</span></td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>대외거래전문종별구분코드</td><td class="mono type-text">OSDE_TR_MSG_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">4</td><td style="text-align:center;">91</td><td style="text-align:center;">△</td><td style="text-align:center;">▲</td>
-                  <td style="font-size:12px;">대외 거래 전문의 종류를 구분하기 위한 코드<br><span style="color:#8a9bb0;">대외계 체계에 따름</span></td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>대외거래업무구분코드</td><td class="mono type-text">OSDE_TR_JOB_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">3</td><td style="text-align:center;">95</td><td style="text-align:center;">△</td><td style="text-align:center;">▲</td>
-                  <td style="font-size:12px;">대외 거래의 업무를 구분하기 위한 코드<br><span style="color:#8a9bb0;">대외계 체계에 따름, 예탁원전문일 경우 통신망 관리정보</span></td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>대외거래라우팅ID</td><td class="mono type-text">OSDE_TR_RUTN_ID</td><td style="text-align:center;">문자</td><td style="text-align:center;">12</td><td style="text-align:center;">98</td><td style="text-align:center;">△</td><td style="text-align:center;">▲</td>
-                  <td style="font-size:12px;">대외 요청에 대한 기관 라우팅 정보<br><span style="color:#8a9bb0;">대외계 체계에 따름, 예탁원전문일 경우 데이터전문코드(10)+공백(2)</span></td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>대외거래일련번호</td><td class="mono type-text">OSDE_TR_PRG_NO</td><td style="text-align:center;">숫자</td><td style="text-align:center;">8</td><td style="text-align:center;">110</td><td style="text-align:center;">△</td><td style="text-align:center;">▲</td>
-                  <td style="font-size:12px;">대외 거래 전문의 일련번호<br><span style="color:#8a9bb0;">대외수신 전문의 경우 기관에서 채번한 일련번호, 대외기관으로 송신하는 전문의 경우 대외 MCI에서 채번한 일련번호</span></td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td style="text-align:center; font-weight:600; color:#8a9bb0; background:#f8fafc;">여유</td>
-                  <td>FILLER</td><td class="mono type-text">FILLER</td><td style="text-align:center;">문자</td><td style="text-align:center;">9</td><td style="text-align:center;">118</td><td style="text-align:center; color:#ef4444;">×</td><td style="text-align:center; color:#ef4444;">×</td>
-                  <td style="font-size:12px; color:#8a9bb0;">시스템 확장을 위한 여유자리</td><td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-              </tbody>
-            </table>
+            <%- include('_headerFieldTable', { groups: headerFields.transaction }) %>
           </div>
         </div>
 
@@ -325,65 +232,10 @@
             <span class="api-section-toggle">▶ 펼치기</span>
           </div>
           <div class="api-section-body" style="display:none;">
-            <p style="font-size:12px; color:#8a9bb0; margin-bottom:12px;">
-              생성주체: <strong style="color:#1a3a6b;">O</strong> 데이터 생성 &nbsp;|&nbsp; <strong>●</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong>△</strong> 필요시 데이터 생성 &nbsp;|&nbsp; <strong style="color:#ef4444;">×</strong> 해당 항목 데이터 사용 안함
-            </p>
             <p style="font-size:12px; color:#4a5568; background:#f0f7ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 14px; margin-bottom:12px;">
               💡 메시지 헤더의 각 항목은 채울 필요는 없지만, 메시지 헤더는 존재해야 합니다. ex) <span class="mono">MessageHeader{}</span>
             </p>
-            <table class="param-table" style="font-size:12.5px;">
-              <thead>
-                <tr>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">구분</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">필드명(KO)</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">필드명(EN)</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">항목유형</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">길이</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">Offset</th>
-                  <th colspan="3" style="text-align:center;">생성주체</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">비고</th>
-                  <th rowspan="2" style="text-align:center; vertical-align:middle;">Setting Value</th>
-                </tr>
-                <tr>
-                  <th style="text-align:center; font-size:11px;">Request</th>
-                  <th style="text-align:center; font-size:11px;">MCI</th>
-                  <th style="text-align:center; font-size:11px;">Response</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td rowspan="5" style="text-align:center; font-weight:600; color:#1a3a6b; vertical-align:middle; background:#f8fafc;">메시지 데이터부<br><span class="mono" style="font-size:11px; font-weight:400; color:#8a9bb0;">(MSG_DATA_SUB)</span></td>
-                  <td>메시지 정상 처리 여부</td><td class="mono type-text">MSG_PRCS_RSLT_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">2</td><td style="text-align:center;">0</td>
-                  <td style="text-align:center; color:#ef4444;">×</td><td style="text-align:center;">△</td><td style="text-align:center;">O</td>
-                  <td style="font-size:12px;">에러코드 블랙 오류코드<br><span style="color:#8a9bb0;">정상 0, 오류 -1</span></td>
-                  <td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>메시지 데이터부 반복횟수</td><td class="mono type-text">MSG_DATA_SUB_RPTT_CNT</td><td style="text-align:center;">숫자</td><td style="text-align:center;">1</td><td style="text-align:center;">2</td>
-                  <td style="text-align:center; color:#ef4444;">×</td><td style="text-align:center;">△</td><td style="text-align:center;">△</td>
-                  <td style="font-size:12px;">메시지부 반복횟수<br><span style="color:#8a9bb0;">메시지가 없을 경우 '0'</span></td>
-                  <td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>메시지표시구분코드</td><td class="mono type-text">MSG_INDC_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">4</td><td style="text-align:center;">3</td>
-                  <td style="text-align:center; color:#ef4444;">×</td><td style="text-align:center;">△</td><td style="text-align:center;">△</td>
-                  <td style="font-size:12px;">메시지 표시 방법<br><span style="color:#8a9bb0;">'0': 일반 메시지 창 출력 (정상/에러 메시지창) DEFAULT<br>'1': 거래 상태바에만 출력 (단말 메시지 창 출력 안함)<br>'9': 메시지 창 출력 안함</span></td>
-                  <td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>메시지코드</td><td class="mono type-text">MSG_CD</td><td style="text-align:center;">문자</td><td style="text-align:center;">12</td><td style="text-align:center;">7</td>
-                  <td style="text-align:center; color:#ef4444;">×</td><td style="text-align:center;">△</td><td style="text-align:center;">△</td>
-                  <td style="font-size:12px;">메시지 코드 체계에 따르며 메시지 내용이 200바이트 이상일 경우 동일 메시지 코드를 지정하며 메시지 내용은 분할 삽입.</td>
-                  <td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-                <tr>
-                  <td>메시지내용</td><td class="mono type-text">MSG_CTNS</td><td style="text-align:center;">문자</td><td style="text-align:center;">400</td><td style="text-align:center;">19</td>
-                  <td style="text-align:center; color:#ef4444;">×</td><td style="text-align:center;">△</td><td style="text-align:center;">△</td>
-                  <td style="font-size:12px;">주메시지 내용</td>
-                  <td style="text-align:center; color:#8a9bb0;">none</td>
-                </tr>
-              </tbody>
-            </table>
+            <%- include('_headerFieldTable', { groups: headerFields.message }) %>
           </div>
         </div>
 
@@ -513,7 +365,6 @@ function switchTab(btn, targetId) {
   const group = btn.closest('.api-section-body');
   group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  // 같은 섹션 내 패널 전환
   const sectionBody = btn.closest('.api-section-body');
   sectionBody.querySelectorAll('[id^="params-"], [id^="res-"]').forEach(el => el.style.display = 'none');
   const target = document.getElementById(targetId);

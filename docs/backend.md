@@ -27,6 +27,7 @@
 - 일부 조회 모델은 DB 오류/빈 결과 시 **STATIC fallback**(데모): `partnerModel`, `noticeModel`, `inquiryModel.getRecent`, `firewallModel`, `apiSpecModel`. 신규 조회 추가 시 이 패턴 유지 여부 판단.
 - 관리자 전용 목록(`getAllForAdmin` 계열: `noticeModel`, `apiSpecModel`)은 fallback 없이 DB 실제 상태만 반환 — 관리 화면에서 STATIC 데모 데이터가 실 데이터처럼 보이지 않게 함.
 - `apiSpecModel`은 조회(`getAll`, fallback 있음)와 Admin CRUD(`getAllForAdmin/getById/create/update/delete`, fallback 없음)를 함께 제공하는 **API Reference·Admin 공유 모델**이다. `domain UNIQUE` 위반은 그대로 throw하고 컨트롤러가 `err.code === '23505'`로 판별해 사용자 메시지로 변환한다.
+- `headerFieldModel`: API Reference 헤더 정보(SystemHeader/TransactionHeader/MessageHeader) DB 관리 모델. `getBySection()`, `getByCategory()`, `getAllWithGrouping()`(section/category 그룹화) 제공. `apiReferenceController.index()`에서 `getAllWithGrouping()` 호출 → system/transaction/message 모두 `{ category, fields }[]` 형태로 통일해 `headerFields`에 담아 뷰에 주입. 뷰는 3개 섹션 모두 공통 partial `views/apiReference/_headerFieldTable.ejs`(구분/필드명KO·EN/항목유형/길이/Offset/생성주체(Request·MCI·Response)/비고/Setting Value(Type·value) 컬럼 통일, `구분` rowspan)로 렌더링한다.
 - 채번: 파트너 코드=8자리 숫자, 방화벽 토큰=`HWR########`(applies) / `HNRTK-XXXXXXXX`(firewall_requests, crypto).
 
 ## 인증/보안

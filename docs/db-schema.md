@@ -4,7 +4,7 @@
 
 ## 스크립트 관리 규칙
 - `db/scripts/`는 순번 prefix 누적 관리. **기존 스크립트 수정 금지 — 새 순번 스크립트 추가.**
-- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql` (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
+- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql` (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
 - 드라이버: `pg` Pool(`src/config/database.js`, `DATABASE_URL`). 파라미터 바인딩(`$1,$2,...`)만 사용.
 
 ## 주요 테이블
@@ -35,6 +35,15 @@
 ### partner_firewall_applies (`07`) — 실사용
 `id PK`, `user_id → users.id`, `source_ip`, `source_hostname`, `dest_ip`, `dest_hostname`, `dest_port`, `approval_status`(`pending`/`approved`/`rejected`), `reject_reason`, `token`, `note`, `requested_at`, `approved_at`.
 - Support 신청 + Admin 목록/승인/반려. 승인 시 `token = HWR########` 채번.
+
+### header_fields (`17`, system은 `18`, transaction은 `19`, message는 `20`으로 데이터 교체) — API Reference 헤더 정보
+`id PK`, `section`(system/transaction/message), `category`, `field_name_ko`, `field_name_en`, `item_type`, `length`, `field_offset`, `required_request`, `required_mci`, `required_response`, `description`, `setting_type`, `setting_value`, `display_order`, `created_at`.
+- API Reference 포털의 SystemHeader, TransactionHeader, MessageHeader 정보 관리 (하드코딩 → DB 이전).
+- 53개 행: system(29, 8개 카테고리 + 무분류 1행, `18`로 교체된 실제 표준전문 스펙) + transaction(18, 4개 카테고리, `19`로 생성주체 기호 교체) + message(5, 무분류 2건 + `메시지 데이터부(MSG_DATA_SUB)` 3건, `20`으로 재구성).
+- `required_request`/`required_mci`/`required_response`는 생성주체 기호(`○`/`●`/`△`/`▲`/`×`)를 저장한다. `17`의 transaction/message 데이터는 `required_request`/`required_response`에 `'Y'`를 넣고(message는 실제 기호 대신 획일적 'Y'), 실제 기호는 `required_mci` 또는 다른 위치에 잘못 매핑된 버그가 있었음 — `19`(transaction), `20`(message)에서 정정.
+- `getAllWithGrouping()`이 반환하는 `fields` JSON 항목의 `description`/`settingValue`에는 실제 줄바꿈(`\n`)이 포함될 수 있으며, 뷰(`_headerFieldTable.ejs`)는 `white-space:pre-line`으로 그대로 표시한다.
+- 인덱스: `idx_header_fields_section`, `idx_header_fields_category`.
+- 쿼리: `headerFieldModel.getAllWithGrouping()` → section/category 그룹화 후 EJS 동적 렌더링. 컨트롤러는 system/transaction/message 모두 `{ category, fields }[]` 형태로 통일해 뷰에 전달한다.
 
 ## 관계 요약
 - `users.partner_id → partners.id` (**FK 제약 없음 [Needs verification]**; 컬럼만 존재).

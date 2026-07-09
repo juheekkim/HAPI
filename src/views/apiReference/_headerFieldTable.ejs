@@ -1,0 +1,59 @@
+<%
+// locals: groups = [{ category, fields: [...] }, ...] (see headerFieldModel.getAllWithGrouping)
+%>
+<% if (groups && groups.length > 0) { %>
+<p style="font-size:12px; color:#8a9bb0; margin-bottom:12px;">
+  생성주체: <strong style="color:#1a3a6b;">○</strong> 데이터 생성 &nbsp;|&nbsp; <strong>●</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong>△</strong> 필요시 데이터 생성 &nbsp;|&nbsp; <strong>▲</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong style="color:#ef4444;">×</strong> 해당 항목 데이터 사용 안함
+</p>
+<p style="font-size:12px; color:#4a5568; background:#f0f7ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 14px; margin-bottom:12px;">
+  💡 Setting Value의 Type이 <span class="mono">fix</span> 또는 <span class="mono">variable</span>인 항목은 value 값을 채워 주셔야 합니다.
+</p>
+<div style="overflow-x:auto;">
+<table class="param-table header-field-table" style="font-size:12.5px;">
+  <thead>
+    <tr>
+      <th rowspan="2" style="text-align:center; vertical-align:middle;">구분</th>
+      <th rowspan="2" style="text-align:center; vertical-align:middle;">필드명(KO)</th>
+      <th rowspan="2" style="text-align:center; vertical-align:middle;">필드명(EN)</th>
+      <th rowspan="2" style="text-align:center; vertical-align:middle;">항목유형</th>
+      <th rowspan="2" style="text-align:center; vertical-align:middle;">길이</th>
+      <th rowspan="2" style="text-align:center; vertical-align:middle;">Offset</th>
+      <th colspan="3" style="text-align:center;">생성주체</th>
+      <th rowspan="2" style="text-align:center; vertical-align:middle;">비고</th>
+      <th colspan="2" style="text-align:center;">Setting Value</th>
+    </tr>
+    <tr>
+      <th style="text-align:center; font-size:11px;">Request</th>
+      <th style="text-align:center; font-size:11px;">MCI</th>
+      <th style="text-align:center; font-size:11px;">Response</th>
+      <th style="text-align:center; font-size:11px;">Type</th>
+      <th style="text-align:center; font-size:11px;">value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% groups.forEach(group => { %>
+      <% group.fields.forEach((field, idx) => { %>
+      <tr>
+        <% if (idx === 0) { %>
+        <td rowspan="<%= group.fields.length %>" style="text-align:center; font-weight:600; color:#1a3a6b; vertical-align:middle; background:#f8fafc; white-space:pre-line;"><%= group.category || '' %></td>
+        <% } %>
+        <td><%= field.fieldNameKo %></td>
+        <td class="mono"><%= field.fieldNameEn %></td>
+        <td style="text-align:center;"><%= field.itemType %></td>
+        <td style="text-align:center;"><%= field.length %></td>
+        <td style="text-align:center;"><%= field.fieldOffset %></td>
+        <td style="text-align:center;"><%= field.requiredRequest || '' %></td>
+        <td style="text-align:center;"><%= field.requiredMci || '' %></td>
+        <td style="text-align:center;"><%= field.requiredResponse || '' %></td>
+        <td style="font-size:12px; white-space:pre-line;"><%= field.description %></td>
+        <td style="text-align:center;"><%= field.settingType || '' %></td>
+        <td style="text-align:center; white-space:pre-line;"><%= field.settingValue || '' %></td>
+      </tr>
+      <% }) %>
+    <% }) %>
+  </tbody>
+</table>
+</div>
+<% } else { %>
+<p style="color:#8a9bb0; padding:20px;">데이터를 불러올 수 없습니다.</p>
+<% } %>

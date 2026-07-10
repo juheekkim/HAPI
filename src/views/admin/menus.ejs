@@ -1,0 +1,199 @@
+<div class="admin-nav">
+  <span class="admin-nav-title">⚙ 관리자 페이지</span>
+  <span>|</span>
+  <span>메뉴 관리</span>
+</div>
+
+<div class="admin-tabs">
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
+  <a href="/admin/apis" class="admin-tab">🧩 API 등록/관리</a>
+  <a href="/admin/menus" class="admin-tab active">🗂 메뉴 관리</a>
+  <a href="/admin/roles" class="admin-tab">🔑 권한 관리</a>
+</div>
+
+<%
+  // 트리를 depth 정보와 함께 평면 배열로 변환
+  function flattenTree(nodes, depth, acc) {
+    (nodes || []).forEach((n) => {
+      acc.push({ node: n, depth: depth });
+      if (n.children && n.children.length) flattenTree(n.children, depth + 1, acc);
+    });
+    return acc;
+  }
+  const rows = flattenTree(tree, 0, []);
+  const typeLabels = { nav: '대메뉴', 'admin-tab': '관리자탭', 'api-doc': 'API문서', group: '그룹' };
+%>
+
+<div class="admin-content">
+  <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>메뉴 목록</span>
+    <button class="btn btn-primary btn-sm" onclick="openCreateModal()">+ 새 메뉴 등록</button>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width:44px;text-align:center;background:#dbeafe;color:#1e40af;">No</th>
+        <th style="text-align:left;background:#dbeafe;color:#1e40af;">메뉴명</th>
+        <th style="text-align:left;background:#dbeafe;color:#1e40af;">경로</th>
+        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:90px;">유형</th>
+        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:80px;">관리자전용</th>
+        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:60px;">순서</th>
+        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:90px;">활성</th>
+        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:150px;">관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (rows.length === 0) { %>
+      <tr><td colspan="8" style="text-align:center;color:#8a9bb0;padding:32px;">등록된 메뉴가 없습니다.</td></tr>
+      <% } %>
+      <% rows.forEach((r, idx) => { const n = r.node; %>
+      <tr>
+        <td style="text-align:center;color:#8a9bb0;"><%= idx + 1 %></td>
+        <td style="padding-left:<%= 12 + r.depth * 22 %>px;">
+          <% if (r.depth > 0) { %><span style="color:#9ca3af;">└ </span><% } %>
+          <% if (n.icon) { %><%= n.icon %> <% } %><%= n.name %>
+        </td>
+        <td class="mono" style="font-size:12px;color:#4a5568;"><%= n.path || '-' %></td>
+        <td style="text-align:center;font-size:12px;"><%= typeLabels[n.menu_type] || n.menu_type %></td>
+        <td style="text-align:center;font-size:12px;"><%= n.admin_only ? '✅' : '-' %></td>
+        <td style="text-align:center;color:#8a9bb0;"><%= n.display_order %></td>
+        <td style="text-align:center;">
+          <form action="/admin/menus/<%= n.id %>/toggle-active" method="POST" style="display:inline;">
+            <button type="submit" class="btn btn-sm" style="border:none;<%= n.is_active ? 'background:#bbf7d0;color:#166534;' : 'background:#fecaca;color:#991b1b;' %>">
+              <%= n.is_active ? '활성' : '비활성' %>
+            </button>
+          </form>
+        </td>
+        <td style="text-align:center;">
+          <div class="action-btns" style="justify-content:center;">
+            <button class="btn btn-sm" style="background:#93c5fd;color:#1e40af;border:none;"
+              onclick="openEditModal(<%= n.id %>, <%= n.parent_id || '' %>, `<%= (n.name||'').replace(/`/g,'\\`') %>`, `<%= (n.path||'').replace(/`/g,'\\`') %>`, `<%= n.menu_type %>`, `<%= (n.icon||'').replace(/`/g,'\\`') %>`, <%= n.admin_only %>, <%= n.display_order %>, <%= n.is_active %>)">
+              수정
+            </button>
+            <form action="/admin/menus/<%= n.id %>/delete" method="POST" style="display:inline;"
+              onsubmit="return confirm('하위 메뉴까지 함께 삭제됩니다. 삭제하시겠습니까?')">
+              <button type="submit" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;">삭제</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<!-- 등록/수정 모달 -->
+<div id="menuModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:560px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <h3 id="menuModalTitle" style="margin:0 0 20px;font-size:17px;color:#1e40af;">새 메뉴 등록</h3>
+    <form id="menuForm" method="POST" action="/admin/menus">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">상위 메뉴</label>
+          <select id="menuParent" name="parent_id"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+            <option value="">— 최상위 —</option>
+            <%# 계층(트리) 순서로 depth만큼 들여쓰기해 임의 depth 부모 선택을 직관화 %>
+            <% rows.forEach((r) => { const m = r.node; %>
+            <option value="<%= m.id %>"><%= '　'.repeat(r.depth) + (r.depth > 0 ? '└ ' : '') + (m.icon ? m.icon + ' ' : '') + m.name %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">유형</label>
+          <select id="menuType" name="menu_type"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+            <option value="nav">대메뉴(nav)</option>
+            <option value="admin-tab">관리자탭(admin-tab)</option>
+            <option value="api-doc">API문서(api-doc)</option>
+            <option value="group">그룹헤더(group)</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 100px;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">메뉴명</label>
+          <input type="text" id="menuName" name="name" required placeholder="예: 공지사항 관리"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">아이콘</label>
+          <input type="text" id="menuIcon" name="icon" placeholder="📢"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">경로 (그룹 헤더는 비워둠)</label>
+        <input type="text" id="menuPath" name="path" placeholder="예: /admin/notices"
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:monospace;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 100px;gap:14px;margin-bottom:20px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">관리자 전용</label>
+          <select id="menuAdminOnly" name="admin_only"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+            <option value="false">아니오</option>
+            <option value="true">예</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">활성 여부</label>
+          <select id="menuActive" name="is_active"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+            <option value="true">활성</option>
+            <option value="false">비활성</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">표시순서</label>
+          <input type="number" id="menuOrder" name="display_order" value="0"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="closeMenuModal()"
+          style="padding:8px 20px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#374151;font-size:13px;cursor:pointer;">취소</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;padding:8px 20px;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openCreateModal() {
+  document.getElementById('menuModalTitle').textContent = '새 메뉴 등록';
+  document.getElementById('menuForm').action = '/admin/menus';
+  document.getElementById('menuParent').value = '';
+  document.getElementById('menuType').value = 'nav';
+  document.getElementById('menuName').value = '';
+  document.getElementById('menuIcon').value = '';
+  document.getElementById('menuPath').value = '';
+  document.getElementById('menuAdminOnly').value = 'false';
+  document.getElementById('menuActive').value = 'true';
+  document.getElementById('menuOrder').value = '0';
+  document.getElementById('menuModal').style.display = 'flex';
+}
+function openEditModal(id, parentId, name, path, menuType, icon, adminOnly, order, isActive) {
+  document.getElementById('menuModalTitle').textContent = '메뉴 수정';
+  document.getElementById('menuForm').action = '/admin/menus/' + id + '/update';
+  document.getElementById('menuParent').value = parentId ? String(parentId) : '';
+  document.getElementById('menuType').value = menuType;
+  document.getElementById('menuName').value = name;
+  document.getElementById('menuIcon').value = icon;
+  document.getElementById('menuPath').value = path;
+  document.getElementById('menuAdminOnly').value = adminOnly ? 'true' : 'false';
+  document.getElementById('menuActive').value = isActive ? 'true' : 'false';
+  document.getElementById('menuOrder').value = order;
+  document.getElementById('menuModal').style.display = 'flex';
+}
+function closeMenuModal() {
+  document.getElementById('menuModal').style.display = 'none';
+}
+document.getElementById('menuModal').addEventListener('click', function (e) {
+  if (e.target === this) closeMenuModal();
+});
+</script>

@@ -41,6 +41,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Inject role-permitted top-nav menus into res.locals.navMenus
+const loadNavMenus = require('./middlewares/loadNavMenus');
+app.use(loadNavMenus);
+
 // Routes
 const authRoutes = require('./routes/auth');
 const homeRoutes = require('./routes/home');

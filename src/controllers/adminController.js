@@ -8,6 +8,8 @@ const userModel = require('../models/userModel');
 const inquiryModel = require('../models/inquiryModel');
 const noticeModel = require('../models/noticeModel');
 const apiSpecModel = require('../models/apiSpecModel');
+const menuModel = require('../models/menuModel');
+const roleModel = require('../models/roleModel');
 
 const adminController = {
   index(req, res) {
@@ -357,6 +359,204 @@ const adminController = {
       console.error(err);
     }
     res.redirect('/admin/apis');
+  },
+
+  // ── 메뉴 관리 ──────────────────────────────────────
+  async menus(req, res) {
+    try {
+      const [tree, flatMenus] = await Promise.all([
+        menuModel.getAllWithChildren(),
+        menuModel.getAll(),
+      ]);
+      res.render('admin/menus', {
+        title: '메뉴 관리',
+        currentMenu: 'admin',
+        activeTab: 'menus',
+        tree,
+        flatMenus,
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/menus', {
+        title: '메뉴 관리',
+        currentMenu: 'admin',
+        activeTab: 'menus',
+        tree: [],
+        flatMenus: [],
+      });
+    }
+  },
+
+  async createMenu(req, res) {
+    const { parent_id, name, path, menu_type, icon, admin_only, display_order, is_active } = req.body;
+    try {
+      await menuModel.create({
+        parentId: parent_id ? Number(parent_id) : null,
+        name,
+        path,
+        menuType: menu_type,
+        icon,
+        adminOnly: admin_only === 'true',
+        displayOrder: display_order,
+        isActive: is_active !== 'false',
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/menus');
+  },
+
+  async updateMenu(req, res) {
+    const { parent_id, name, path, menu_type, icon, admin_only, display_order, is_active } = req.body;
+    try {
+      await menuModel.update(req.params.id, {
+        parentId: parent_id ? Number(parent_id) : null,
+        name,
+        path,
+        menuType: menu_type,
+        icon,
+        adminOnly: admin_only === 'true',
+        displayOrder: display_order,
+        isActive: is_active !== 'false',
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/menus');
+  },
+
+  async deleteMenu(req, res) {
+    try {
+      await menuModel.delete(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/menus');
+  },
+
+  async toggleMenuActive(req, res) {
+    try {
+      await menuModel.toggleActive(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/menus');
+  },
+
+  // ── 권한 관리 ──────────────────────────────────────
+  async roles(req, res) {
+    try {
+      const [roles, tree, roleMenuMap] = await Promise.all([
+        roleModel.getAllForAdmin(),
+        menuModel.getAllWithChildren(),
+        roleModel.getAllMenuIdsByRole(),
+      ]);
+      res.render('admin/roles', {
+        title: '권한 관리',
+        currentMenu: 'admin',
+        activeTab: 'roles',
+        roles,
+        tree,
+        roleMenuMap,
+        error: null,
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/roles', {
+        title: '권한 관리',
+        currentMenu: 'admin',
+        activeTab: 'roles',
+        roles: [],
+        tree: [],
+        roleMenuMap: {},
+        error: null,
+      });
+    }
+  },
+
+  async createRole(req, res) {
+    const { code, name, description, is_active } = req.body;
+    try {
+      await roleModel.create({
+        code,
+        name,
+        description,
+        isActive: is_active !== 'false',
+      });
+      return res.redirect('/admin/roles');
+    } catch (err) {
+      console.error(err);
+      const error =
+        err.code === '23505'
+          ? `이미 등록된 역할 코드입니다: ${code}`
+          : '역할 등록 중 오류가 발생했습니다.';
+      const [roles, tree, roleMenuMap] = await Promise.all([
+        roleModel.getAllForAdmin(),
+        menuModel.getAllWithChildren(),
+        roleModel.getAllMenuIdsByRole(),
+      ]);
+      return res.render('admin/roles', {
+        title: '권한 관리',
+        currentMenu: 'admin',
+        activeTab: 'roles',
+        roles,
+        tree,
+        roleMenuMap,
+        error,
+      });
+    }
+  },
+
+  async updateRole(req, res) {
+    const { code, name, description, is_active } = req.body;
+    try {
+      await roleModel.update(req.params.id, {
+        code,
+        name,
+        description,
+        isActive: is_active !== 'false',
+      });
+      return res.redirect('/admin/roles');
+    } catch (err) {
+      console.error(err);
+      const error =
+        err.code === '23505'
+          ? `이미 등록된 역할 코드입니다: ${code}`
+          : '역할 수정 중 오류가 발생했습니다.';
+      const [roles, tree, roleMenuMap] = await Promise.all([
+        roleModel.getAllForAdmin(),
+        menuModel.getAllWithChildren(),
+        roleModel.getAllMenuIdsByRole(),
+      ]);
+      return res.render('admin/roles', {
+        title: '권한 관리',
+        currentMenu: 'admin',
+        activeTab: 'roles',
+        roles,
+        tree,
+        roleMenuMap,
+        error,
+      });
+    }
+  },
+
+  async deleteRole(req, res) {
+    try {
+      await roleModel.delete(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/roles');
+  },
+
+  async assignMenus(req, res) {
+    const menuIds = [].concat(req.body.menuIds || []);
+    try {
+      await roleModel.setMenus(req.params.id, menuIds);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/roles');
   },
 };
 

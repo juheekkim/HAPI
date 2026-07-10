@@ -32,5 +32,15 @@ router.get('/apis/:id/edit', adminController.editApiForm);
 router.post('/apis', adminController.createApi);
 router.post('/apis/:id/update', adminController.updateApi);
 router.post('/apis/:id/delete', adminController.deleteApi);
+router.get('/menus', adminController.menus);
+router.post('/menus', adminController.createMenu);
+router.post('/menus/:id/update', adminController.updateMenu);
+router.post('/menus/:id/delete', adminController.deleteMenu);
+router.post('/menus/:id/toggle-active', adminController.toggleMenuActive);
+router.get('/roles', adminController.roles);
+router.post('/roles', adminController.createRole);
+router.post('/roles/:id/update', adminController.updateRole);
+router.post('/roles/:id/delete', adminController.deleteRole);
+router.post('/roles/:id/menus', adminController.assignMenus);
 
 module.exports = router;

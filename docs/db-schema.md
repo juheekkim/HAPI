@@ -4,7 +4,7 @@
 
 ## 스크립트 관리 규칙
 - `db/scripts/`는 순번 prefix 누적 관리. **기존 스크립트 수정 금지 — 새 순번 스크립트 추가.**
-- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql` (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
+- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql` (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
 - 드라이버: `pg` Pool(`src/config/database.js`, `DATABASE_URL`). 파라미터 바인딩(`$1,$2,...`)만 사용.
 
 ## 주요 테이블
@@ -45,13 +45,32 @@
 - 인덱스: `idx_header_fields_section`, `idx_header_fields_category`.
 - 쿼리: `headerFieldModel.getAllWithGrouping()` → section/category 그룹화 후 EJS 동적 렌더링. 컨트롤러는 system/transaction/message 모두 `{ category, fields }[]` 형태로 통일해 뷰에 전달한다.
 
+### roles (`21`) — 역할(권한 그룹)
+`id PK`, `code VARCHAR(30) UNIQUE`(`admin`/`partner`/...), `name`, `description`, `is_active`, `created_at`, `updated_at`.
+- `roleModel` CRUD. `code UNIQUE` 위반은 컨트롤러가 `err.code === '23505'`로 잡아 폼 에러로 표시(`createRole`/`updateRole`).
+- 시드(`22`): `admin`(관리자), `partner`(파트너사).
+
+### menus (`21`) — 계층 메뉴
+`id PK`, `parent_id → menus.id (ON DELETE CASCADE)`(최상위는 NULL), `name`, `path`(그룹 헤더는 NULL), `menu_type`(`nav`/`admin-tab`/`api-doc`/`group`), `icon`, `admin_only`, `display_order`, `is_active`, `created_at`, `updated_at`.
+- `menuModel`. 트리는 `getAllWithChildren()`이 평면 조회 후 JS에서 `parent_id`로 `children[]` 조립(재귀 CTE 미사용, 얕은 계층).
+- 시드(`22`): 상단 nav 5 + 관리자 서브탭 7 + apiReference 사이드바(그룹 3 → 문서 8, **2단계 중첩**). API 사이드바 계층은 `24_restructure_api_menu_hierarchy.sql`으로 정상화됨 — **그룹(공통/리조트/에스테이트)이 각 문서(api-doc)의 부모**. API 대메뉴 path는 `/api-reference`(doc 미지정).
+- 렌더링: 상단 대메뉴(`loadNavMenus` 미들웨어)와 API 사이드바(`apiReferenceController` + `menuModel.getApiSidebarByRole`) 모두 `role_menus` 기반 **동적 렌더링 적용됨**. `getApiSidebarByRole`는 API 서브트리를 **임의 depth 재귀**로 순회(2단계 고정 아님)하므로 메뉴 관리에서 만든 깊은 계층이 그대로 반영된다. 관리자 `admin-tabs`만 아직 하드코딩.
+
+### role_menus (`21`) — 역할↔메뉴 매핑
+`role_id → roles.id (ON DELETE CASCADE)`, `menu_id → menus.id (ON DELETE CASCADE)`, `PRIMARY KEY(role_id, menu_id)`.
+- `roleModel.setMenus(roleId, menuIds)`가 매핑을 통째로 교체 — **코드베이스 최초의 트랜잭션 사용**(`pool.connect()` → `BEGIN` → `DELETE` → `INSERT ... unnest($2::int[])` → `COMMIT`, 오류 시 `ROLLBACK`, `finally { client.release() }`로 커넥션 반환). 그 외 모델은 기존대로 공유 `pool.query`.
+- 매트릭스 화면은 `roleModel.getAllMenuIdsByRole()`로 `{roleId: [menuId...]}`를 1쿼리로 조회(N+1 방지). 시드(`22`)에서 `admin`은 전체 메뉴 매핑.
+- **동적 렌더링은 "매핑된 메뉴만 노출"(opt-in)** 모델이다. `22`에서 `partner`가 무매핑이라 대메뉴가 비던 문제를, `23_seed_partner_menu_mappings.sql`이 `partner`에 `admin_only=false` 전체 메뉴를 매핑해 복구한다(= 관리자 제외 전체). 이후 새 role은 `/admin/roles`에서 명시적으로 매핑해야 메뉴가 보인다.
+
 ## 관계 요약
 - `users.partner_id → partners.id` (**FK 제약 없음 [Needs verification]**; 컬럼만 존재).
 - `firewall_requests.partner_code → partners.partner_code` (ON DELETE SET NULL).
 - `inquiries.user_id → users.id`, `partner_firewall_applies.user_id → users.id` (ON DELETE SET NULL).
+- `menus.parent_id → menus.id` (ON DELETE CASCADE, 자기참조). `role_menus.role_id → roles.id`, `role_menus.menu_id → menus.id` (둘 다 ON DELETE CASCADE).
+- `users.role`(문자열) ↔ `roles.code` 연결은 아직 없음. 사용자↔역할 매핑(users에 role_id FK 등)은 다음 이터레이션 **[예정]**.
 
-## 인덱스 (`01`, `07`)
-`idx_partners_status`, `idx_firewall_approval_status`, `idx_notices_created_at(DESC)`, `idx_inquiries_status`, `idx_api_specs_category`, `idx_pfa_user`.
+## 인덱스 (`01`, `07`, `21`)
+`idx_partners_status`, `idx_firewall_approval_status`, `idx_notices_created_at(DESC)`, `idx_inquiries_status`, `idx_api_specs_category`, `idx_pfa_user`, `idx_menus_parent_id`, `idx_menus_display_order`, `idx_role_menus_menu_id`.
 
 ## 주요 쿼리 (models)
 - 조회: 대부분 `SELECT ... ORDER BY created_at/requested_at DESC`. Admin 방화벽은 `partner_firewall_applies`에 `users`·`partners` LEFT JOIN.

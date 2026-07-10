@@ -3,25 +3,15 @@
   <aside class="api-sidebar">
     <input class="sidebar-search" placeholder="🔍 API 검색" oninput="filterSidebar(this.value)">
 
-    <div class="sidebar-group">
-      <div class="sidebar-group-title">공통</div>
-      <a href="/api-reference?doc=header"      class="sidebar-item <%= selectedDoc === 'header'      ? 'active' : '' %>">헤더</a>
-      <a href="/api-reference?doc=auth"        class="sidebar-item <%= selectedDoc === 'auth'        ? 'active' : '' %>">인증</a>
-      <a href="/api-reference?doc=error-codes" class="sidebar-item <%= selectedDoc === 'error-codes' ? 'active' : '' %>">에러 코드</a>
-    </div>
-
-    <div class="sidebar-group">
-      <div class="sidebar-group-title">리조트</div>
-      <a href="/api-reference?doc=condo"   class="sidebar-item <%= selectedDoc === 'condo'   ? 'active' : '' %>">대형법인사</a>
-      <a href="/api-reference?doc=golf"    class="sidebar-item <%= selectedDoc === 'golf'    ? 'active' : '' %>">골프장 키오스크</a>
-      <a href="/api-reference?doc=product" class="sidebar-item <%= selectedDoc === 'product' ? 'active' : '' %>">상품/쿠폰</a>
-      <a href="/api-reference?doc=hlive"   class="sidebar-item <%= selectedDoc === 'hlive'   ? 'active' : '' %>">H-LIVE포인트</a>
-    </div>
-
-    <div class="sidebar-group">
-      <div class="sidebar-group-title">에스테이트</div>
-      <a href="/api-reference?doc=estate-facility" class="sidebar-item <%= selectedDoc === 'estate-facility' ? 'active' : '' %>">부대시설</a>
-    </div>
+    <%# 사이드바는 로그인 role에 매핑된 메뉴만 노출, 임의 depth 재귀 렌더 (menuModel.getApiSidebarByRole) %>
+    <% const sb = (typeof sidebar !== 'undefined' ? sidebar : []); %>
+    <% if (sb.length === 0) { %>
+      <div class="sidebar-group"><div class="sidebar-item" style="color:#8a9bb0;">표시할 API 문서가 없습니다.</div></div>
+    <% } else { %>
+      <div class="sidebar-group">
+        <%- include('_sidebarTree', { nodes: sb, selectedDoc: selectedDoc, depth: 0 }) %>
+      </div>
+    <% } %>
 
   </aside>
 

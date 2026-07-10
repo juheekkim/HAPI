@@ -1,0 +1,183 @@
+<div class="admin-nav">
+  <span class="admin-nav-title">⚙ 관리자 페이지</span>
+  <span>|</span>
+  <span>권한 관리</span>
+</div>
+
+<div class="admin-tabs">
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
+  <a href="/admin/apis" class="admin-tab">🧩 API 등록/관리</a>
+  <a href="/admin/menus" class="admin-tab">🗂 메뉴 관리</a>
+  <a href="/admin/roles" class="admin-tab active">🔑 권한 관리</a>
+</div>
+
+<%
+  function flattenTree(nodes, depth, acc) {
+    (nodes || []).forEach((n) => {
+      acc.push({ node: n, depth: depth });
+      if (n.children && n.children.length) flattenTree(n.children, depth + 1, acc);
+    });
+    return acc;
+  }
+  const menuRows = flattenTree(tree, 0, []);
+%>
+
+<div class="admin-content">
+  <% if (error) { %>
+  <div style="background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+    ⚠ <%= error %>
+  </div>
+  <% } %>
+
+  <!-- 역할 목록 -->
+  <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>역할 목록</span>
+    <button class="btn btn-primary btn-sm" onclick="openCreateModal()">+ 새 역할 등록</button>
+  </div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width:44px;text-align:center;background:#dbeafe;color:#1e40af;">No</th>
+        <th style="text-align:left;background:#dbeafe;color:#1e40af;width:120px;">코드</th>
+        <th style="text-align:left;background:#dbeafe;color:#1e40af;width:120px;">이름</th>
+        <th style="text-align:left;background:#dbeafe;color:#1e40af;">설명</th>
+        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:80px;">활성</th>
+        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:150px;">관리</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (roles.length === 0) { %>
+      <tr><td colspan="6" style="text-align:center;color:#8a9bb0;padding:32px;">등록된 역할이 없습니다.</td></tr>
+      <% } %>
+      <% roles.forEach((role, idx) => { %>
+      <tr>
+        <td style="text-align:center;color:#8a9bb0;"><%= idx + 1 %></td>
+        <td class="mono" style="font-size:12px;"><%= role.code %></td>
+        <td><%= role.name %></td>
+        <td style="font-size:12px;color:#4a5568;"><%= role.description || '-' %></td>
+        <td style="text-align:center;font-size:12px;"><%= role.is_active ? '활성' : '비활성' %></td>
+        <td style="text-align:center;">
+          <div class="action-btns" style="justify-content:center;">
+            <button class="btn btn-sm" style="background:#93c5fd;color:#1e40af;border:none;"
+              onclick="openEditModal(<%= role.id %>, `<%= (role.code||'').replace(/`/g,'\\`') %>`, `<%= (role.name||'').replace(/`/g,'\\`') %>`, `<%= (role.description||'').replace(/`/g,'\\`').replace(/\n/g,'\\n') %>`, <%= role.is_active %>)">
+              수정
+            </button>
+            <form action="/admin/roles/<%= role.id %>/delete" method="POST" style="display:inline;"
+              onsubmit="return confirm('역할을 삭제하시겠습니까? 매핑된 메뉴 연결도 함께 삭제됩니다.')">
+              <button type="submit" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;">삭제</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <!-- 역할별 메뉴 매핑 -->
+  <div class="admin-section-title" style="margin-top:32px;">역할별 메뉴 권한</div>
+  <% roles.forEach((role) => { const assigned = (roleMenuMap[role.id] || []); %>
+  <div style="border:1px solid #dde3ea;border-radius:8px;padding:16px 20px;margin-bottom:16px;">
+    <form action="/admin/roles/<%= role.id %>/menus" method="POST">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <strong style="color:#1e40af;font-size:14px;"><%= role.name %> <span class="mono" style="color:#8a9bb0;font-weight:400;font-size:12px;">(<%= role.code %>)</span></strong>
+        <button type="submit" class="btn btn-primary btn-sm">저장</button>
+      </div>
+      <div class="perm-tree">
+        <% menuRows.forEach((r) => { const n = r.node; %>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:2px 0;padding-left:<%= r.depth * 22 %>px;<%= r.depth === 0 ? 'font-weight:700;margin-top:6px;color:#1e293b;' : 'color:#374151;' %>">
+          <% if (r.depth > 0) { %><span style="color:#c0c8d4;user-select:none;">└</span><% } %>
+          <input type="checkbox" name="menuIds" value="<%= n.id %>" data-depth="<%= r.depth %>"
+            <%= assigned.includes(n.id) ? 'checked' : '' %>>
+          <span><%= (n.icon ? n.icon + ' ' : '') + n.name %></span>
+        </label>
+        <% }) %>
+      </div>
+    </form>
+  </div>
+  <% }) %>
+</div>
+
+<!-- 등록/수정 모달 -->
+<div id="roleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <h3 id="roleModalTitle" style="margin:0 0 20px;font-size:17px;color:#1e40af;">새 역할 등록</h3>
+    <form id="roleForm" method="POST" action="/admin/roles">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">코드 (고유값)</label>
+          <input type="text" id="roleCode" name="code" required placeholder="예: manager"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:monospace;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">이름</label>
+          <input type="text" id="roleName" name="name" required placeholder="예: 매니저"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">설명</label>
+        <textarea id="roleDesc" name="description" rows="3" placeholder="역할 설명"
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">활성 여부</label>
+        <select id="roleActive" name="is_active"
+          style="padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+          <option value="true">활성</option>
+          <option value="false">비활성</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="closeRoleModal()"
+          style="padding:8px 20px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#374151;font-size:13px;cursor:pointer;">취소</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;padding:8px 20px;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openCreateModal() {
+  document.getElementById('roleModalTitle').textContent = '새 역할 등록';
+  document.getElementById('roleForm').action = '/admin/roles';
+  document.getElementById('roleCode').value = '';
+  document.getElementById('roleCode').readOnly = false;
+  document.getElementById('roleName').value = '';
+  document.getElementById('roleDesc').value = '';
+  document.getElementById('roleActive').value = 'true';
+  document.getElementById('roleModal').style.display = 'flex';
+}
+function openEditModal(id, code, name, description, isActive) {
+  document.getElementById('roleModalTitle').textContent = '역할 수정';
+  document.getElementById('roleForm').action = '/admin/roles/' + id + '/update';
+  document.getElementById('roleCode').value = code;
+  document.getElementById('roleName').value = name;
+  document.getElementById('roleDesc').value = description.replace(/\\n/g, '\n');
+  document.getElementById('roleActive').value = isActive ? 'true' : 'false';
+  document.getElementById('roleModal').style.display = 'flex';
+}
+function closeRoleModal() {
+  document.getElementById('roleModal').style.display = 'none';
+}
+document.getElementById('roleModal').addEventListener('click', function (e) {
+  if (e.target === this) closeRoleModal();
+});
+
+// 역할별 메뉴 매트릭스: 부모 체크 시 하위(더 깊은 depth 연속 구간) 자동 선택/해제
+document.querySelectorAll('form[action$="/menus"]').forEach(function (form) {
+  var boxes = Array.prototype.slice.call(form.querySelectorAll('input[name="menuIds"]'));
+  boxes.forEach(function (box, i) {
+    box.addEventListener('change', function () {
+      var depth = Number(box.dataset.depth);
+      for (var j = i + 1; j < boxes.length; j++) {
+        if (Number(boxes[j].dataset.depth) <= depth) break;
+        boxes[j].checked = box.checked;
+      }
+    });
+  });
+});
+</script>

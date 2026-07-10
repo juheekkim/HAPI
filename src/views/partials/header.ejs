@@ -1,13 +1,10 @@
 <nav class="top-nav">
   <span class="nav-logo"><span>H</span>API Portal</span>
   <div class="nav-tabs">
-    <a href="/home" class="nav-tab <%= currentMenu === 'home' ? 'active' : '' %>">HOME</a>
-    <a href="/guide" class="nav-tab <%= currentMenu === 'guide' ? 'active' : '' %>">시작하기</a>
-    <a href="/api-reference?doc=header" class="nav-tab <%= currentMenu === 'api-reference' ? 'active' : '' %>">API</a>
-    <a href="/support" class="nav-tab <%= currentMenu === 'support' ? 'active' : '' %>">운영 지원</a>
-    <% if (user && user.role === 'admin') { %>
-    <a href="/admin" class="nav-tab <%= currentMenu === 'admin' ? 'active' : '' %>">관리자</a>
-    <% } %>
+    <%# 대메뉴는 로그인 role에 매핑된 메뉴만 노출(res.locals.navMenus, loadNavMenus 미들웨어) %>
+    <% (typeof navMenus !== 'undefined' ? navMenus : []).forEach((m) => { %>
+    <a href="<%= m.path %>" class="nav-tab <%= currentMenu === m.key ? 'active' : '' %>"><%= m.name %></a>
+    <% }) %>
   </div>
   <div class="nav-right">
     <% if (user) { %>

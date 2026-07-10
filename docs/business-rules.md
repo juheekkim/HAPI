@@ -10,6 +10,12 @@
   - `home`, `guide`, `api-reference`, `support`는 로그인 필요(`isAuthenticated`).
   - `admin/*`는 `isAuthenticated` + `isAdmin`(role === 'admin'). 미인증 → `/auth/login` 리다이렉트, 권한 없음 → 403.
 - `/` 접근 시 로그인돼 있으면 `/home`, 아니면 `/auth/login`.
+- 역할/메뉴 관리(`/admin/roles`, `/admin/menus`, admin 전용):
+  - `roles.code`는 유일값. 중복 등록/수정 시 `23505`를 잡아 폼 상단 에러 배너로 안내(조용히 무시하지 않음).
+  - 메뉴 삭제 시 하위 메뉴는 FK CASCADE로 함께 삭제(UI에서 confirm 경고).
+  - 메뉴 노출은 **opt-in**: 로그인 role의 `role_menus`에 매핑된 메뉴만 상단 대메뉴/ API 사이드바에 노출된다(매핑 없으면 안 보임). `admin`=전체 매핑(`22`), `partner`=`admin_only=false` 전체 매핑(`23`, 관리자 제외 전체). 새 role은 `/admin/roles`에서 매핑해야 보인다.
+  - 권한 관리 매트릭스는 부모 체크 시 하위 메뉴가 자동 선택/해제된다(개별 조정 가능).
+  - 역할별 메뉴 매핑 저장은 기존 매핑을 통째로 교체(트랜잭션). **현 단계는 관리 데이터만 구축** — 실제 화면(헤더/탭)이 역할별로 달라지는 동작(사용자↔역할 매핑 + 동적 렌더링)은 다음 이터레이션 **[예정]**.
 
 ## 2. 파트너사 온보딩 (확정 흐름)
 1. 파트너가 `/auth/apply`로 신청 → `partners` 저장(`status='pending'`).

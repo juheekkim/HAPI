@@ -9,7 +9,7 @@ Root instructions in `/CLAUDE.md` (and `/AGENTS.md`, `/GEMINI.md`) take priority
 
 ## Key Facts (source of truth = code)
 - Driver: `pg` Pool shared via `src/config/database.js`. Connection from `DATABASE_URL`.
-- Tables: `users`, `partners`, `firewall_requests`, `notices`, `inquiries`, `api_specs`, `partner_firewall_applies`. See `docs/db-schema.md` for columns/relations.
+- Tables: `users`, `partners`, `firewall_requests`, `notices`, `inquiries`, `api_specs`, `partner_firewall_applies`, `roles`, `menus`, `role_menus`. See `docs/db-schema.md` for columns/relations.
 - Scripts are cumulative and numbered (`01_`, `02_`, `07_`, `16_`, ... gaps exist). **Do not modify existing scripts** — add a new higher-numbered script for any change.
 - `api_specs.endpoints`/`error_codes` are JSONB. Timestamps are `TIMESTAMPTZ`.
 - Admin account via `npm run db:setup` (`admin`/`admin123`). Partner accounts: `username = partner_code`.

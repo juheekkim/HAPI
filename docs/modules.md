@@ -34,10 +34,13 @@
 - 흐름: `/support`(공지+FAQ), `/support/inquiry`(내 문의), `/support/firewall-apply`(방화벽 신청).
 
 ### Admin (관리자)
-- 역할: 파트너사 승인/반려, 방화벽·토큰 요청 처리, 문의 답변/FAQ 토글, 공지 CRUD/노출 토글, **API 등록/관리**(API 명칭·설명 및 Request/Response 파라미터 수기 등록·수정·삭제).
-- 위치: `routes/admin.js`(`isAuthenticated`+`isAdmin`) → `adminController.js` → `partnerModel`, `partnerFirewallApplyModel`, `firewallModel`, `userModel`, `inquiryModel`, `noticeModel`, `apiSpecModel` → `views/admin/{partners,firewall,inquiries,notices,apis,api-form}.ejs`.
+- 역할: 파트너사 승인/반려, 방화벽·토큰 요청 처리, 문의 답변/FAQ 토글, 공지 CRUD/노출 토글, **API 등록/관리**(API 명칭·설명 및 Request/Response 파라미터 수기 등록·수정·삭제), **메뉴 관리**(계층 메뉴 CRUD), **권한 관리**(역할 CRUD + 역할별 메뉴 매핑).
+- 위치: `routes/admin.js`(`isAuthenticated`+`isAdmin`) → `adminController.js` → `partnerModel`, `partnerFirewallApplyModel`, `firewallModel`, `userModel`, `inquiryModel`, `noticeModel`, `apiSpecModel`, `menuModel`, `roleModel` → `views/admin/{partners,firewall,inquiries,notices,apis,api-form,menus,roles}.ejs`.
+- 메뉴 관리 서브메뉴(`/admin/menus`): `menus` 테이블을 계층(`parent_id`) CRUD. `menuModel.getAllWithChildren()`로 트리 렌더, 삭제 시 하위 메뉴 CASCADE. 렌더링 동적화는 다음 이터레이션 예정(`docs/menu-routing.md` 참조).
+- 권한 관리 서브메뉴(`/admin/roles`): `roles` 테이블 CRUD + `role_menus` 매핑. 역할별 체크박스 매트릭스에서 `POST /admin/roles/:id/menus` → `roleModel.setMenus`(트랜잭션 교체). `code UNIQUE` 위반은 `23505`로 잡아 폼 에러 배너 표시.
 - API 등록/관리 서브메뉴(`/admin/apis`): `api_specs` 테이블을 CRUD. 목록은 `apiSpecModel.getAllForAdmin()`(STATIC fallback 없음, DB 실제 상태만 표시). 등록/수정 화면(`api-form.ejs`)은 엔드포인트(HTTP method/URL/설명/응답 예시)와 그 하위 Request 파라미터(파라미터명/타입/필수여부/설명)를 화면에서 동적으로 추가·삭제할 수 있는 폼을 제공하며, 제출 시 `endpoints` JSONB 배열로 직렬화되어 저장된다. 저장되는 구조는 API Reference가 읽는 `apiSpecModel.STATIC_SPECS`/`endpoints` 구조와 동일해 별도 변환 없이 API Reference 화면에 바로 노출된다.
-- **참고**: `views/apiReference/index.ejs`의 좌측 사이드바는 domain 링크가 하드코딩되어 있어, Admin에서 새 `domain`을 등록해도 사이드바에는 자동으로 나타나지 않는다(URL `?doc=<domain>` 직접 접근은 가능). 사이드바를 동적으로 만들려면 API Reference 담당자(박승욱)와 협의가 필요하다.
+- **사이드바(갱신)**: `views/apiReference/index.ejs`의 좌측 사이드바는 `menus`(임의 depth 트리) + `role_menus`로 렌더링된다(`menuModel.getApiSidebarByRole(role)`가 API 서브트리를 재귀 순회, 재귀 파셜 `apiReference/_sidebarTree.ejs`). **표시 여부는 `api_specs`가 아니라 `menus`/`role_menus`가 결정**. `/admin/menus`에서 원하는 depth로 메뉴를 만들고(부모 지정) `/admin/roles`에서 매핑하면 그 계층 그대로 사이드바에 중첩 노출된다.
+- **랜딩/접근(갱신)**: `apiReferenceController.index`가 `sidebar`에서 `allowedDocs`를 산출해, 허용되지 않은 `?doc=`는 첫 허용 문서로 리다이렉트하고 doc 미지정 시 role의 첫 허용 문서로 랜딩한다. 그래서 est_partner처럼 특정 문서만 부여된 role은 상단 API 클릭 시 자기 문서로 진입하고, 권한 없는 문서 본문 URL 접근도 차단된다. (본문 EJS 분기 자체는 `selectedDoc` 기준 하드코딩이나, 컨트롤러 리다이렉트로 허용 문서만 도달.)
 - **소유권 메모**: `apiSpecModel.js`는 조회(API Reference, 박승욱)와 등록/관리(Admin, 임가윤) 양쪽에서 함께 사용하는 공유 모델이 되었다. 변경 시 두 모듈에 미치는 영향을 함께 검토한다(`team-ownership.md` 변경 이력 참조).
 
 ### Auth

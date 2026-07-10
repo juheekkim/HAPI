@@ -1,0 +1,15 @@
+<%# API 사이드바 재귀 렌더 파셜.
+    받는 값: nodes([{name, icon, path, doc, isLink, children}]), selectedDoc, depth
+    isLink=true → 클릭 가능한 문서 링크, 아니면 그룹/비클릭 헤더. children는 재귀. %>
+<% (nodes || []).forEach(function (node) { %>
+  <% if (node.isLink) { %>
+    <a href="<%= node.path %>"
+       class="sidebar-item <%= selectedDoc === node.doc ? 'active' : '' %>"
+       style="padding-left:<%= 12 + depth * 14 %>px;"><%= (node.icon ? node.icon + ' ' : '') + node.name %></a>
+  <% } else { %>
+    <div class="sidebar-group-title" style="padding-left:<%= depth * 14 %>px;"><%= (node.icon ? node.icon + ' ' : '') + node.name %></div>
+  <% } %>
+  <% if (node.children && node.children.length) { %>
+    <%- include('_sidebarTree', { nodes: node.children, selectedDoc: selectedDoc, depth: depth + 1 }) %>
+  <% } %>
+<% }) %>

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import bcrypt; print\\(bcrypt.hashpw\\(b'admin123', bcrypt.gensalt\\(rounds=10\\)\\).decode\\(\\)\\)\")",
+      "Bash(command -v htpasswd)",
+      "Bash(htpasswd -bnBC 10 \"\" admin123)",
+      "Bash(python3 *)"
+    ]
+  }
+}

@@ -70,7 +70,7 @@
         <td style="text-align:center;">
           <div class="action-btns" style="justify-content:center;">
             <button class="btn btn-sm" style="background:#93c5fd;color:#1e40af;border:none;"
-              onclick="openEditModal(<%= n.id %>, <%= n.parent_id || '' %>, `<%= (n.name||'').replace(/`/g,'\\`') %>`, `<%= (n.path||'').replace(/`/g,'\\`') %>`, `<%= n.menu_type %>`, `<%= (n.icon||'').replace(/`/g,'\\`') %>`, <%= n.admin_only %>, <%= n.display_order %>, <%= n.is_active %>)">
+              onclick="openEditModal(<%= n.id %>, <%= n.parent_id || 'null' %>, `<%= (n.name||'').replace(/`/g,'\\`') %>`, `<%= (n.path||'').replace(/`/g,'\\`') %>`, `<%= n.menu_type %>`, `<%= (n.icon||'').replace(/`/g,'\\`') %>`, <%= n.admin_only %>, <%= n.display_order %>, <%= n.is_active %>)">
               수정
             </button>
             <form action="/admin/menus/<%= n.id %>/delete" method="POST" style="display:inline;"
@@ -125,6 +125,32 @@
             style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
         </div>
       </div>
+      <!-- API문서(api-doc) 유형일 때만 노출. 등록된 API 문서를 검색·선택하면 경로가 자동 입력·잠금된다. -->
+      <div id="menuApiDocRow" style="display:none;margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">API 문서 연결</label>
+        <% if (apiDocs && apiDocs.length) { %>
+        <!-- 콤보박스: 입력창 포커스/타이핑 시에만 목록이 팝오버로 떠서 겹쳐진다(모달 높이 고정). -->
+        <div style="position:relative;">
+          <input type="text" id="menuApiDocSearch" autocomplete="off" placeholder="🔍 API 문서 검색/선택"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+          <div id="menuApiDocList"
+            style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20;max-height:220px;overflow-y:auto;background:#fff;border:1px solid #d1d5db;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,0.14);">
+            <div class="apidoc-item" data-mode="custom" data-path="" data-search=""
+              style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid #eef2f7;">✏️ 직접 입력 (커스텀 URL)</div>
+            <% apiDocs.forEach((d) => { %>
+            <div class="apidoc-item" data-mode="doc" data-path="/api-reference?doc=<%= d.domain %>"
+              data-search="<%= (d.name + ' ' + d.domain).toLowerCase() %>"
+              style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid #eef2f7;">
+              <%= d.name %> <span style="color:#8a9bb0;">(<%= d.domain %>)</span>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+        <p style="margin:6px 0 0;font-size:11px;color:#8a9bb0;">API 문서를 선택하면 아래 경로가 자동 입력·잠금됩니다. 커스텀 URL이 필요하면 '직접 입력'을 선택하세요.</p>
+        <% } else { %>
+        <p style="margin:0;font-size:12px;color:#8a9bb0;">등록된 API 문서가 없습니다. 아래 경로를 직접 입력하세요.</p>
+        <% } %>
+      </div>
       <div style="margin-bottom:14px;">
         <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">경로 (그룹 헤더는 비워둠)</label>
         <input type="text" id="menuPath" name="path" placeholder="예: /admin/notices"
@@ -163,6 +189,79 @@
 </div>
 
 <script>
+// 경로 입력을 잠금(읽기전용)하거나 해제한다.
+function setPathLocked(locked) {
+  const el = document.getElementById('menuPath');
+  el.readOnly = locked;
+  el.style.background = locked ? '#f3f4f6' : '';
+  el.style.color = locked ? '#6b7280' : '';
+}
+// 목록 팝오버 열기(전체 표시) / 닫기 / 검색어 필터.
+function openApiDocList() {
+  const list = document.getElementById('menuApiDocList');
+  if (!list) return;
+  list.querySelectorAll('.apidoc-item').forEach((it) => (it.style.display = ''));
+  list.style.display = 'block';
+}
+function closeApiDocList() {
+  const list = document.getElementById('menuApiDocList');
+  if (list) list.style.display = 'none';
+}
+function filterApiDocList(q) {
+  const list = document.getElementById('menuApiDocList');
+  if (!list) return;
+  const term = (q || '').trim().toLowerCase();
+  list.querySelectorAll('.apidoc-item').forEach((it) => {
+    const show = it.dataset.mode === 'custom' || !term || it.dataset.search.includes(term);
+    it.style.display = show ? '' : 'none';
+  });
+  list.style.display = 'block';
+}
+// 항목의 표시 라벨(문서만; '직접 입력'은 빈 문자열).
+function apiDocLabel(el) {
+  return el.dataset.mode === 'doc' ? el.textContent.replace(/\s+/g, ' ').trim() : '';
+}
+// API 문서 목록에서 한 항목을 선택 상태로 만든다.
+// mode='doc'이면 경로 자동 입력·잠금 + 검색창에 라벨 표시, mode='custom'이면 경로 편집 해제 + 검색창 비움.
+function selectApiDocItem(el) {
+  if (!el) return;
+  const list = document.getElementById('menuApiDocList');
+  (list ? Array.from(list.querySelectorAll('.apidoc-item')) : []).forEach((it) => {
+    it.style.background = it === el ? '#dbeafe' : '';
+    it.style.fontWeight = it === el ? '600' : '';
+  });
+  const search = document.getElementById('menuApiDocSearch');
+  if (el.dataset.mode === 'doc') {
+    document.getElementById('menuPath').value = el.dataset.path;
+    setPathLocked(true);
+    if (search) search.value = apiDocLabel(el);
+  } else {
+    setPathLocked(false);
+    if (search) search.value = '';
+  }
+  closeApiDocList();
+}
+// 현재 경로 값에 맞는 목록 항목을 골라 선택 상태/잠금을 동기화.
+// 경로가 등록된 API 문서와 정확히 일치하면 그 항목 선택(잠금), 아니면 '직접 입력'(편집 가능).
+function syncApiDocSelection() {
+  const list = document.getElementById('menuApiDocList');
+  if (!list) return; // 등록된 API 문서가 없는 경우
+  const path = document.getElementById('menuPath').value;
+  const items = Array.from(list.querySelectorAll('.apidoc-item'));
+  const match = items.find((it) => it.dataset.mode === 'doc' && it.dataset.path === path);
+  selectApiDocItem(match || items.find((it) => it.dataset.mode === 'custom'));
+}
+// menu_type이 api-doc일 때만 연결 UI를 노출. 그 외 유형은 경로 잠금 해제.
+function togglePicker() {
+  const isApiDoc = document.getElementById('menuType').value === 'api-doc';
+  document.getElementById('menuApiDocRow').style.display = isApiDoc ? 'block' : 'none';
+  closeApiDocList();
+  if (isApiDoc && document.getElementById('menuApiDocList')) {
+    syncApiDocSelection();
+  } else {
+    setPathLocked(false); // api-doc이 아니거나 등록된 문서가 없으면 자유 입력
+  }
+}
 function openCreateModal() {
   document.getElementById('menuModalTitle').textContent = '새 메뉴 등록';
   document.getElementById('menuForm').action = '/admin/menus';
@@ -174,6 +273,7 @@ function openCreateModal() {
   document.getElementById('menuAdminOnly').value = 'false';
   document.getElementById('menuActive').value = 'true';
   document.getElementById('menuOrder').value = '0';
+  togglePicker();
   document.getElementById('menuModal').style.display = 'flex';
 }
 function openEditModal(id, parentId, name, path, menuType, icon, adminOnly, order, isActive) {
@@ -187,11 +287,40 @@ function openEditModal(id, parentId, name, path, menuType, icon, adminOnly, orde
   document.getElementById('menuAdminOnly').value = adminOnly ? 'true' : 'false';
   document.getElementById('menuActive').value = isActive ? 'true' : 'false';
   document.getElementById('menuOrder').value = order;
+  togglePicker();
   document.getElementById('menuModal').style.display = 'flex';
 }
 function closeMenuModal() {
   document.getElementById('menuModal').style.display = 'none';
 }
+document.getElementById('menuType').addEventListener('change', togglePicker);
+(function () {
+  const list = document.getElementById('menuApiDocList');
+  const search = document.getElementById('menuApiDocSearch');
+  if (list) {
+    // 목록 항목 클릭 → 선택(문서면 경로 자동 입력·잠금, '직접 입력'이면 편집 해제).
+    list.addEventListener('click', function (e) {
+      const item = e.target.closest('.apidoc-item');
+      if (item) selectApiDocItem(item);
+    });
+  }
+  if (search) {
+    // 포커스 시 팝오버 열기(전체 표시). 기존 라벨은 전체 선택해 타이핑 시 대체.
+    search.addEventListener('focus', function () {
+      this.select();
+      openApiDocList();
+    });
+    // 타이핑으로 목록 필터('직접 입력' 항목은 항상 노출).
+    search.addEventListener('input', function () {
+      filterApiDocList(this.value);
+    });
+  }
+  // 팝오버 바깥 클릭 시 닫기.
+  document.addEventListener('click', function (e) {
+    const row = document.getElementById('menuApiDocRow');
+    if (row && !row.contains(e.target)) closeApiDocList();
+  });
+})();
 document.getElementById('menuModal').addEventListener('click', function (e) {
   if (e.target === this) closeMenuModal();
 });

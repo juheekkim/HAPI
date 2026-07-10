@@ -364,9 +364,11 @@ const adminController = {
   // ── 메뉴 관리 ──────────────────────────────────────
   async menus(req, res) {
     try {
-      const [tree, flatMenus] = await Promise.all([
+      const [tree, flatMenus, apiDocs] = await Promise.all([
         menuModel.getAllWithChildren(),
         menuModel.getAll(),
+        // api-doc 메뉴 경로 도우미용. 조회 실패해도 메뉴 화면은 정상 렌더되도록 []로 폴백.
+        apiSpecModel.getAllForAdmin().catch(() => []),
       ]);
       res.render('admin/menus', {
         title: '메뉴 관리',
@@ -374,6 +376,7 @@ const adminController = {
         activeTab: 'menus',
         tree,
         flatMenus,
+        apiDocs,
       });
     } catch (err) {
       console.error(err);
@@ -383,6 +386,7 @@ const adminController = {
         activeTab: 'menus',
         tree: [],
         flatMenus: [],
+        apiDocs: [],
       });
     }
   },

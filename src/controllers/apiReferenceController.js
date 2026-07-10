@@ -3,11 +3,18 @@
 const apiSpecModel = require('../models/apiSpecModel');
 const headerFieldModel = require('../models/headerFieldModel');
 const menuModel = require('../models/menuModel');
+const partnerModel = require('../models/partnerModel');
 
 const apiReferenceController = {
   async index(req, res) {
-    const role = req.session.user && req.session.user.role;
+    const sessionUser = req.session.user;
+    let role = sessionUser && sessionUser.role;
     try {
+      // 파트너 사용자는 /admin/partner-roles에서 지정한 partners.role_id가 세션 role보다 우선 적용
+      if (sessionUser && sessionUser.partnerId) {
+        const mappedRole = await partnerModel.getRoleCodeById(sessionUser.partnerId);
+        if (mappedRole) role = mappedRole;
+      }
       const sidebar = role ? await menuModel.getApiSidebarByRole(role) : [];
       // 중첩 사이드바 트리에서 클릭 가능한(허용된) 문서 doc을 재귀 수집
       const collectDocs = (nodes) =>

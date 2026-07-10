@@ -47,7 +47,7 @@ const adminController = {
         username: code,
         passwordHash: hash,
         name: partner ? partner.manager_name : '파트너',
-        role: 'partner',
+        role: 'BigCorp',
         partnerId: Number(req.params.id),
       });
     } catch (err) {
@@ -443,7 +443,7 @@ const adminController = {
     res.redirect('/admin/menus');
   },
 
-  // ── 권한 관리 ──────────────────────────────────────
+  // ── 권한 그룹 관리 ──────────────────────────────────────
   async roles(req, res) {
     try {
       const [roles, tree, roleMenuMap] = await Promise.all([
@@ -452,7 +452,7 @@ const adminController = {
         roleModel.getAllMenuIdsByRole(),
       ]);
       res.render('admin/roles', {
-        title: '권한 관리',
+        title: '권한 그룹 관리',
         currentMenu: 'admin',
         activeTab: 'roles',
         roles,
@@ -463,7 +463,7 @@ const adminController = {
     } catch (err) {
       console.error(err);
       res.render('admin/roles', {
-        title: '권한 관리',
+        title: '권한 그룹 관리',
         currentMenu: 'admin',
         activeTab: 'roles',
         roles: [],
@@ -496,7 +496,7 @@ const adminController = {
         roleModel.getAllMenuIdsByRole(),
       ]);
       return res.render('admin/roles', {
-        title: '권한 관리',
+        title: '권한 그룹 관리',
         currentMenu: 'admin',
         activeTab: 'roles',
         roles,
@@ -510,11 +510,14 @@ const adminController = {
   async updateRole(req, res) {
     const { code, name, description, is_active } = req.body;
     try {
+      // admin 그룹은 항상 활성 상태 유지 (비활성화 시 관리자 로그인 전체 차단 위험)
+      const existing = await roleModel.getById(req.params.id);
+      const isActive = existing && existing.code === 'admin' ? true : is_active !== 'false';
       await roleModel.update(req.params.id, {
         code,
         name,
         description,
-        isActive: is_active !== 'false',
+        isActive,
       });
       return res.redirect('/admin/roles');
     } catch (err) {
@@ -529,7 +532,7 @@ const adminController = {
         roleModel.getAllMenuIdsByRole(),
       ]);
       return res.render('admin/roles', {
-        title: '권한 관리',
+        title: '권한 그룹 관리',
         currentMenu: 'admin',
         activeTab: 'roles',
         roles,
@@ -557,6 +560,42 @@ const adminController = {
       console.error(err);
     }
     res.redirect('/admin/roles');
+  },
+
+  // ── 사용자별 권한관리 (파트너사 코드 ↔ 권한그룹 매핑) ──────
+  async partnerRoles(req, res) {
+    try {
+      const [partners, roles] = await Promise.all([
+        partnerModel.getApprovedWithRole(),
+        roleModel.getAllForAdmin(),
+      ]);
+      res.render('admin/partnerRoles', {
+        title: '사용자별 권한관리',
+        currentMenu: 'admin',
+        activeTab: 'partnerRoles',
+        partners,
+        roles: roles.filter((r) => r.code !== 'admin'),
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/partnerRoles', {
+        title: '사용자별 권한관리',
+        currentMenu: 'admin',
+        activeTab: 'partnerRoles',
+        partners: [],
+        roles: [],
+      });
+    }
+  },
+
+  async updatePartnerRole(req, res) {
+    const { role_id } = req.body;
+    try {
+      await partnerModel.updateRoleId(req.params.id, role_id || null);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/partner-roles');
   },
 };
 

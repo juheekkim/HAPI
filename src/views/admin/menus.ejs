@@ -11,7 +11,8 @@
   <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
   <a href="/admin/apis" class="admin-tab">🧩 API 등록/관리</a>
   <a href="/admin/menus" class="admin-tab active">🗂 메뉴 관리</a>
-  <a href="/admin/roles" class="admin-tab">🔑 권한 관리</a>
+  <a href="/admin/roles" class="admin-tab">🔑 권한 그룹 관리</a>
+  <a href="/admin/partner-roles" class="admin-tab">🧑‍💼 사용자별 권한관리</a>
 </div>
 
 <%
@@ -63,9 +64,7 @@
         <td style="text-align:center;color:#8a9bb0;"><%= n.display_order %></td>
         <td style="text-align:center;">
           <form action="/admin/menus/<%= n.id %>/toggle-active" method="POST" style="display:inline;">
-            <button type="submit" class="btn btn-sm" style="border:none;<%= n.is_active ? 'background:#bbf7d0;color:#166534;' : 'background:#fecaca;color:#991b1b;' %>">
-              <%= n.is_active ? '활성' : '비활성' %>
-            </button>
+            <input type="checkbox" <%= n.is_active ? 'checked' : '' %> onchange="this.form.submit();">
           </form>
         </td>
         <td style="text-align:center;">

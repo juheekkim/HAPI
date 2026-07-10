@@ -3,7 +3,7 @@
 > Source of truth: `src/controllers/**`, `src/models/**`, `src/middlewares/**`. 확인된 사실과 추측을 구분한다. 추측은 **[Needs verification]**.
 
 ## 1. 사용자 / 권한
-- 역할(role): `admin`(내부 담당자), `partner`(연동사 담당자). 스키마 기본값은 `user`이나 실제 삽입값은 위 둘.
+- 역할(role): `admin`(내부 담당자), `BigCorp`(연동사 담당자, 舊 `partner` — `26_rename_partner_role_to_bigcorp.sql`로 개명). 스키마 기본값은 `user`이나 실제 삽입값은 위 둘.
 - 세션 로그인(`express-session`). 로그인 성공 시 `req.session.user = { id, name, role, partnerId }`.
 - 접근 제어:
   - `auth/*`(로그인, 파트너 신청)만 공개.
@@ -13,14 +13,15 @@
 - 역할/메뉴 관리(`/admin/roles`, `/admin/menus`, admin 전용):
   - `roles.code`는 유일값. 중복 등록/수정 시 `23505`를 잡아 폼 상단 에러 배너로 안내(조용히 무시하지 않음).
   - 메뉴 삭제 시 하위 메뉴는 FK CASCADE로 함께 삭제(UI에서 confirm 경고).
-  - 메뉴 노출은 **opt-in**: 로그인 role의 `role_menus`에 매핑된 메뉴만 상단 대메뉴/ API 사이드바에 노출된다(매핑 없으면 안 보임). `admin`=전체 매핑(`22`), `partner`=`admin_only=false` 전체 매핑(`23`, 관리자 제외 전체). 새 role은 `/admin/roles`에서 매핑해야 보인다.
-  - 권한 관리 매트릭스는 부모 체크 시 하위 메뉴가 자동 선택/해제된다(개별 조정 가능).
-  - 역할별 메뉴 매핑 저장은 기존 매핑을 통째로 교체(트랜잭션). **현 단계는 관리 데이터만 구축** — 실제 화면(헤더/탭)이 역할별로 달라지는 동작(사용자↔역할 매핑 + 동적 렌더링)은 다음 이터레이션 **[예정]**.
+  - 메뉴 노출은 **opt-in**: 로그인 role의 `role_menus`에 매핑된 메뉴만 상단 대메뉴/ API 사이드바에 노출된다(매핑 없으면 안 보임). `admin`=전체 매핑(`22`), `BigCorp`(舊 `partner`)=`admin_only=false` 전체 매핑(`23`, 관리자 제외 전체). 새 role은 `/admin/roles`에서 매핑해야 보인다.
+  - 권한 그룹 관리 매트릭스는 부모 체크 시 하위 메뉴가 자동 선택/해제된다(개별 조정 가능).
+  - 역할별 메뉴 매핑 저장은 기존 매핑을 통째로 교체(트랜잭션).
+  - **사용자별 권한관리**(`/admin/partner-roles`, admin 전용, `28`): 파트너사(코드)마다 권한그룹 1개를 지정하면(`partners.role_id`) 그 파트너 로그인 사용자에게 실제로 해당 그룹의 메뉴만 노출된다(`users.role` 문자열보다 우선 적용). 그룹 미지정 시 `users.role`(현재 `BigCorp`)로 폴백. 관리자(admin) 개별 사용자 단위 매핑은 아직 없음 — 다음 이터레이션 **[예정]**.
 
 ## 2. 파트너사 온보딩 (확정 흐름)
 1. 파트너가 `/auth/apply`로 신청 → `partners` 저장(`status='pending'`).
 2. 관리자가 `/admin/partners`에서 승인/반려.
-   - 승인: `partner_code` = 8자리 숫자 난수 채번 → `partners.status='approved'` + code 저장. 이어서 로그인 계정 생성: `users(username=code, password=bcrypt(code), role='partner', partner_id)`. **초기 비밀번호 = partner_code.**
+   - 승인: `partner_code` = 8자리 숫자 난수 채번 → `partners.status='approved'` + code 저장. 이어서 로그인 계정 생성: `users(username=code, password=bcrypt(code), role='BigCorp', partner_id)`. **초기 비밀번호 = partner_code.**
    - 반려: `status='rejected'` + `reject_reason` 저장(계정 미생성).
 3. 파트너 로그인: 아이디 = `partner_code`, 비밀번호 = 초기값(code).
 

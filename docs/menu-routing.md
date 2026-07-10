@@ -34,7 +34,7 @@
 - `GET /admin/notices`, `POST /admin/notices`, `POST /admin/notices/:id/update`, `POST /admin/notices/:id/delete`, `POST /admin/notices/:id/toggle-visible`
 - `GET /admin/apis`(목록), `GET /admin/apis/new`(등록 폼), `GET /admin/apis/:id/edit`(수정 폼), `POST /admin/apis`(등록), `POST /admin/apis/:id/update`(수정), `POST /admin/apis/:id/delete`(삭제)
 - `GET /admin/menus`(메뉴 관리), `POST /admin/menus`(등록), `POST /admin/menus/:id/update`, `POST /admin/menus/:id/delete`(하위 CASCADE), `POST /admin/menus/:id/toggle-active`
-- `GET /admin/roles`(권한 관리), `POST /admin/roles`(등록), `POST /admin/roles/:id/update`, `POST /admin/roles/:id/delete`, `POST /admin/roles/:id/menus`(역할별 메뉴 매핑 저장)
+- `GET /admin/roles`(권한 그룹 관리), `POST /admin/roles`(등록), `POST /admin/roles/:id/update`, `POST /admin/roles/:id/delete`, `POST /admin/roles/:id/menus`(역할별 메뉴 매핑 저장)
 
 ### 루트/에러
 - `GET /` → 로그인 시 `/home`, 아니면 `/auth/login`
@@ -44,7 +44,7 @@
 - **상단 대메뉴는 로그인 role에 매핑된 메뉴만 동적 렌더링**한다(하드코딩 아님). `loadNavMenus` 미들웨어(`src/middlewares/loadNavMenus.js`, `app.js`에서 `res.locals.user` 주입 직후 전역 등록)가 `menuModel.getNavMenusByRole(user.role)`로 `role_menus`를 조회해 `res.locals.navMenus`에 주입 → 헤더가 이를 순회 렌더.
   - `getNavMenusByRole`: `menus`(parent_id IS NULL, `menu_type='nav'`, `is_active`) 중 해당 `roles.code`에 매핑된 것만. `admin_only` 메뉴(관리자)는 `role='admin'`에만 노출(방어적 가드).
   - 활성 탭 판별 키는 경로 첫 세그먼트(`/api-reference` → `api-reference`)로, 컨트롤러가 넘기는 `currentMenu`와 비교.
-  - 매핑이 없거나 DB 오류 시 `navMenus=[]`(빈 네비). 각 role은 `/admin/roles`(권한 관리)에서 노출할 메뉴를 반드시 매핑해야 한다.
+  - 매핑이 없거나 DB 오류 시 `navMenus=[]`(빈 네비). 각 role은 `/admin/roles`(권한 그룹 관리)에서 노출할 메뉴를 반드시 매핑해야 한다.
   - **한계(현 단계)**: 이건 **시각적 노출 제어**다. 라우트 접근 자체는 여전히 각 라우터의 `isAuthenticated`/`isAdmin`만으로 막는다. admin 서브탭은 아직 하드코딩(대메뉴·API 사이드바는 동적화됨).
 - 우측: 로그인 시 이름 + 로그아웃(POST), 미로그인 시 로그인 링크.
 - 참고: API 대메뉴 링크 path는 `/api-reference`(doc 미지정) — 컨트롤러가 role의 첫 허용 문서로 랜딩.

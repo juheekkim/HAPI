@@ -1,0 +1,67 @@
+<div class="admin-nav">
+  <span class="admin-nav-title">⚙ 관리자 페이지</span>
+  <span>|</span>
+  <span>사용자별 권한관리</span>
+</div>
+
+<div class="admin-tabs">
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
+  <a href="/admin/apis" class="admin-tab">🧩 API 등록/관리</a>
+  <a href="/admin/menus" class="admin-tab">🗂 메뉴 관리</a>
+  <a href="/admin/roles" class="admin-tab">🔑 권한 그룹 관리</a>
+  <a href="/admin/partner-roles" class="admin-tab active">🧑‍💼 사용자별 권한관리</a>
+</div>
+
+<div class="admin-content">
+  <div class="admin-section-title">파트너사별 권한그룹 매핑</div>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width:44px;text-align:center;background:#dbeafe;color:#1e40af;">No</th>
+        <th style="text-align:left;background:#dbeafe;color:#1e40af;width:140px;">파트너사코드</th>
+        <th style="text-align:left;background:#dbeafe;color:#1e40af;">파트너사명</th>
+        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:160px;">그룹코드</th>
+        <th style="text-align:left;background:#dbeafe;color:#1e40af;width:160px;">그룹명</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (partners.length === 0) { %>
+      <tr><td colspan="5" style="text-align:center;color:#8a9bb0;padding:32px;">승인된 파트너사가 없습니다.</td></tr>
+      <% } %>
+      <% partners.forEach((p, idx) => { %>
+      <tr>
+        <td style="text-align:center;color:#8a9bb0;"><%= idx + 1 %></td>
+        <td class="mono" style="font-size:12px;"><%= p.partner_code %></td>
+        <td><%= p.company_name %></td>
+        <td style="text-align:center;">
+          <form action="/admin/partner-roles/<%= p.id %>/update" method="POST" style="display:inline;">
+            <select name="role_id" onchange="onRoleSelect(this)"
+              style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+              <option value="">-- 미지정 --</option>
+              <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" data-name="<%= r.name %>" <%= p.role_id === r.id ? 'selected' : '' %>><%= r.code %></option>
+              <% }) %>
+            </select>
+          </form>
+        </td>
+        <td class="role-name-cell" style="font-size:12px;color:#4a5568;"><%= p.role_name || '-' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+// 그룹코드 선택 시 그룹명 셀을 즉시 갱신하고 매핑을 저장(전체 페이지 재조회로 최종 확정)
+function onRoleSelect(select) {
+  var opt = select.options[select.selectedIndex];
+  var row = select.closest('tr');
+  var nameCell = row.querySelector('.role-name-cell');
+  if (nameCell) nameCell.textContent = (opt && opt.dataset.name) || '-';
+  select.form.submit();
+}
+</script>

@@ -41,6 +41,33 @@ const partnerModel = {
       [status, rejectReason, partnerCode, id]
     );
   },
+
+  // 사용자별 권한관리 화면용: 승인된 파트너 + 매핑된 권한그룹(코드/이름) 조회
+  async getApprovedWithRole() {
+    const result = await pool.query(
+      `SELECT p.id, p.company_name, p.partner_code, p.role_id, r.code AS role_code, r.name AS role_name
+       FROM partners p
+       LEFT JOIN roles r ON r.id = p.role_id
+       WHERE p.status = 'approved'
+       ORDER BY p.company_name ASC`
+    );
+    return result.rows;
+  },
+
+  async updateRoleId(id, roleId) {
+    await pool.query('UPDATE partners SET role_id=$1 WHERE id=$2', [roleId, id]);
+  },
+
+  // 파트너 로그인 사용자의 실제 노출 메뉴 결정용: partner_id로 매핑된 role code 조회
+  async getRoleCodeById(id) {
+    const result = await pool.query(
+      `SELECT r.code FROM partners p
+       JOIN roles r ON r.id = p.role_id
+       WHERE p.id = $1`,
+      [id]
+    );
+    return result.rows[0] ? result.rows[0].code : null;
+  },
 };
 
 module.exports = partnerModel;

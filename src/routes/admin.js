@@ -42,5 +42,7 @@ router.post('/roles', adminController.createRole);
 router.post('/roles/:id/update', adminController.updateRole);
 router.post('/roles/:id/delete', adminController.deleteRole);
 router.post('/roles/:id/menus', adminController.assignMenus);
+router.get('/partner-roles', adminController.partnerRoles);
+router.post('/partner-roles/:id/update', adminController.updatePartnerRole);
 
 module.exports = router;

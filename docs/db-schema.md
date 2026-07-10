@@ -10,12 +10,13 @@
 ## 주요 테이블
 
 ### users (`01`)
-`id PK`, `username UNIQUE`, `password_hash`, `name`, `role`(default `user`; 코드 사용값 `admin`/`partner`), `partner_id`, `created_at`.
+`id PK`, `username UNIQUE`, `password_hash`, `name`, `role`(default `user`; 코드 사용값 `admin`/`BigCorp`), `partner_id`, `created_at`.
 - 로그인: `userModel.findByUsername`. 파트너 계정 `username = partner_code`.
 
-### partners (`01`)
-`id PK`, `company_name`, `manager_name`, `email`, `phone`, `purpose`, `status`(`pending`/`approved`/`rejected`), `reject_reason`, `partner_code VARCHAR(8) UNIQUE`, `processed_at`, `created_at`.
+### partners (`01`, `role_id`는 `27`)
+`id PK`, `company_name`, `manager_name`, `email`, `phone`, `purpose`, `status`(`pending`/`approved`/`rejected`), `reject_reason`, `partner_code VARCHAR(8) UNIQUE`, `processed_at`, `created_at`, `role_id → roles.id (ON DELETE SET NULL)`.
 - 승인 시 `partner_code` 채번(8자리 숫자, `adminController.approvePartner`).
+- `role_id`: "사용자별 권한관리"(`/admin/partner-roles`, admin 전용)에서 파트너사별로 권한그룹 1개를 지정. `loadNavMenus` 미들웨어와 `apiReferenceController`가 파트너 로그인 시 `users.role`보다 이 매핑을 우선 적용(`partnerModel.getRoleCodeById`). 매핑 없으면(`NULL`) 세션 `users.role`로 폴백.
 
 ### firewall_requests (`01`) — 구형/데모
 `id PK`, `partner_code → partners.partner_code`, `ip_address`, `port`, `reason`, `approval_status`, `reject_reason`, `payment_status`, `token`, `processed_at`, `created_at`.
@@ -46,9 +47,9 @@
 - 쿼리: `headerFieldModel.getAllWithGrouping()` → section/category 그룹화 후 EJS 동적 렌더링. 컨트롤러는 system/transaction/message 모두 `{ category, fields }[]` 형태로 통일해 뷰에 전달한다.
 
 ### roles (`21`) — 역할(권한 그룹)
-`id PK`, `code VARCHAR(30) UNIQUE`(`admin`/`partner`/...), `name`, `description`, `is_active`, `created_at`, `updated_at`.
+`id PK`, `code VARCHAR(30) UNIQUE`(`admin`/`BigCorp`/...), `name`, `description`, `is_active`, `created_at`, `updated_at`.
 - `roleModel` CRUD. `code UNIQUE` 위반은 컨트롤러가 `err.code === '23505'`로 잡아 폼 에러로 표시(`createRole`/`updateRole`).
-- 시드(`22`): `admin`(관리자), `partner`(파트너사).
+- 시드(`22`): `admin`(관리자), `partner`(파트너사) — `26_rename_partner_role_to_bigcorp.sql`이 `partner` → `BigCorp`로 전면 변경(`roles.code` + `users.role` 동시 반영).
 
 ### menus (`21`) — 계층 메뉴
 `id PK`, `parent_id → menus.id (ON DELETE CASCADE)`(최상위는 NULL), `name`, `path`(그룹 헤더는 NULL), `menu_type`(`nav`/`admin-tab`/`api-doc`/`group`), `icon`, `admin_only`, `display_order`, `is_active`, `created_at`, `updated_at`.
@@ -60,14 +61,15 @@
 `role_id → roles.id (ON DELETE CASCADE)`, `menu_id → menus.id (ON DELETE CASCADE)`, `PRIMARY KEY(role_id, menu_id)`.
 - `roleModel.setMenus(roleId, menuIds)`가 매핑을 통째로 교체 — **코드베이스 최초의 트랜잭션 사용**(`pool.connect()` → `BEGIN` → `DELETE` → `INSERT ... unnest($2::int[])` → `COMMIT`, 오류 시 `ROLLBACK`, `finally { client.release() }`로 커넥션 반환). 그 외 모델은 기존대로 공유 `pool.query`.
 - 매트릭스 화면은 `roleModel.getAllMenuIdsByRole()`로 `{roleId: [menuId...]}`를 1쿼리로 조회(N+1 방지). 시드(`22`)에서 `admin`은 전체 메뉴 매핑.
-- **동적 렌더링은 "매핑된 메뉴만 노출"(opt-in)** 모델이다. `22`에서 `partner`가 무매핑이라 대메뉴가 비던 문제를, `23_seed_partner_menu_mappings.sql`이 `partner`에 `admin_only=false` 전체 메뉴를 매핑해 복구한다(= 관리자 제외 전체). 이후 새 role은 `/admin/roles`에서 명시적으로 매핑해야 메뉴가 보인다.
+- **동적 렌더링은 "매핑된 메뉴만 노출"(opt-in)** 모델이다. `22`에서 `partner`가 무매핑이라 대메뉴가 비던 문제를, `23_seed_partner_menu_mappings.sql`이 `partner`에 `admin_only=false` 전체 메뉴를 매핑해 복구한다(= 관리자 제외 전체). 이후 새 role은 `/admin/roles`에서 명시적으로 매핑해야 메뉴가 보인다. (매핑은 `role_id` 기준이라 `26`의 `partner`→`BigCorp` code 변경 후에도 그대로 유지됨.)
 
 ## 관계 요약
 - `users.partner_id → partners.id` (**FK 제약 없음 [Needs verification]**; 컬럼만 존재).
 - `firewall_requests.partner_code → partners.partner_code` (ON DELETE SET NULL).
 - `inquiries.user_id → users.id`, `partner_firewall_applies.user_id → users.id` (ON DELETE SET NULL).
 - `menus.parent_id → menus.id` (ON DELETE CASCADE, 자기참조). `role_menus.role_id → roles.id`, `role_menus.menu_id → menus.id` (둘 다 ON DELETE CASCADE).
-- `users.role`(문자열) ↔ `roles.code` 연결은 아직 없음. 사용자↔역할 매핑(users에 role_id FK 등)은 다음 이터레이션 **[예정]**.
+- `users.role`(문자열) ↔ `roles.code`는 FK 없이 **문자열 매칭**으로 연결됨(`menuModel.getNavMenusByRole`, `menuModel.getApiSidebarByRole` 등이 `WHERE code = $1`로 조회). 두 값은 항상 동기화되어야 함 — 예: `26_rename_partner_role_to_bigcorp.sql`은 `roles.code`와 `users.role`을 동시에 변경.
+- `partners.role_id → roles.id`(`27`, 실제 FK): 파트너 로그인 사용자는 이 매핑이 `users.role` 문자열 매칭보다 **우선 적용**된다(`loadNavMenus`, `apiReferenceController`가 `sessionUser.partnerId`로 조회). 관리자(admin, `partnerId` 없음)는 `users.role`만 사용. 사용자 단위(개별 users row) FK는 여전히 없음 — 다음 이터레이션 **[예정]**.
 
 ## 인덱스 (`01`, `07`, `21`)
 `idx_partners_status`, `idx_firewall_approval_status`, `idx_notices_created_at(DESC)`, `idx_inquiries_status`, `idx_api_specs_category`, `idx_pfa_user`, `idx_menus_parent_id`, `idx_menus_display_order`, `idx_role_menus_menu_id`.
@@ -79,7 +81,7 @@
 ## 주의사항 / 확인 필요
 1. **방화벽 이중 구조**: 목록/승인은 `partner_firewall_applies`, 반면 `adminController.issueToken` → `firewallModel.issueToken`은 `firewall_requests`를 갱신. id가 다른 테이블을 가리켜 오작동 가능. → 정리 필요 **[Needs verification]**.
 2. **STATIC fallback**: `partnerModel`, `noticeModel`, `inquiryModel(getRecent)`, `firewallModel`, `apiSpecModel`은 DB 오류/빈 결과 시 하드코딩 데이터 반환(데모). 운영에서 오해 소지 — 확인 필요.
-3. `users.role` 스키마 주석은 `admin|user`이나 코드가 `partner`를 삽입 — 주석/도메인 불일치.
+3. `users.role` 스키마 주석은 `admin|user`이나 코드가 `BigCorp`를 삽입 — 주석/도메인 불일치.
 4. `users.partner_id`에 FK 제약이 없어 참조 무결성 미보장 **[Needs verification]**.
 5. 성능: 조회는 소규모/인덱스 존재로 문제 낮음. `partner_firewall_applies`의 다중 JOIN은 데이터 증가 시 인덱스 검토 필요.
 

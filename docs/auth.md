@@ -15,7 +15,7 @@
 
 ## 계정 종류
 - `admin`: `npm run db:setup`로 생성(`admin`/`admin123`). 전 관리자 기능 접근.
-- `partner`: 관리자 파트너 승인 시 자동 생성. `username = partner_code`, 초기 PW = `partner_code`(변경 기능 유무 **[Needs verification]**).
+- `BigCorp`: 관리자 파트너 승인 시 자동 생성. `username = partner_code`, 초기 PW = `partner_code`(변경 기능 유무 **[Needs verification]**).
 
 ## 접근 제어 미들웨어
 - `isAuthenticated`: 세션 user 없으면 `/auth/login` 리다이렉트. `home/guide/api-reference/support/admin`에 적용.
@@ -28,4 +28,4 @@
 - 비밀번호 변경/재설정 UI 없음 → 초기 PW 유지 위험 **[Needs verification]**.
 - 이메일 통지 로직 부재(문구만 존재) **[Needs verification]**.
 - 로그인 실패 rate-limit/lockout 없음.
-- `role` 스키마 기본값(`user`) vs 실제(`admin`/`partner`) 불일치.
+- `role` 스키마 기본값(`user`) vs 실제(`admin`/`BigCorp`) 불일치.

@@ -27,6 +27,33 @@
   </div>
   <% } %>
 
+  <% if (mode !== 'edit') { %>
+  <!-- 등록 방식 선택: 수기 작성 / 엑셀 업로드 / MCI 서비스 주소 가져오기.
+       엑셀·MCI는 결과를 아래 수기 작성 폼과 동일한 필드에 주입(applyImportedSpec)할 뿐,
+       실제 등록/수정은 여전히 기존 apiForm 제출로 이루어진다. -->
+  <div class="admin-section-title" style="margin-bottom:10px;">등록 방식 선택</div>
+  <div style="display:flex;gap:8px;margin-bottom:18px;">
+    <button type="button" class="btn btn-sm btn-primary import-mode-tab" data-mode="manual">✍ 수기 작성</button>
+    <button type="button" class="btn btn-sm import-mode-tab" data-mode="excel">📄 엑셀 업로드</button>
+    <button type="button" class="btn btn-sm import-mode-tab" data-mode="mci">🔗 MCI 서비스 주소 가져오기</button>
+  </div>
+
+  <div id="importPanel-excel" class="import-panel" style="display:none;border:1px dashed #93c5fd;border-radius:8px;padding:16px;margin-bottom:18px;background:#f8fafc;">
+    <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">엑셀 파일 선택 (.xlsx)</label>
+    <input type="file" id="excelFile" accept=".xlsx,.xls">
+    <button type="button" class="btn btn-primary btn-sm" style="margin-left:8px;" onclick="importFromExcel()">불러오기</button>
+    <div id="excelImportMsg" style="font-size:12px;color:#6b7280;margin-top:8px;"></div>
+    <select id="excelSpecPicker" style="display:none;margin-top:10px;width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></select>
+  </div>
+
+  <div id="importPanel-mci" class="import-panel" style="display:none;border:1px dashed #93c5fd;border-radius:8px;padding:16px;margin-bottom:18px;background:#f8fafc;">
+    <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">MCI 서비스 주소</label>
+    <input type="text" id="mciAddress" placeholder="예: /svc/condo-reserve" style="width:60%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+    <button type="button" class="btn btn-primary btn-sm" style="margin-left:8px;" onclick="importFromMci()">가져오기</button>
+    <div id="mciImportMsg" style="font-size:12px;color:#6b7280;margin-top:8px;"></div>
+  </div>
+  <% } %>
+
   <form id="apiForm" method="POST"
     action="<%= mode === 'edit' ? '/admin/apis/' + apiSpec.id + '/update' : '/admin/apis' %>">
 
@@ -194,4 +221,70 @@ document.getElementById('apiForm').addEventListener('submit', function () {
   });
   document.getElementById('endpointsJson').value = JSON.stringify(endpoints);
 });
+
+// ── 등록 방식 탭 전환 ──
+document.querySelectorAll('.import-mode-tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.import-mode-tab').forEach((t) => t.classList.remove('btn-primary'));
+    tab.classList.add('btn-primary');
+    document.querySelectorAll('.import-panel').forEach((p) => (p.style.display = 'none'));
+    const panel = document.getElementById('importPanel-' + tab.dataset.mode);
+    if (panel) panel.style.display = 'block';
+  });
+});
+
+// ── 데이터 바인딩 슬롯: 엑셀/MCI 결과(ApiSpecInput)를 수기 작성 폼에 그대로 주입한다.
+// 엑셀 업로드·MCI 조회 기능이 나중에 무엇으로 구현되더라도, 이 함수 하나에만 맞춰 결과를
+// 넘기면 되므로 수기 작성 폼/제출 로직은 전혀 손댈 필요가 없다.
+function applyImportedSpec(spec) {
+  if (!spec) return;
+  document.querySelector('[name="category"]').value = spec.category || 'resort';
+  document.querySelector('[name="domain"]').value = spec.domain || '';
+  document.querySelector('[name="name"]').value = spec.name || '';
+  document.querySelector('[name="description"]').value = spec.description || '';
+  document.querySelector('[name="display_order"]').value = spec.displayOrder || 0;
+  document.getElementById('endpointsContainer').innerHTML = '';
+  (spec.endpoints || []).forEach((ep) => addEndpoint(ep));
+}
+
+async function importFromExcel() {
+  const fileInput = document.getElementById('excelFile');
+  const msg = document.getElementById('excelImportMsg');
+  const picker = document.getElementById('excelSpecPicker');
+  if (!fileInput.files.length) {
+    msg.textContent = '파일을 선택하세요.';
+    return;
+  }
+  msg.textContent = '불러오는 중...';
+  try {
+    // TODO(team): 실제 업로드는 파서 라이브러리 도입 후 FormData로 파일 바이트를 전송하도록 교체.
+    const result = await apiClient.post('/admin/apis/import/excel', { filename: fileInput.files[0].name });
+    picker.innerHTML = result.specs
+      .map((s, i) => `<option value="${i}">${s.name} (${s.domain})</option>`)
+      .join('');
+    picker.style.display = result.specs.length > 1 ? 'block' : 'none';
+    picker.onchange = () => applyImportedSpec(result.specs[picker.value]);
+    applyImportedSpec(result.specs[0]);
+    msg.textContent = `${result.specs.length}건을 불러왔습니다. 내용을 확인한 뒤 등록 버튼을 누르세요.`;
+  } catch (err) {
+    msg.textContent = err.message || '엑셀 불러오기 중 오류가 발생했습니다.';
+  }
+}
+
+async function importFromMci() {
+  const address = document.getElementById('mciAddress').value.trim();
+  const msg = document.getElementById('mciImportMsg');
+  if (!address) {
+    msg.textContent = 'MCI 서비스 주소를 입력하세요.';
+    return;
+  }
+  msg.textContent = '조회 중...';
+  try {
+    const result = await apiClient.post('/admin/apis/import/mci', { address });
+    applyImportedSpec(result.specs[0]);
+    msg.textContent = '불러온 내용을 확인한 뒤 등록 버튼을 누르세요.';
+  } catch (err) {
+    msg.textContent = err.message || 'MCI 서비스 조회 중 오류가 발생했습니다.';
+  }
+}
 </script>

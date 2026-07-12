@@ -6,7 +6,9 @@
 - Node.js + npm, PostgreSQL 로컬 인스턴스.
 - 환경변수(`.env`, 커밋 금지):
   - `PORT`(기본 3000), `NODE_ENV`(development/production), `DATABASE_URL`(`postgresql://user:pass@host:5432/db`), `SESSION_SECRET`.
-  - `.env.example`(키 목록 유지)은 현재 작업 트리에서 삭제 표시 상태 → **복구 권장 [Needs verification]**.
+  - `.env.example`(키 목록 유지) 복구 완료.
+  - 기존 로컬 컨벤션(`src/scripts/createPartnerUser.js`에 하드코딩): `postgresql://postgres:postgres@localhost:5432/hapi_db`.
+- `28_local_data_snapshot.sql`은 PostgreSQL 18.4에서 `pg_dump`한 파일이라 PG16 서버에서 실행 시 `SET transaction_timeout = 0;`(PG17+ 신규 파라미터) 줄에서 `unrecognized configuration parameter` 오류 발생. 해당 줄만 걸러서 실행: `grep -v "^SET transaction_timeout" 28_local_data_snapshot.sql | psql ... `. 스크립트 파일 자체는 수정하지 않는다(기존 스크립트 수정 금지 원칙).
 
 ## 2. 실행
 ```bash

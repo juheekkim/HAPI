@@ -8,6 +8,7 @@ const userModel = require('../models/userModel');
 const inquiryModel = require('../models/inquiryModel');
 const noticeModel = require('../models/noticeModel');
 const apiSpecModel = require('../models/apiSpecModel');
+const apiSpecImportMapper = require('../models/apiSpecImportMapper');
 const menuModel = require('../models/menuModel');
 const roleModel = require('../models/roleModel');
 
@@ -359,6 +360,54 @@ const adminController = {
       console.error(err);
     }
     res.redirect('/admin/apis');
+  },
+
+  // ── API 등록/관리: 엑셀 업로드 (뼈대) ──────────────
+  // 응답 계약: { success: true, specs: ApiSpecInput[] } | 오류 시 4xx/5xx + { success:false, message }.
+  // 프론트(api-form.ejs)는 이 계약만 보고 동작하므로, 실제 파싱이 붙어도 화면 코드는 그대로 재사용된다.
+  //
+  // 아직 연동 전인 이유: 멀티파트 업로드 파서(예: multer)와 엑셀 파서(예: xlsx) 둘 다 새 의존성이며,
+  // package.json은 공통 영역(coding-convention.md 0장)이라 팀 협의 후 추가해야 한다.
+  // 협의 후 붙이는 순서: ① multer로 req.file(버퍼) 수신 ② xlsx 등으로 버퍼를 rows(Record<string,any>[])로 변환
+  // ③ apiSpecImportMapper.mapExcelRowsToApiSpecs(rows) 호출 ④ 아래 응답 계약대로 res.json.
+  async importApisFromExcel(req, res) {
+    return res.status(501).json({
+      success: false,
+      message:
+        '엑셀 업로드는 아직 연동되지 않았습니다. 파서 라이브러리 추가(팀 협의) 후 사용할 수 있습니다.',
+    });
+  },
+
+  // ── API 등록/관리: MCI 서비스 주소 가져오기 (뼈대) ──
+  // MCI_SERVICE_BASE_URL(.env, 공통 영역)이 설정된 경우에만 동작한다. 실제 MCI 응답 필드명은
+  // apiSpecImportMapper.mapMciResponseToApiSpec에서 [Needs verification]로 표시된 잠정 매핑을 사용 중이며,
+  // 연동 확정 시 그 함수만 교체하면 된다.
+  async fetchApiFromMci(req, res) {
+    const address = (req.body && req.body.address ? String(req.body.address) : '').trim();
+    if (!address) {
+      return res.status(400).json({ success: false, message: 'MCI 서비스 주소를 입력하세요.' });
+    }
+    const baseUrl = process.env.MCI_SERVICE_BASE_URL;
+    if (!baseUrl) {
+      return res.status(501).json({
+        success: false,
+        message: 'MCI_SERVICE_BASE_URL 환경변수가 설정되지 않았습니다. .env 구성(팀 협의) 후 사용할 수 있습니다.',
+      });
+    }
+    try {
+      const response = await fetch(new URL(address, baseUrl).toString());
+      if (!response.ok) {
+        return res
+          .status(502)
+          .json({ success: false, message: `MCI 서비스 응답 오류 (${response.status})` });
+      }
+      const mciData = await response.json();
+      const spec = apiSpecImportMapper.mapMciResponseToApiSpec(mciData);
+      return res.json({ success: true, specs: [spec] });
+    } catch (err) {
+      console.error(err);
+      return res.status(502).json({ success: false, message: 'MCI 서비스 조회 중 오류가 발생했습니다.' });
+    }
   },
 
   // ── 메뉴 관리 ──────────────────────────────────────

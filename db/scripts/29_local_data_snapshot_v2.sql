@@ -2,8 +2,8 @@
 -- 28_local_data_snapshot.sql 이후 로컬 개발 DB의 최신 데이터 스냅샷
 -- (pg_dump --data-only --column-inserts --disable-triggers, PostgreSQL 18.4).
 -- 28번 대비 변경점: header_fields(시스템/거래공통/메시지 헤더 필드 정의) 테이블 추가,
--- menus 중복 행 정리(21~23 재실행으로 생겼던 중복 제거), api_specs에 엑셀 자동입력으로
--- 등록한 골프장 키오스크(OchKioskRsv) 예시 데이터 포함.
+-- menus/notices/inquiries 중복 행 정리(01~27 스크립트를 이미 데이터가 있는 DB에 재실행해서
+-- 생겼던 중복 제거), api_specs에 엑셀 자동입력으로 등록한 골프장 키오스크(OchKioskRsv) 예시 데이터 포함.
 -- 재실행 시 아래 11개 테이블을 TRUNCATE 후 전량 재적재(멱등, RESTART IDENTITY CASCADE로 시퀀스도 초기화).
 -- 스키마는 이 스크립트에 포함되지 않음 — 01~28 스크립트가 이미 적용된 DB에서만 실행할 것.
 -- PG16 서버에서 실행 시 "SET transaction_timeout = 0;"(PG17+ 신규 파라미터) 줄에서
@@ -16,7 +16,6 @@ TRUNCATE TABLE
   users, partners, firewall_requests, notices, inquiries,
   api_specs, partner_firewall_applies, roles, menus, role_menus, header_fields
   RESTART IDENTITY CASCADE;
-
 --
 -- PostgreSQL database dump
 --
@@ -238,9 +237,6 @@ INSERT INTO public.inquiries (id, user_id, question, answer, status, is_faq, ans
 
 ㅇㅇ', 'answered', true, '2026-06-26 15:35:30.117953+09', '2026-06-26 15:35:12.139492+09');
 INSERT INTO public.inquiries (id, user_id, question, answer, status, is_faq, answered_at, created_at) VALUES (8, 1, '문의 추가 테스트', '입니다', 'answered', true, '2026-06-26 15:53:54.929208+09', '2026-06-26 15:53:54.929208+09');
-INSERT INTO public.inquiries (id, user_id, question, answer, status, is_faq, answered_at, created_at) VALUES (9, NULL, '콘도예약 API 호출 시 401 오류가 발생합니다', '토큰 만료 여부를 확인하고 재발급 신청해주세요.', 'answered', false, NULL, '2026-07-13 15:32:37.431109+09');
-INSERT INTO public.inquiries (id, user_id, question, answer, status, is_faq, answered_at, created_at) VALUES (10, NULL, '방화벽 해제 처리 기간은 얼마나 걸리나요?', '신청 후 1~2 영업일 이내 처리됩니다.', 'answered', false, NULL, '2026-07-13 15:32:37.431109+09');
-INSERT INTO public.inquiries (id, user_id, question, answer, status, is_faq, answered_at, created_at) VALUES (11, NULL, '골프 예약 API에서 예약 취소 시 환불 처리는 어떻게 되나요?', NULL, 'pending', false, NULL, '2026-07-13 15:32:37.431109+09');
 
 
 ALTER TABLE public.inquiries ENABLE TRIGGER ALL;
@@ -289,10 +285,6 @@ INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, creat
 INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, created_at) VALUES (2, '공지', 'notice', '스테이징 서버 점검 일정 안내 (8/15 02:00~06:00)', NULL, true, '2025-07-28 09:00:00+09');
 INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, created_at) VALUES (3, '업데이트', 'update', '콘도예약 API v2.1 배포 안내 – 파라미터 추가', NULL, true, '2025-07-20 09:00:00+09');
 INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, created_at) VALUES (4, '공지', 'notice', '추석 연휴 운영 안내 (9/15~9/17 긴급 대응팀 운영)', NULL, true, '2025-07-10 09:00:00+09');
-INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, created_at) VALUES (5, '공지 NEW', 'new', '[필독] API 인증 방식 변경 안내 (Bearer Token)', NULL, true, '2025-08-01 09:00:00+09');
-INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, created_at) VALUES (6, '공지', 'notice', '스테이징 서버 점검 일정 안내 (8/15 02:00~06:00)', NULL, true, '2025-07-28 09:00:00+09');
-INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, created_at) VALUES (7, '업데이트', 'update', '콘도예약 API v2.1 배포 안내 – 파라미터 추가', NULL, true, '2025-07-20 09:00:00+09');
-INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, created_at) VALUES (8, '공지', 'notice', '추석 연휴 운영 안내 (9/15~9/17 긴급 대응팀 운영)', NULL, true, '2025-07-10 09:00:00+09');
 
 
 ALTER TABLE public.notices ENABLE TRIGGER ALL;

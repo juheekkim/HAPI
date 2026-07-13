@@ -7,7 +7,7 @@
        class="sidebar-item <%= selectedDoc === node.doc ? 'active' : '' %>"
        style="padding-left:<%= 12 + depth * 14 %>px;"><%= (node.icon ? node.icon + ' ' : '') + node.name %></a>
   <% } else { %>
-    <div class="sidebar-group-title" style="padding-left:<%= depth * 14 %>px;"><%= (node.icon ? node.icon + ' ' : '') + node.name %></div>
+    <div class="sidebar-group-title" style="padding-left:<%= 16 + depth * 14 %>px;"><%= (node.icon ? node.icon + ' ' : '') + node.name %></div>
   <% } %>
   <% if (node.children && node.children.length) { %>
     <%- include('_sidebarTree', { nodes: node.children, selectedDoc: selectedDoc, depth: depth + 1 }) %>

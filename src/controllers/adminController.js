@@ -1,6 +1,8 @@
 'use strict';
 
 const bcrypt = require('bcrypt');
+const ExcelJS = require('exceljs');
+const Anthropic = require('@anthropic-ai/sdk');
 const partnerModel = require('../models/partnerModel');
 const firewallModel = require('../models/firewallModel');
 const partnerFirewallApplyModel = require('../models/partnerFirewallApplyModel');
@@ -11,6 +13,75 @@ const apiSpecModel = require('../models/apiSpecModel');
 const apiSpecImportMapper = require('../models/apiSpecImportMapper');
 const menuModel = require('../models/menuModel');
 const roleModel = require('../models/roleModel');
+
+// ── 이미지 업로드 자동입력: Claude Vision 구조화 추출 ──────
+// apiSpecImportMapper의 필드 shape({depth,id,label,type,usage,length,decimal,default,isArray,note})과
+// 정확히 동일한 JSON을 강제해서(structured outputs) mapImageExtractionsToApiSpec에 변환 없이 넘긴다.
+const IMAGE_FIELD_SCHEMA = {
+  type: 'object',
+  properties: {
+    depth: { type: 'integer', description: '0=최상위, ▷ 들여쓰기 1개당 1씩 증가' },
+    id: { type: 'string', description: '필드ID (예: CORP_CD)' },
+    label: { type: 'string', description: '필드명(한글)' },
+    type: { type: 'string', description: '오브젝트명 컬럼 값 (String/Numeric/Group 등)' },
+    usage: { type: 'string', description: '사용여부 컬럼 값(예: NOT USE). 없으면 빈 문자열' },
+    length: { type: 'string', description: '길이 컬럼 값. 없으면 빈 문자열' },
+    decimal: { type: 'string', description: '소수점 컬럼 값. 없으면 빈 문자열' },
+    default: { type: 'string', description: 'Default 컬럼 값. 없으면 빈 문자열' },
+    isArray: { type: 'string', description: '배열형태 컬럼 값(Y/N). 없으면 빈 문자열' },
+    note: { type: 'string', description: '비고. 없으면 빈 문자열' },
+  },
+  required: ['depth', 'id', 'label', 'type', 'usage', 'length', 'decimal', 'default', 'isArray', 'note'],
+  additionalProperties: false,
+};
+const IMAGE_EXTRACTION_SCHEMA = {
+  type: 'object',
+  properties: {
+    svcId: { type: 'string', description: 'SVC명 값. 못 찾으면 빈 문자열' },
+    businessDesc: { type: 'string', description: '업무설명 값. 못 찾으면 빈 문자열' },
+    inputFields: { type: 'array', items: IMAGE_FIELD_SCHEMA, description: '[INPUT] 표의 필드 행' },
+    outputFields: { type: 'array', items: IMAGE_FIELD_SCHEMA, description: '[OUTPUT] 표의 필드 행' },
+  },
+  required: ['svcId', 'businessDesc', 'inputFields', 'outputFields'],
+  additionalProperties: false,
+};
+
+const IMAGE_EXTRACTION_PROMPT = `이 이미지는 사내 표준 "HABIS 모델 정의서" 엑셀 시트를 캡처한 것이다. 다음 규칙으로 데이터를 추출하라.
+
+- 시트 상단에 "SVC명"과 "업무설명" 라벨 옆에 각각의 값이 있다.
+- "[INPUT]"이라고 적힌 섹션 아래 표가 입력 필드 목록이고, "[OUTPUT]"이라고 적힌 섹션 아래 표가 출력 필드 목록이다.
+- 각 표의 헤더는 보통 "필드ID / 필드명 / 오브젝트명 / 사용여부 / 길이 / 소수점 / Default / 배열형태" 순서이지만
+  컬럼 순서나 문구가 조금 다를 수 있으니 헤더 문구를 보고 의미로 매칭하라.
+- 필드ID 앞에 "▷" 기호가 붙어있으면 상위 Group 필드의 하위 필드라는 뜻이다. "▷"가 없으면 depth=0,
+  "▷" 1개면 depth=1, "▷▷"처럼 2개면 depth=2로 취급한다.
+- 오브젝트명이 "Group"인 행은 실제 데이터 필드가 아니라 하위 필드들을 묶는 컨테이너다.
+- 표에 없는 컬럼 값은 빈 문자열("")로 채워라. 실제로 없는 값을 지어내지 마라.
+- 표 옆이나 아래에 있는 별도의 코드값 설명표(예: 코드번호/코드명 매핑)는 필드 목록에 포함하지 마라.
+- [INPUT]이나 [OUTPUT] 섹션이 이미지에 없으면 해당 배열은 빈 배열([])로 반환하라.
+
+주어진 스키마 그대로 JSON으로만 응답하라.`;
+
+async function extractSpecFromImage(client, file) {
+  const response = await client.messages.create({
+    model: 'claude-opus-4-8',
+    max_tokens: 8000,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: file.mimetype, data: file.buffer.toString('base64') },
+          },
+          { type: 'text', text: IMAGE_EXTRACTION_PROMPT },
+        ],
+      },
+    ],
+    output_config: { format: { type: 'json_schema', schema: IMAGE_EXTRACTION_SCHEMA } },
+  });
+  const textBlock = response.content.find((b) => b.type === 'text');
+  return JSON.parse(textBlock ? textBlock.text : '{}');
+}
 
 const adminController = {
   index(req, res) {
@@ -362,35 +433,68 @@ const adminController = {
     res.redirect('/admin/apis');
   },
 
-  // ── API 등록/관리: 엑셀 업로드 (뼈대) ──────────────
+  // ── API 등록/관리: 엑셀 업로드(HABIS 모델 정의서) ──
   // 응답 계약: { success: true, specs: ApiSpecInput[] } | 오류 시 4xx/5xx + { success:false, message }.
-  // 프론트(api-form.ejs)는 이 계약만 보고 동작하므로, 실제 파싱이 붙어도 화면 코드는 그대로 재사용된다.
-  //
-  // 아직 연동 전인 이유: 멀티파트 업로드 파서(예: multer)와 엑셀 파서(예: xlsx) 둘 다 새 의존성이며,
-  // package.json은 공통 영역(coding-convention.md 0장)이라 팀 협의 후 추가해야 한다.
-  // 협의 후 붙이는 순서: ① multer로 req.file(버퍼) 수신 ② xlsx 등으로 버퍼를 rows(Record<string,any>[])로 변환
-  // ③ apiSpecImportMapper.mapExcelRowsToApiSpecs(rows) 호출 ④ 아래 응답 계약대로 res.json.
+  // 파싱 로직은 apiSpecImportMapper.mapHabisWorkbookToApiSpec 참조(양식 가정/제약 주석 포함).
   async importApisFromExcel(req, res) {
-    return res.status(501).json({
-      success: false,
-      message:
-        '엑셀 업로드는 아직 연동되지 않았습니다. 파서 라이브러리 추가(팀 협의) 후 사용할 수 있습니다.',
-    });
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: '엑셀 파일을 선택하세요.' });
+    }
+    try {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(req.file.buffer);
+      const fallbackName = req.file.originalname.replace(/\.[^./\\]+$/, '');
+      const spec = apiSpecImportMapper.mapHabisWorkbookToApiSpec(workbook, fallbackName);
+      if (!spec.endpoints.length) {
+        return res.status(422).json({
+          success: false,
+          message: '엔드포인트를 찾지 못했습니다. 시트명이 "#1", "#2"... 형식인지 확인하세요.',
+        });
+      }
+      return res.json({ success: true, specs: [spec] });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: '엑셀 파싱 중 오류가 발생했습니다.' });
+    }
   },
 
-  // ── API 등록/관리: 이미지 업로드 (뼈대) ────────────
+  // ── API 등록/관리: 이미지 업로드(여러 장, Claude Vision) ──
   // 응답 계약은 엑셀 업로드와 동일: { success: true, specs: ApiSpecInput[] } | 오류 시 4xx/5xx + { success:false, message }.
-  //
-  // 아직 연동 전인 이유: 멀티파트 업로드 파서(예: multer)와 이미지 인식/OCR 라이브러리 둘 다 새 의존성이며,
-  // package.json은 공통 영역(coding-convention.md 0장)이라 팀 협의 후 추가해야 한다.
-  // 협의 후 붙이는 순서: ① multer로 req.file(버퍼) 수신 ② OCR/비전 라이브러리로 버퍼에서 스펙 정보 추출
-  // ③ apiSpecImportMapper에 이미지 결과 → ApiSpecInput 매핑 함수 추가 ④ 아래 응답 계약대로 res.json.
+  // ANTHROPIC_API_KEY(.env, 공통 영역)가 설정된 경우에만 동작한다(MCI 연동과 동일한 501 폴백 패턴).
+  // 이미지 1장 = 시트 "#N" 1장(엔드포인트 1개)이라는 엑셀 경로와 같은 전제. 추출 결과 shape을
+  // apiSpecImportMapper의 필드 shape과 동일하게 맞춰 mapImageExtractionsToApiSpec 하나로 합친다
+  // (NOT USE 처리·도메인 추천 로직이 엑셀/이미지 두 경로에서 갈라지지 않게).
   async importApisFromImage(req, res) {
-    return res.status(501).json({
-      success: false,
-      message:
-        '이미지 업로드는 아직 연동되지 않았습니다. 파서 라이브러리 추가(팀 협의) 후 사용할 수 있습니다.',
-    });
+    const files = req.files || [];
+    if (!files.length) {
+      return res.status(400).json({ success: false, message: '이미지 파일을 선택하세요.' });
+    }
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      return res.status(501).json({
+        success: false,
+        message: 'ANTHROPIC_API_KEY 환경변수가 설정되지 않았습니다. .env 구성(팀 협의) 후 사용할 수 있습니다.',
+      });
+    }
+    try {
+      const client = new Anthropic({ apiKey });
+      const extractions = [];
+      for (const file of files) {
+        extractions.push(await extractSpecFromImage(client, file));
+      }
+      const fallbackName = files[0].originalname.replace(/\.[^./\\]+$/, '');
+      const spec = apiSpecImportMapper.mapImageExtractionsToApiSpec(extractions, fallbackName);
+      if (!spec.endpoints.length) {
+        return res.status(422).json({
+          success: false,
+          message: '이미지에서 엔드포인트를 찾지 못했습니다.',
+        });
+      }
+      return res.json({ success: true, specs: [spec] });
+    } catch (err) {
+      console.error(err);
+      return res.status(502).json({ success: false, message: '이미지 인식 중 오류가 발생했습니다.' });
+    }
   },
 
   // ── API 등록/관리: MCI 서비스 주소 가져오기 (뼈대) ──

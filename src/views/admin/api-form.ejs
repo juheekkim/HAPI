@@ -47,8 +47,8 @@
   </div>
 
   <div id="importPanel-image" class="import-panel" style="display:none;border:1px dashed #93c5fd;border-radius:8px;padding:16px;margin-bottom:18px;background:#f8fafc;">
-    <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">이미지 파일 선택 (.png, .jpg)</label>
-    <input type="file" id="imageFile" accept="image/*">
+    <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">이미지 파일 선택 (.png, .jpg, 여러 장 선택 가능 — 이미지 1장 = 엔드포인트 1개)</label>
+    <input type="file" id="imageFile" accept="image/*" multiple>
     <div id="imageImportMsg" style="font-size:12px;color:#6b7280;margin-top:8px;"></div>
     <select id="imageSpecPicker" style="display:none;margin-top:10px;width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></select>
   </div>
@@ -83,6 +83,7 @@
           <input type="text" name="domain" required placeholder="예: condo"
             value="<%= apiSpec ? apiSpec.domain : '' %>"
             style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:monospace;">
+          <div id="domainSuggestion" style="display:none;font-size:11.5px;color:#2563eb;margin-top:5px;cursor:pointer;"></div>
         </div>
       </div>
       <div style="margin-bottom:14px;">
@@ -140,11 +141,12 @@
       <table class="param-table">
         <thead>
           <tr>
+            <th>파라미터ID</th>
             <th>파라미터명</th>
             <th style="width:120px;">Data Type</th>
             <th style="width:60px;">필수</th>
             <th>설명</th>
-            <th style="width:60px;"></th>
+            <th style="width:100px;"></th>
           </tr>
         </thead>
         <tbody class="ep-params-body"></tbody>
@@ -163,7 +165,9 @@
 <!-- 파라미터 행 템플릿 -->
 <template id="paramRowTemplate">
   <tr class="param-row">
-    <td><input type="text" class="param-name" placeholder="파라미터명"
+    <td><input type="text" class="param-name" placeholder="파라미터ID"
+      style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;box-sizing:border-box;"></td>
+    <td><input type="text" class="param-label" placeholder="파라미터명"
       style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;box-sizing:border-box;"></td>
     <td>
       <select class="param-type" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;box-sizing:border-box;">
@@ -174,7 +178,7 @@
     <td><input type="text" class="param-desc" placeholder="설명"
       style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;box-sizing:border-box;"></td>
     <td style="text-align:center;">
-      <button type="button" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;"
+      <button type="button" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;padding:6px 14px;"
         onclick="this.closest('tr').remove()">삭제</button>
     </td>
   </tr>
@@ -185,10 +189,14 @@ function addParamRow(tbody, param) {
   const tpl = document.getElementById('paramRowTemplate');
   const row = tpl.content.firstElementChild.cloneNode(true);
   if (param) {
+    // 구버전 데이터(label 없이 desc에 한글명이 들어있던 시절) 호환: label이 없으면
+    // desc 값을 파라미터명으로 옮기고 설명은 비워서 새 컬럼 구조로 자연스럽게 보이게 한다.
+    const hasLabel = param.label !== undefined && param.label !== null && param.label !== '';
     row.querySelector('.param-name').value = param.name || '';
+    row.querySelector('.param-label').value = hasLabel ? param.label : (param.desc || '');
     row.querySelector('.param-type').value = param.type || 'String';
     row.querySelector('.param-required').checked = !!param.required;
-    row.querySelector('.param-desc').value = param.desc || '';
+    row.querySelector('.param-desc').value = hasLabel ? (param.desc || '') : '';
   }
   tbody.appendChild(row);
 }
@@ -226,6 +234,7 @@ document.getElementById('apiForm').addEventListener('submit', function () {
   const endpoints = Array.from(blocks).map((block) => {
     const params = Array.from(block.querySelectorAll('.param-row')).map((row) => ({
       name: row.querySelector('.param-name').value.trim(),
+      label: row.querySelector('.param-label').value.trim(),
       type: row.querySelector('.param-type').value,
       required: row.querySelector('.param-required').checked,
       desc: row.querySelector('.param-desc').value.trim(),
@@ -265,10 +274,28 @@ function runAutoFill() {
 // ── 데이터 바인딩 슬롯: 엑셀/MCI 결과(ApiSpecInput)를 수기 작성 폼에 그대로 주입한다.
 // 엑셀 업로드·MCI 조회 기능이 나중에 무엇으로 구현되더라도, 이 함수 하나에만 맞춰 결과를
 // 넘기면 되므로 수기 작성 폼/제출 로직은 전혀 손댈 필요가 없다.
+// 도메인 코드 추천 표시 — 값을 입력창에 바로 채우지 않고 클릭해야 적용되는 힌트로만 보여준다.
+function showDomainSuggestion(suggested) {
+  const domainInput = document.querySelector('[name="domain"]');
+  const hint = document.getElementById('domainSuggestion');
+  if (!suggested || domainInput.value.trim()) {
+    hint.style.display = 'none';
+    return;
+  }
+  hint.innerHTML = '💡 추천 도메인 코드: <strong>' + suggested + '</strong> (클릭하면 적용)';
+  hint.style.display = 'block';
+  hint.onclick = () => {
+    domainInput.value = suggested;
+    hint.style.display = 'none';
+  };
+}
+
 function applyImportedSpec(spec) {
   if (!spec) return;
   document.querySelector('[name="category"]').value = spec.category || 'resort';
-  document.querySelector('[name="domain"]').value = spec.domain || '';
+  // 도메인 코드는 실제 서비스 식별자라 자동으로 채워 넣지 않는다 — 추천값만 보여주고,
+  // 관리자가 직접 클릭해서 적용할지 판단하게 한다(오등록/충돌 방지).
+  showDomainSuggestion(spec.domain);
   document.querySelector('[name="name"]').value = spec.name || '';
   document.querySelector('[name="description"]').value = spec.description || '';
   document.querySelector('[name="display_order"]').value = spec.displayOrder || 0;
@@ -286,8 +313,9 @@ async function importFromExcel() {
   }
   msg.textContent = '불러오는 중...';
   try {
-    // TODO(team): 실제 업로드는 파서 라이브러리 도입 후 FormData로 파일 바이트를 전송하도록 교체.
-    const result = await apiClient.post('/admin/apis/import/excel', { filename: fileInput.files[0].name });
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    const result = await apiClient.upload('/admin/apis/import/excel', formData);
     picker.innerHTML = result.specs
       .map((s, i) => `<option value="${i}">${s.name} (${s.domain})</option>`)
       .join('');
@@ -308,10 +336,11 @@ async function importFromImage() {
     msg.textContent = '파일을 선택하세요.';
     return;
   }
-  msg.textContent = '불러오는 중...';
+  msg.textContent = `이미지 ${fileInput.files.length}장 분석 중... (파일당 수 초 소요될 수 있습니다)`;
   try {
-    // TODO(team): 실제 업로드는 이미지 인식/OCR 라이브러리 도입 후 FormData로 파일 바이트를 전송하도록 교체.
-    const result = await apiClient.post('/admin/apis/import/image', { filename: fileInput.files[0].name });
+    const formData = new FormData();
+    Array.from(fileInput.files).forEach((f) => formData.append('files', f));
+    const result = await apiClient.upload('/admin/apis/import/image', formData);
     picker.innerHTML = result.specs
       .map((s, i) => `<option value="${i}">${s.name} (${s.domain})</option>`)
       .join('');

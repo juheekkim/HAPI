@@ -116,20 +116,20 @@
           <div class="api-section-body">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
               <!-- 개발 -->
-              <div style="border:1.5px solid #bfdbfe; border-radius:10px; overflow:hidden;">
-                <div style="background:#1a3a6b; color:#fff; font-weight:700; font-size:14px; padding:10px 18px; letter-spacing:0.05em;">개발 서버</div>
+              <div style="border:1.5px solid #dbeafe; border-radius:10px; overflow:hidden;">
+                <div style="background:#dbeafe; color:#1e6fce; font-weight:700; font-size:14px; padding:10px 18px; letter-spacing:0.05em;">개발 서버</div>
                 <table class="param-table" style="margin:0; border-radius:0; border:none;">
                   <tbody>
                     <tr>
-                      <th style="width:90px; background:#f0f7ff; color:#1a3a6b;">Domain</th>
-                      <td class="mono" style="color:#1a3a6b;">exgatedev.hanwharesort.co.kr</td>
+                      <th style="width:90px; background:#eef4ff; color:#1e6fce;">Domain</th>
+                      <td class="mono" style="color:#1e6fce;">exgatedev.hanwharesort.co.kr</td>
                     </tr>
                     <tr>
-                      <th style="background:#f0f7ff; color:#1a3a6b;">IP</th>
+                      <th style="background:#eef4ff; color:#1e6fce;">IP</th>
                       <td class="mono">211.197.235.21</td>
                     </tr>
                     <tr>
-                      <th style="background:#f0f7ff; color:#1a3a6b;">URL</th>
+                      <th style="background:#eef4ff; color:#1e6fce;">URL</th>
                       <td>
                         <a href="https://exgatedev.hanwharesort.co.kr:443/iGate/LCB/json.jdo" class="mono" style="color:#1e6fce; word-break:break-all; font-size:12px;">
                           https://exgatedev.hanwharesort.co.kr:443/iGate/LCB/json.jdo
@@ -143,29 +143,29 @@
                 </div>
               </div>
               <!-- 운영 -->
-              <div style="border:1.5px solid #c6d4e8; border-radius:10px; overflow:hidden;">
-                <div style="background:#374151; color:#fff; font-weight:700; font-size:14px; padding:10px 18px; letter-spacing:0.05em;">운영 서버</div>
+              <div style="border:1.5px solid #d6e6f7; border-radius:10px; overflow:hidden;">
+                <div style="background:#c3d9f0; color:#0f2d54; font-weight:700; font-size:14px; padding:10px 18px; letter-spacing:0.05em;">운영 서버</div>
                 <table class="param-table" style="margin:0; border-radius:0; border:none;">
                   <tbody>
                     <tr>
-                      <th style="width:90px; background:#f8fafc; color:#374151;">Domain</th>
-                      <td class="mono" style="color:#374151;">exgate.hanwharesort.co.kr</td>
+                      <th style="width:90px; background:#dce9f8; color:#0f2d54;">Domain</th>
+                      <td class="mono" style="color:#0f2d54;">exgate.hanwharesort.co.kr</td>
                     </tr>
                     <tr>
-                      <th style="background:#f8fafc; color:#374151;">IP</th>
+                      <th style="background:#dce9f8; color:#0f2d54;">IP</th>
                       <td class="mono">211.197.235.53</td>
                     </tr>
                     <tr>
-                      <th style="background:#f8fafc; color:#374151;">URL</th>
+                      <th style="background:#dce9f8; color:#0f2d54;">URL</th>
                       <td>
-                        <span class="mono" style="color:#374151; font-size:12px; word-break:break-all;">
+                        <span class="mono" style="color:#0f2d54; font-size:12px; word-break:break-all;">
                           https://exgate.hanwharesort.co.kr:443/iGate/LCB/json.jdo
                         </span>
                       </td>
                     </tr>
                   </tbody>
                 </table>
-                <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:10px 16px; font-size:12px; color:#8a9bb0;">
+                <div style="background:#dce9f8; border-top:1px solid #d6e6f7; padding:10px 16px; font-size:12px; color:#8a9bb0;">
                   &nbsp;
                 </div>
               </div>
@@ -304,14 +304,21 @@
 
             <div id="params-<%= idx %>">
               <table class="param-table">
-                <thead><tr><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead>
+                <thead><tr><th>파라미터ID</th><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead>
                 <tbody>
-                  <% ep.params.forEach(p => { %>
+                  <% ep.params.forEach(p => {
+                    // 구버전 데이터(label 없이 desc에 한글명이 들어있던 시절) 호환: label이 없으면
+                    // desc 값을 파라미터명으로 보여주고 설명 칸은 비운다(관리자 화면 addParamRow와 동일 규칙).
+                    const hasLabel = p.label !== undefined && p.label !== null && p.label !== '';
+                    const displayLabel = hasLabel ? p.label : (p.desc || '');
+                    const displayDesc = hasLabel ? (p.desc || '') : '';
+                  %>
                   <tr>
                     <td><%= p.name %></td>
+                    <td><%= displayLabel %></td>
                     <td class="mono type-text"><%= p.type %></td>
                     <td class="<%= p.required ? 'param-req' : '' %>"><%= p.required ? 'Y' : 'N' %></td>
-                    <td><%= p.desc %></td>
+                    <td><%= displayDesc %></td>
                   </tr>
                   <% }) %>
                 </tbody>

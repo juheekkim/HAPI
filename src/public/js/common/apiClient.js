@@ -26,4 +26,15 @@ const apiClient = {
   post(url, data) { return this.request('POST', url, data); },
   put(url, data)  { return this.request('PUT', url, data); },
   delete(url)     { return this.request('DELETE', url); },
+
+  // 파일 업로드 전용: FormData는 Content-Type을 브라우저가 boundary 포함해 직접 설정해야 하므로
+  // request()의 JSON 경로를 타지 않고 별도로 처리한다.
+  async upload(url, formData) {
+    const res = await fetch(url, { method: 'POST', credentials: 'same-origin', body: formData });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw { status: res.status, message: err.message || '요청에 실패했습니다.' };
+    }
+    return res.json();
+  },
 };

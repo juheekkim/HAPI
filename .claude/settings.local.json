@@ -34,7 +34,9 @@
       "Bash(curl -s -b p3_cookies.txt http://localhost:3000/home -o p3_home2.html -w \"partner3 home -> %{http_code}\\\\n\")",
       "Bash(grep *)",
       "Bash(find / -maxdepth 6 -iname \"chromium-cli\")",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(npm run *)",
+      "Bash(export PGPASSWORD=hapi1234)"
     ]
   }
 }

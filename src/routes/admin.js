@@ -1,10 +1,14 @@
 'use strict';
 
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const isAuthenticated = require('../middlewares/isAuthenticated');
 const isAdmin = require('../middlewares/isAdmin');
+
+// API 등록 자동입력(엑셀/이미지 업로드)용 메모리 저장 - 10MB 제한
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // 모든 /admin 라우트에 인증+권한 일괄 적용
 router.use(isAuthenticated, isAdmin);
@@ -32,8 +36,8 @@ router.get('/apis/:id/edit', adminController.editApiForm);
 router.post('/apis', adminController.createApi);
 router.post('/apis/:id/update', adminController.updateApi);
 router.post('/apis/:id/delete', adminController.deleteApi);
-router.post('/apis/import/excel', adminController.importApisFromExcel);
-router.post('/apis/import/image', adminController.importApisFromImage);
+router.post('/apis/import/excel', upload.single('file'), adminController.importApisFromExcel);
+router.post('/apis/import/image', upload.array('files', 10), adminController.importApisFromImage);
 router.post('/apis/import/mci', adminController.fetchApiFromMci);
 router.get('/menus', adminController.menus);
 router.post('/menus', adminController.createMenu);

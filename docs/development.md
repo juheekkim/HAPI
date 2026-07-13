@@ -8,7 +8,7 @@
   - `PORT`(기본 3000), `NODE_ENV`(development/production), `DATABASE_URL`(`postgresql://user:pass@host:5432/db`), `SESSION_SECRET`.
   - `.env.example`(키 목록 유지) 복구 완료.
   - 기존 로컬 컨벤션(`src/scripts/createPartnerUser.js`에 하드코딩): `postgresql://postgres:postgres@localhost:5432/hapi_db`.
-- `28_local_data_snapshot.sql`은 PostgreSQL 18.4에서 `pg_dump`한 파일이라 PG16 서버에서 실행 시 `SET transaction_timeout = 0;`(PG17+ 신규 파라미터) 줄에서 `unrecognized configuration parameter` 오류 발생. 해당 줄만 걸러서 실행: `grep -v "^SET transaction_timeout" 28_local_data_snapshot.sql | psql ... `. 스크립트 파일 자체는 수정하지 않는다(기존 스크립트 수정 금지 원칙).
+- `28_local_data_snapshot.sql`/`29_local_data_snapshot_v2.sql`은 PostgreSQL 18.4에서 `pg_dump`한 파일이라 PG16 서버에서 실행 시 `SET transaction_timeout = 0;`(PG17+ 신규 파라미터) 줄에서 `unrecognized configuration parameter` 오류 발생. 해당 줄만 걸러서 실행: `grep -v "^SET transaction_timeout" 29_local_data_snapshot_v2.sql | psql ... `. 스크립트 파일 자체는 수정하지 않는다(기존 스크립트 수정 금지 원칙). **29번이 28번을 대체**(header_fields 테이블 포함, menus 중복 정리됨) — 로컬 DB를 새로 셋업할 때는 29번까지 순서대로 실행.
 
 ## 2. 실행
 ```bash

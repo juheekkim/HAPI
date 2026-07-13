@@ -5,14 +5,14 @@
 </div>
 
 <div class="admin-tabs">
-  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
-  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
-  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
-  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
   <a href="/admin/apis" class="admin-tab">🧩 API 등록/관리</a>
   <a href="/admin/menus" class="admin-tab active">🗂 메뉴 관리</a>
   <a href="/admin/roles" class="admin-tab">🔑 권한 그룹 관리</a>
   <a href="/admin/partner-roles" class="admin-tab">🧑‍💼 사용자별 권한관리</a>
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
 </div>
 
 <%
@@ -37,14 +37,14 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width:44px;text-align:center;background:#dbeafe;color:#1e40af;">No</th>
-        <th style="text-align:left;background:#dbeafe;color:#1e40af;">메뉴명</th>
-        <th style="text-align:left;background:#dbeafe;color:#1e40af;">경로</th>
-        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:90px;">유형</th>
-        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:80px;">관리자전용</th>
-        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:60px;">순서</th>
-        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:90px;">활성</th>
-        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:150px;">관리</th>
+        <th style="width:44px;text-align:center;background:#d9e8fb;color:#5a7194;">No</th>
+        <th style="text-align:left;background:#d9e8fb;color:#5a7194;">메뉴명</th>
+        <th style="text-align:left;background:#d9e8fb;color:#5a7194;">경로</th>
+        <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:90px;">유형</th>
+        <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:80px;">관리자전용</th>
+        <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:60px;">순서</th>
+        <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:90px;">활성</th>
+        <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:150px;">관리</th>
       </tr>
     </thead>
     <tbody>
@@ -69,13 +69,13 @@
         </td>
         <td style="text-align:center;">
           <div class="action-btns" style="justify-content:center;">
-            <button class="btn btn-sm" style="background:#93c5fd;color:#1e40af;border:none;"
+            <button class="btn btn-sm btn-edit-outline"
               onclick="openEditModal(<%= n.id %>, <%= n.parent_id || 'null' %>, `<%= (n.name||'').replace(/`/g,'\\`') %>`, `<%= (n.path||'').replace(/`/g,'\\`') %>`, `<%= n.menu_type %>`, `<%= (n.icon||'').replace(/`/g,'\\`') %>`, <%= n.admin_only %>, <%= n.display_order %>, <%= n.is_active %>)">
               수정
             </button>
             <form action="/admin/menus/<%= n.id %>/delete" method="POST" style="display:inline;"
               onsubmit="return confirm('하위 메뉴까지 함께 삭제됩니다. 삭제하시겠습니까?')">
-              <button type="submit" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;">삭제</button>
+              <button type="submit" class="btn btn-sm btn-delete-outline">삭제</button>
             </form>
           </div>
         </td>

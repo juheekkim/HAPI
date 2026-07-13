@@ -5,28 +5,24 @@
 </div>
 
 <div class="admin-tabs">
-  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
-  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
-  <a href="/admin/inquiries" class="admin-tab active">💬 문의 확인</a>
-  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
   <a href="/admin/apis" class="admin-tab">🧩 API 등록/관리</a>
   <a href="/admin/menus" class="admin-tab">🗂 메뉴 관리</a>
   <a href="/admin/roles" class="admin-tab">🔑 권한 그룹 관리</a>
   <a href="/admin/partner-roles" class="admin-tab">🧑‍💼 사용자별 권한관리</a>
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab active">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
 </div>
 
 <div class="admin-content">
-  <div class="admin-section-title">문의 목록</div>
+  <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <span>문의 목록</span>
+    <button type="button" class="btn btn-primary btn-sm" onclick="toggleAddForm()">+ 새 문의 등록</button>
+  </div>
 
   <div style="background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:11px 16px;margin-bottom:14px;font-size:13px;color:#1a3a6b;">
     💡 답변 등록 후 <strong>FAQ 등록</strong> 버튼을 누르면 <strong>[운영지원 &gt; 자주 묻는 질문]</strong> 에 추가됩니다.
-  </div>
-
-  <div style="margin-bottom:20px;text-align:right;">
-    <button type="button" onclick="toggleAddForm()"
-      style="padding:8px 18px;border-radius:6px;font-size:13px;font-weight:600;border:none;background:#1a3a6b;color:#fff;cursor:pointer;">
-      + 문의 추가
-    </button>
   </div>
 
   <!-- 관리자 직접 Q&A 작성 폼 -->

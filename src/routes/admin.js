@@ -33,6 +33,7 @@ router.post('/apis', adminController.createApi);
 router.post('/apis/:id/update', adminController.updateApi);
 router.post('/apis/:id/delete', adminController.deleteApi);
 router.post('/apis/import/excel', adminController.importApisFromExcel);
+router.post('/apis/import/image', adminController.importApisFromImage);
 router.post('/apis/import/mci', adminController.fetchApiFromMci);
 router.get('/menus', adminController.menus);
 router.post('/menus', adminController.createMenu);

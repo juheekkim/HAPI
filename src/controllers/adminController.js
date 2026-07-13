@@ -378,6 +378,21 @@ const adminController = {
     });
   },
 
+  // ── API 등록/관리: 이미지 업로드 (뼈대) ────────────
+  // 응답 계약은 엑셀 업로드와 동일: { success: true, specs: ApiSpecInput[] } | 오류 시 4xx/5xx + { success:false, message }.
+  //
+  // 아직 연동 전인 이유: 멀티파트 업로드 파서(예: multer)와 이미지 인식/OCR 라이브러리 둘 다 새 의존성이며,
+  // package.json은 공통 영역(coding-convention.md 0장)이라 팀 협의 후 추가해야 한다.
+  // 협의 후 붙이는 순서: ① multer로 req.file(버퍼) 수신 ② OCR/비전 라이브러리로 버퍼에서 스펙 정보 추출
+  // ③ apiSpecImportMapper에 이미지 결과 → ApiSpecInput 매핑 함수 추가 ④ 아래 응답 계약대로 res.json.
+  async importApisFromImage(req, res) {
+    return res.status(501).json({
+      success: false,
+      message:
+        '이미지 업로드는 아직 연동되지 않았습니다. 파서 라이브러리 추가(팀 협의) 후 사용할 수 있습니다.',
+    });
+  },
+
   // ── API 등록/관리: MCI 서비스 주소 가져오기 (뼈대) ──
   // MCI_SERVICE_BASE_URL(.env, 공통 영역)이 설정된 경우에만 동작한다. 실제 MCI 응답 필드명은
   // apiSpecImportMapper.mapMciResponseToApiSpec에서 [Needs verification]로 표시된 잠정 매핑을 사용 중이며,

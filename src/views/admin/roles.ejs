@@ -5,14 +5,14 @@
 </div>
 
 <div class="admin-tabs">
-  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
-  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
-  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
-  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
   <a href="/admin/apis" class="admin-tab">🧩 API 등록/관리</a>
   <a href="/admin/menus" class="admin-tab">🗂 메뉴 관리</a>
   <a href="/admin/roles" class="admin-tab active">🔑 권한그룹 관리</a>
   <a href="/admin/partner-roles" class="admin-tab">🧑‍💼 사용자별 권한관리</a>
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
 </div>
 
 <%
@@ -42,13 +42,13 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th style="width:44px;text-align:center;background:#dbeafe;color:#1e40af;">No</th>
-        <th style="text-align:left;background:#dbeafe;color:#1e40af;width:120px;">그룹코드</th>
-        <th style="text-align:left;background:#dbeafe;color:#1e40af;width:120px;">그룹명</th>
-        <th style="text-align:left;background:#dbeafe;color:#1e40af;width:200px;">설명</th>
-        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:90px;">메뉴권한</th>
-        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:80px;">활성</th>
-        <th style="text-align:center;background:#dbeafe;color:#1e40af;width:150px;">그룹관리</th>
+        <th style="width:44px;text-align:center;background:#d9e8fb;color:#5a7194;">No</th>
+        <th style="text-align:left;background:#d9e8fb;color:#5a7194;width:120px;">그룹코드</th>
+        <th style="text-align:left;background:#d9e8fb;color:#5a7194;width:120px;">그룹명</th>
+        <th style="text-align:left;background:#d9e8fb;color:#5a7194;width:200px;">설명</th>
+        <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:90px;">메뉴권한</th>
+        <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:80px;">활성</th>
+        <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:150px;">그룹관리</th>
       </tr>
     </thead>
     <tbody>
@@ -81,13 +81,13 @@
         </td>
         <td style="text-align:center;">
           <div class="action-btns" style="justify-content:center;">
-            <button class="btn btn-sm" style="background:#93c5fd;color:#1e40af;border:none;"
+            <button class="btn btn-sm btn-edit-outline"
               onclick="openEditModal(<%= role.id %>, `<%= (role.code||'').replace(/`/g,'\\`') %>`, `<%= (role.name||'').replace(/`/g,'\\`') %>`, `<%= (role.description||'').replace(/`/g,'\\`').replace(/\n/g,'\\n') %>`, <%= role.is_active %>)">
               수정
             </button>
             <form action="/admin/roles/<%= role.id %>/delete" method="POST" style="display:inline;"
               onsubmit="return confirm('권한그룹을 삭제하시겠습니까? 매핑된 메뉴 연결도 함께 삭제됩니다.')">
-              <button type="submit" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;">삭제</button>
+              <button type="submit" class="btn btn-sm btn-delete-outline">삭제</button>
             </form>
           </div>
         </td>

@@ -31,7 +31,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Data for Name: api_specs; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: api_specs; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 SET SESSION AUTHORIZATION DEFAULT;
@@ -44,7 +44,7 @@ INSERT INTO public.api_specs (id, category, domain, name, description, endpoints
 ALTER TABLE public.api_specs ENABLE TRIGGER ALL;
 
 --
--- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.roles DISABLE TRIGGER ALL;
@@ -57,21 +57,22 @@ INSERT INTO public.roles (id, code, name, description, is_active, created_at, up
 ALTER TABLE public.roles ENABLE TRIGGER ALL;
 
 --
--- Data for Name: partners; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: partners; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.partners DISABLE TRIGGER ALL;
 
-INSERT INTO public.partners (id, company_name, manager_name, email, phone, purpose, status, reject_reason, partner_code, processed_at, created_at, role_id) VALUES (4, '(주)거꾸로해도윤태윤', '윤태윤', 'yoonyoon@hanwha.com', '010-0000-9999', '내가 대표요. 내가 왕이될 상이로다', 'pending', NULL, NULL, NULL, '2026-06-26 15:02:15.395149+09', NULL);
 INSERT INTO public.partners (id, company_name, manager_name, email, phone, purpose, status, reject_reason, partner_code, processed_at, created_at, role_id) VALUES (2, '저기어때', '김은성', 'silverstar@hanwha.com', '010-1111-2222', '나는 silverstar. goldstar 댐벼보시지', 'rejected', 'silver는 취급 안합니데이', NULL, '2026-06-26 15:02:37.04036+09', '2026-06-26 15:00:50.20055+09', NULL);
 INSERT INTO public.partners (id, company_name, manager_name, email, phone, purpose, status, reject_reason, partner_code, processed_at, created_at, role_id) VALUES (1, '야어때', '김주희', 'juhee3160@hanwha.com', '010-5196-3160', '연결해서 돈 마니 벌고 싶어요 안된다구요?', 'approved', NULL, '88007882', '2026-06-26 15:02:26.35423+09', '2026-06-26 15:00:14.357119+09', 2);
 INSERT INTO public.partners (id, company_name, manager_name, email, phone, purpose, status, reject_reason, partner_code, processed_at, created_at, role_id) VALUES (3, '천수관컴퍼니', '박승욱', 'beast00k@hanwha.com', '010-3333-4444', '나는 짐승욱. 호랑이 댐벼라', 'approved', NULL, '69249209', '2026-06-26 15:02:40.954274+09', '2026-06-26 15:01:22.777571+09', 3);
+INSERT INTO public.partners (id, company_name, manager_name, email, phone, purpose, status, reject_reason, partner_code, processed_at, created_at, role_id) VALUES (5, '휴가가자', '박수관', 'parkssi@hanwha.com', '010-2222-3333', '휴가 가고 싶어요~ 그래서 신청합니다~~', 'pending', NULL, NULL, NULL, '2026-07-13 14:36:54.146539+09', NULL);
+INSERT INTO public.partners (id, company_name, manager_name, email, phone, purpose, status, reject_reason, partner_code, processed_at, created_at, role_id) VALUES (4, '(주)거꾸로해도윤태윤', '윤태윤', 'yoonyoon@hanwha.com', '010-0000-9999', '내가 대표요. 내가 왕이될 상이로다', 'approved', NULL, '73810832', '2026-07-13 14:37:10.549518+09', '2026-06-26 15:02:15.395149+09', NULL);
 
 
 ALTER TABLE public.partners ENABLE TRIGGER ALL;
 
 --
--- Data for Name: firewall_requests; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: firewall_requests; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.firewall_requests DISABLE TRIGGER ALL;
@@ -81,7 +82,7 @@ ALTER TABLE public.firewall_requests DISABLE TRIGGER ALL;
 ALTER TABLE public.firewall_requests ENABLE TRIGGER ALL;
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.users DISABLE TRIGGER ALL;
@@ -89,12 +90,13 @@ ALTER TABLE public.users DISABLE TRIGGER ALL;
 INSERT INTO public.users (id, username, password_hash, name, role, partner_id, created_at) VALUES (1, 'admin', '$2b$10$3HrMYoyL5qKWvOtcUz0urORp3I2cU/gPvcjUK2mpLZIYNkUtLRduS', '깅밍굥', 'admin', NULL, '2026-06-26 14:29:55.406891+09');
 INSERT INTO public.users (id, username, password_hash, name, role, partner_id, created_at) VALUES (2, '88007882', '$2b$10$BR9V1nSrLnkNelk16NSIduzJsDb.xwj2tekO9J1TT20KKcCYfZMTC', '김주희', 'BigCorp', 1, '2026-06-26 15:02:26.409873+09');
 INSERT INTO public.users (id, username, password_hash, name, role, partner_id, created_at) VALUES (3, '69249209', '$2b$10$8.pDioENqaMbBbYe5n63g.TUsfjQSKqQBnytXZQMhA0OPEr7HRLQq', '박승욱', 'BigCorp', 3, '2026-06-26 15:02:41.012472+09');
+INSERT INTO public.users (id, username, password_hash, name, role, partner_id, created_at) VALUES (4, '73810832', '$2b$10$CXrRMKKjdjpTTVTq80Jm4.UAvECCYuDolwqLdeNR2l3a8jm4UfBaq', '윤태윤', 'BigCorp', 4, '2026-07-13 14:37:10.618492+09');
 
 
 ALTER TABLE public.users ENABLE TRIGGER ALL;
 
 --
--- Data for Name: inquiries; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: inquiries; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.inquiries DISABLE TRIGGER ALL;
@@ -124,14 +126,13 @@ INSERT INTO public.inquiries (id, user_id, question, answer, status, is_faq, ans
 ALTER TABLE public.inquiries ENABLE TRIGGER ALL;
 
 --
--- Data for Name: menus; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: menus; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.menus DISABLE TRIGGER ALL;
 
 INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (3, NULL, 'API', '/api-reference', 'nav', NULL, false, 3, true, '2026-07-10 16:35:33.078604+09', '2026-07-10 16:35:33.078604+09');
 INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (4, NULL, '운영 지원', '/support', 'nav', NULL, false, 4, true, '2026-07-10 16:35:33.078604+09', '2026-07-10 16:35:33.078604+09');
-INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (5, NULL, '관리자', '/admin', 'nav', NULL, true, 5, true, '2026-07-10 16:35:33.078604+09', '2026-07-10 16:35:33.078604+09');
 INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (6, 5, '파트너사 코드 신청', '/admin/partners', 'admin-tab', '👤', true, 1, true, '2026-07-10 16:35:33.081022+09', '2026-07-10 16:35:33.081022+09');
 INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (7, 5, '방화벽·토큰 요청', '/admin/firewall', 'admin-tab', '🔓', true, 2, true, '2026-07-10 16:35:33.081022+09', '2026-07-10 16:35:33.081022+09');
 INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (8, 5, '문의 확인', '/admin/inquiries', 'admin-tab', '💬', true, 3, true, '2026-07-10 16:35:33.081022+09', '2026-07-10 16:35:33.081022+09');
@@ -153,12 +154,13 @@ INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only
 INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (2, NULL, '시작하기', '/guide', 'nav', NULL, false, 2, true, '2026-07-10 16:35:33.078604+09', '2026-07-10 16:56:12.273237+09');
 INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (1, NULL, 'HOME', '/home', 'nav', NULL, false, 1, true, '2026-07-10 16:35:33.078604+09', '2026-07-10 17:12:24.999789+09');
 INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (24, 5, '사용자별 권한관리', '/admin/partner-roles', 'nav', '🧑‍💼', true, 8, true, '2026-07-10 17:25:58.538447+09', '2026-07-10 17:25:58.538447+09');
+INSERT INTO public.menus (id, parent_id, name, path, menu_type, icon, admin_only, display_order, is_active, created_at, updated_at) VALUES (5, NULL, '관리자', '/admin', 'nav', NULL, true, 5, true, '2026-07-10 16:35:33.078604+09', '2026-07-13 13:50:06.980697+09');
 
 
 ALTER TABLE public.menus ENABLE TRIGGER ALL;
 
 --
--- Data for Name: notices; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: notices; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.notices DISABLE TRIGGER ALL;
@@ -172,7 +174,7 @@ INSERT INTO public.notices (id, tag, tag_type, title, content, is_visible, creat
 ALTER TABLE public.notices ENABLE TRIGGER ALL;
 
 --
--- Data for Name: partner_firewall_applies; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: partner_firewall_applies; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.partner_firewall_applies DISABLE TRIGGER ALL;
@@ -183,12 +185,13 @@ INSERT INTO public.partner_firewall_applies (id, user_id, source_ip, source_host
 INSERT INTO public.partner_firewall_applies (id, user_id, source_ip, source_hostname, dest_ip, dest_hostname, approval_status, reject_reason, note, requested_at, approved_at, dest_port, token) VALUES (4, 3, '999.888.777.666', 'https://iamking.api.com', '211.197.235.21', 'exgatedev.hanwharesort.co.kr', 'pending', NULL, '나는 정중히 신청하는
 왕입니다용
 갈히', '2026-06-26 15:34:44.985276+09', NULL, '80', NULL);
+INSERT INTO public.partner_firewall_applies (id, user_id, source_ip, source_hostname, dest_ip, dest_hostname, approval_status, reject_reason, note, requested_at, approved_at, dest_port, token) VALUES (5, 4, '192.223.444.12', 'server.aiaiai.co.kr', '211.197.235.21', 'exgatedev.hanwharesort.co.kr', 'pending', NULL, '하.... 휴가 언제 갈 수 있냐 ㅠㅠㅠㅠㅠㅠㅠㅠㅠㅠ.ㅠ', '2026-07-13 14:38:02.80072+09', NULL, '80', NULL);
 
 
 ALTER TABLE public.partner_firewall_applies ENABLE TRIGGER ALL;
 
 --
--- Data for Name: role_menus; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: role_menus; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 ALTER TABLE public.role_menus DISABLE TRIGGER ALL;
@@ -241,70 +244,68 @@ INSERT INTO public.role_menus (role_id, menu_id) VALUES (3, 4);
 ALTER TABLE public.role_menus ENABLE TRIGGER ALL;
 
 --
--- Name: api_specs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: api_specs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.api_specs_id_seq', 1, true);
 
 
 --
--- Name: firewall_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: firewall_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.firewall_requests_id_seq', 1, false);
 
 
 --
--- Name: inquiries_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: inquiries_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.inquiries_id_seq', 8, true);
 
 
 --
--- Name: menus_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: menus_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.menus_id_seq', 24, true);
 
 
 --
--- Name: notices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: notices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.notices_id_seq', 4, true);
 
 
 --
--- Name: partner_firewall_applies_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: partner_firewall_applies_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.partner_firewall_applies_id_seq', 4, true);
-
-
---
--- Name: partners_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.partners_id_seq', 4, true);
+SELECT pg_catalog.setval('public.partner_firewall_applies_id_seq', 5, true);
 
 
 --
--- Name: roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: partners_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.partners_id_seq', 5, true);
+
+
+--
+-- Name: roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
 SELECT pg_catalog.setval('public.roles_id_seq', 4, true);
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 3, true);
+SELECT pg_catalog.setval('public.users_id_seq', 4, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
-
-

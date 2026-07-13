@@ -5,14 +5,14 @@
 </div>
 
 <div class="admin-tabs">
-  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
-  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
-  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
-  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
   <a href="/admin/apis" class="admin-tab active">🧩 API 등록/관리</a>
   <a href="/admin/menus" class="admin-tab">🗂 메뉴 관리</a>
   <a href="/admin/roles" class="admin-tab">🔑 권한 그룹 관리</a>
   <a href="/admin/partner-roles" class="admin-tab">🧑‍💼 사용자별 권한관리</a>
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
 </div>
 
 <div class="admin-content">
@@ -35,22 +35,32 @@
   <div style="display:flex;gap:8px;margin-bottom:18px;">
     <button type="button" class="btn btn-sm btn-primary import-mode-tab" data-mode="manual">✍ 수기 작성</button>
     <button type="button" class="btn btn-sm import-mode-tab" data-mode="excel">📄 엑셀 업로드</button>
+    <button type="button" class="btn btn-sm import-mode-tab" data-mode="image">🖼 이미지 업로드</button>
     <button type="button" class="btn btn-sm import-mode-tab" data-mode="mci">🔗 MCI 서비스 주소 가져오기</button>
   </div>
 
   <div id="importPanel-excel" class="import-panel" style="display:none;border:1px dashed #93c5fd;border-radius:8px;padding:16px;margin-bottom:18px;background:#f8fafc;">
     <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">엑셀 파일 선택 (.xlsx)</label>
     <input type="file" id="excelFile" accept=".xlsx,.xls">
-    <button type="button" class="btn btn-primary btn-sm" style="margin-left:8px;" onclick="importFromExcel()">불러오기</button>
     <div id="excelImportMsg" style="font-size:12px;color:#6b7280;margin-top:8px;"></div>
     <select id="excelSpecPicker" style="display:none;margin-top:10px;width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></select>
+  </div>
+
+  <div id="importPanel-image" class="import-panel" style="display:none;border:1px dashed #93c5fd;border-radius:8px;padding:16px;margin-bottom:18px;background:#f8fafc;">
+    <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">이미지 파일 선택 (.png, .jpg)</label>
+    <input type="file" id="imageFile" accept="image/*">
+    <div id="imageImportMsg" style="font-size:12px;color:#6b7280;margin-top:8px;"></div>
+    <select id="imageSpecPicker" style="display:none;margin-top:10px;width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></select>
   </div>
 
   <div id="importPanel-mci" class="import-panel" style="display:none;border:1px dashed #93c5fd;border-radius:8px;padding:16px;margin-bottom:18px;background:#f8fafc;">
     <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">MCI 서비스 주소</label>
     <input type="text" id="mciAddress" placeholder="예: /svc/condo-reserve" style="width:60%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
-    <button type="button" class="btn btn-primary btn-sm" style="margin-left:8px;" onclick="importFromMci()">가져오기</button>
     <div id="mciImportMsg" style="font-size:12px;color:#6b7280;margin-top:8px;"></div>
+  </div>
+
+  <div id="autoFillWrap" style="display:none;text-align:right;margin-bottom:12px;">
+    <button type="button" id="autoFillBtn" class="btn btn-primary btn-sm" onclick="runAutoFill()">자동입력</button>
   </div>
   <% } %>
 
@@ -113,9 +123,9 @@
 <template id="endpointTemplate">
   <div class="endpoint-block" style="border:1px solid #dde3ea;border-radius:8px;padding:16px;margin-bottom:16px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <strong style="color:#1e40af;font-size:13px;">엔드포인트</strong>
+      <strong style="color:#1e40af;font-size:13px;">엔드포인트 <span class="ep-number"></span></strong>
       <button type="button" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;"
-        onclick="this.closest('.endpoint-block').remove()">엔드포인트 삭제</button>
+        onclick="this.closest('.endpoint-block').remove(); renumberEndpoints();">엔드포인트 삭제</button>
     </div>
     <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:10px;margin-bottom:12px;">
       <select class="ep-method" style="padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
@@ -195,7 +205,16 @@ function addEndpoint(endpoint) {
     const tbody = block.querySelector('.ep-params-body');
     (endpoint.params || []).forEach((p) => addParamRow(tbody, p));
   }
+  renumberEndpoints();
   return block;
+}
+
+// 엔드포인트 추가/삭제 시 "엔드포인트 #N" 표시를 현재 순서대로 갱신
+function renumberEndpoints() {
+  document.querySelectorAll('#endpointsContainer .endpoint-block').forEach((block, idx) => {
+    const numEl = block.querySelector('.ep-number');
+    if (numEl) numEl.textContent = '#' + (idx + 1);
+  });
 }
 
 // 수정 모드일 때 기존 엔드포인트 데이터로 초기화
@@ -230,8 +249,18 @@ document.querySelectorAll('.import-mode-tab').forEach((tab) => {
     document.querySelectorAll('.import-panel').forEach((p) => (p.style.display = 'none'));
     const panel = document.getElementById('importPanel-' + tab.dataset.mode);
     if (panel) panel.style.display = 'block';
+    document.getElementById('autoFillWrap').style.display = tab.dataset.mode === 'manual' ? 'none' : 'block';
   });
 });
+
+// 등록 방식 탭에서 선택된 모드에 맞춰 실제 자동입력 함수로 위임
+function runAutoFill() {
+  const activeTab = document.querySelector('.import-mode-tab.btn-primary');
+  const mode = activeTab ? activeTab.dataset.mode : 'manual';
+  if (mode === 'excel') return importFromExcel();
+  if (mode === 'image') return importFromImage();
+  if (mode === 'mci') return importFromMci();
+}
 
 // ── 데이터 바인딩 슬롯: 엑셀/MCI 결과(ApiSpecInput)를 수기 작성 폼에 그대로 주입한다.
 // 엑셀 업로드·MCI 조회 기능이 나중에 무엇으로 구현되더라도, 이 함수 하나에만 맞춰 결과를
@@ -268,6 +297,30 @@ async function importFromExcel() {
     msg.textContent = `${result.specs.length}건을 불러왔습니다. 내용을 확인한 뒤 등록 버튼을 누르세요.`;
   } catch (err) {
     msg.textContent = err.message || '엑셀 불러오기 중 오류가 발생했습니다.';
+  }
+}
+
+async function importFromImage() {
+  const fileInput = document.getElementById('imageFile');
+  const msg = document.getElementById('imageImportMsg');
+  const picker = document.getElementById('imageSpecPicker');
+  if (!fileInput.files.length) {
+    msg.textContent = '파일을 선택하세요.';
+    return;
+  }
+  msg.textContent = '불러오는 중...';
+  try {
+    // TODO(team): 실제 업로드는 이미지 인식/OCR 라이브러리 도입 후 FormData로 파일 바이트를 전송하도록 교체.
+    const result = await apiClient.post('/admin/apis/import/image', { filename: fileInput.files[0].name });
+    picker.innerHTML = result.specs
+      .map((s, i) => `<option value="${i}">${s.name} (${s.domain})</option>`)
+      .join('');
+    picker.style.display = result.specs.length > 1 ? 'block' : 'none';
+    picker.onchange = () => applyImportedSpec(result.specs[picker.value]);
+    applyImportedSpec(result.specs[0]);
+    msg.textContent = `${result.specs.length}건을 불러왔습니다. 내용을 확인한 뒤 등록 버튼을 누르세요.`;
+  } catch (err) {
+    msg.textContent = err.message || '이미지 불러오기 중 오류가 발생했습니다.';
   }
 }
 

@@ -32,7 +32,9 @@
       "Bash(curl -s -c p3_cookies.txt -X POST http://localhost:3000/auth/login -d \"username=69249209&password=69249209\" -o /dev/null -w \"partner3 login -> %{http_code}\\\\n\")",
       "Bash(curl -s -b p3_cookies.txt http://localhost:3000/home -o p3_home.html -w \"partner3 home -> %{http_code}\\\\n\")",
       "Bash(curl -s -b p3_cookies.txt http://localhost:3000/home -o p3_home2.html -w \"partner3 home -> %{http_code}\\\\n\")",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(find / -maxdepth 6 -iname \"chromium-cli\")",
+      "Bash(npm ls *)"
     ]
   }
 }

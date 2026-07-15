@@ -61,3 +61,23 @@
 ## 9. 시스템 이동 조건 (메뉴 분기)
 - 헤더 메뉴는 로그인 사용자 공통, `role==='admin'`일 때만 "관리자" 탭 노출.
 - 별도 포탈(파트너 전용/관리자 전용) URL 분리는 없고 단일 포털에서 권한으로 분기. 세부는 `docs/menu-routing.md`.
+
+## 10. API Reference "테스트" 샌드박스
+- 대상: `api_specs.endpoints[].url`이 `/`로 시작하지 않는 엔드포인트만(HABIS 엑셀/이미지 자동입력으로 등록된 SVC-ID 스타일). `url`이 `/api/v1/...` 같은 REST 경로인 레거시/수기 스펙(STATIC_SPECS 계열)은 실제 호출 대상이 확인되지 않아 버튼 자체가 노출되지 않는다.
+- 흐름: `index.ejs`의 🧪 테스트 버튼 → 팝업에서 파라미터 확인/수정 → `POST /api-reference/try`(`isAuthenticated`만 적용, admin 전용 아님 — 파트너도 자신에게 매핑된 문서는 사용 가능) → 서버가 게이트웨이로 프록시 호출 후 결과를 그대로 반환.
+- **호출 URL**: `{SANDBOX_GATEWAY_BASE_URL}/{systemCode}/json.jdo`(env `SANDBOX_GATEWAY_BASE_URL` + 요청별 `systemCode`). `systemCode`(예: `OCH`, `LCB`)는 API마다 다르며, `ep.description`이 `"{시스템코드} / {서브메뉴} / {기능명}"` 형식(예: `"OCH / KIOSK / 예약정보 조회"`)이라는 관찰된 규칙에 따라 첫 토큰을 추천값으로 모달에 채우고 실행 전 사용자가 확인/수정한다. 서버는 `^[A-Za-z0-9_-]{1,20}$`로 형식을 강제해 경로 조작을 차단한다.
+- **인가 재검증(중요)**: 버튼이 안 보이는 것과 별개로, `tryEndpoint`는 요청받은 `domain`이 세션(파트너는 `partners.role_id` 매핑 우선)의 `allowedDocs`에 포함되는지 서버에서 다시 검사한다. 미포함 시 403 — 파트너가 다른 파트너/미매핑 문서를 직접 API 호출로 조회하는 경로를 차단한다.
+- **요청 봉투 구조(확인됨)**: 최상위 4개 키 `{ SystemHeader, TransactionHeader, MessageHeader, Data }`. `Data`는 `ep.params`의 이름 접두사(예: `ds_inSearch`)를 키로 하는 **배열**(예: `Data.ds_inSearch = [ { CORP_CD: ..., BRCH_CD: ... } ]`); 접두사(점) 없는 파라미터는 `Data` 바로 아래에 값으로 위치.
+- 공통헤더(System/Transaction/Message) 자동입력 규칙(`header_fields` 재사용, 클라이언트 JS `computeHeaderDefault`/`buildHeaderSection`에서 계산 — 각 섹션의 모든 필드를 채우고 값 없는 항목도 키는 유지):
+  1. `required_request === '×'`(요청측 미생성) → 키는 유지하고 값은 `null`(실제 관측 예시에서 `MessageHeader.MSG_PRCS_RSLT_CD: null` 등으로 확인).
+  2. `setting_type === 'fix'` → `setting_value` 그대로 사용(값을 추측하지 않고 DB에 저장된 값 그대로).
+  3. `setting_type === 'variable'`(서비스/호출마다 달라질 수 있음, 예: 전문일련번호·타임스탬프 등) → 자동으로 채우지 않고 빈 값, 사용자가 반드시 직접 입력해야 함.
+  4. 그 외(`setting_type === 'none'`, 예: `CMP_NO`/`BRANCH_NO`/`SCREEN_ID`) → 빈 값이지만 비워둬도 되는 선택 항목.
+  5. **예외(잠금, `setting_type`과 무관)**: `RECV_SVC_CD`(수신서비스코드)는 테스트 대상 엔드포인트의 `ep.url`(SVC ID, 예: `HBSGOLOCH0119`)을 그대로, `INTF_ID`(인터페이스ID)는 `{systemCode}00{ep.url}`(예: `OCH00HBSGOLOCH0119`)을 자동 산출해 넣고 두 필드 모두 읽기전용으로 잠근다(`index.ejs` `makeFieldRow`의 `kind==='locked'`, `computeIntfId`). `systemCode`(모달 상단 입력칸)를 바꾸면 `onSystemCodeChange()`가 `INTF_ID`를 즉시 다시 계산한다. 테스트 중인 API 자체로 결정되는 값이라 사용자가 실수로 다른 값을 넣을 수 없게 막은 것.
+  - **UI 구분(`index.ejs` `fieldKind`/`FIELD_KIND_STYLE`)**: 구조화 보기의 각 입력 행에 배지+테두리 색으로 fix(회색 "고정값")/variable(주황 "필수 입력", `setting_value`를 placeholder 힌트로 표시)/none(연회색 "선택")/locked(진회색 "자동 고정(수정불가)", 읽기전용)을 구분해, 사용자가 반드시 채워야 하는 값·비워도 되는 값·건드릴 수 없는 값을 한눈에 알 수 있게 한다.
+- Body(`Data`): `ep.params` 전체를 입력 필드로 노출하되, API 스펙상 `required=true`인 항목은 "필수 입력"(주황), `required=false`인 항목은 "선택"(연회색) 배지로 구분. 접두사별로 배열 그룹핑(위 참고).
+- 위 자동 조립은 어디까지나 기본값이며, 필드별 null/빈값 처리 등 세부 사양이 SVC마다 다를 수 있어 팝업의 "구조화 보기"에서 편집하거나 "Raw JSON" 탭에서 최종 페이로드를 직접 고쳐서 실행할 수 있다. 실제로 전송되는 값은 항상 사용자가 실행 시점에 확인한 JSON이다.
+- **응답 해석(`index.ejs` `renderTryResult`)**: 실제 게이트웨이는 정상/오류 모두 `SystemHeader`/`TransactionHeader`를 포함한 JSON 봉투로 응답하며, `MessageHeader.MSG_DATA_SUB[].MSG_CD`/`MSG_CTNS`(메시지 코드/코드에 대한 한글 명칭)는 성공·실패 모두 채워져 온다(성공 예: `SCMI000001`/"정상적으로 처리되었습니다.", 실패 예: `REME000074`/쿠폰 사용 불가 안내 — 관측된 실 예시로 확인). 결과 패널은 이를 요약으로 먼저 보여주고 전체 원본 응답은 접어서 아래에 둔다:
+  1. 응답이 `SystemHeader`/`TransactionHeader`를 포함한 JSON 객체가 아님(예: 게이트웨이의 HTML 404 에러 페이지) → "⚠ 예상된 응답 형식이 아닙니다..." 경고 + 원본 응답을 펼친 상태로 바로 표시(요약할 게 없으므로).
+  2/3. 정상 봉투 → `MessageHeader.MSG_PRCS_RSLT_CD`로 성공(`'0'`, 녹색 "✓ 처리 결과")/실패(그 외, 빨강 "⚠ 처리 실패") 배너 + `MSG_DATA_SUB[]`의 `MSG_CD`/`MSG_CTNS` 나열 + `Data`(응답 반환 결과, 비어있으면 "(비어 있음)") 요약 카드를 먼저 보여주고, "▶ 전체 응답 보기" 버튼으로 접힌 전체 JSON을 필요할 때만 펼친다.
+- SSRF 방지: 호출 대상 host는 서버 env(`SANDBOX_GATEWAY_BASE_URL`)로 고정, 클라이언트는 `systemCode`(형식 검증됨)와 JSON body만 편집 가능(host 지정 불가). 미설정 시 501.

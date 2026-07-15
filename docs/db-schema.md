@@ -4,7 +4,7 @@
 
 ## 스크립트 관리 규칙
 - `db/scripts/`는 순번 prefix 누적 관리. **기존 스크립트 수정 금지 — 새 순번 스크립트 추가.**
-- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql` (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
+- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql`, `25_rename_roles_menu_label.sql`, `26_rename_partner_role_to_bigcorp.sql`, `27_add_partner_role_mapping.sql`, `28_local_data_snapshot.sql`(로컬 데이터 스냅샷, `29`가 대체), `29_local_data_snapshot_v2.sql`(최신 로컬 데이터 스냅샷 — `header_fields` 포함 11개 테이블 TRUNCATE 후 재적재), `30_remove_orphan_partner_role.sql`(`29` 스냅샷에 딸려온 고아 `roles.code='partner'` 행 정리), `31_mark_frs_rqst_sys_cd_variable.sql`(`FRS_RQST_SYS_CD`를 `fix`→`variable`로 정정 — 서비스마다 값이 다름, `LCB` 고정 아님) (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
 - 드라이버: `pg` Pool(`src/config/database.js`, `DATABASE_URL`). 파라미터 바인딩(`$1,$2,...`)만 사용.
 
 ## 주요 테이블
@@ -45,6 +45,7 @@
 - `getAllWithGrouping()`이 반환하는 `fields` JSON 항목의 `description`/`settingValue`에는 실제 줄바꿈(`\n`)이 포함될 수 있으며, 뷰(`_headerFieldTable.ejs`)는 `white-space:pre-line`으로 그대로 표시한다.
 - 인덱스: `idx_header_fields_section`, `idx_header_fields_category`.
 - 쿼리: `headerFieldModel.getAllWithGrouping()` → section/category 그룹화 후 EJS 동적 렌더링. 컨트롤러는 system/transaction/message 모두 `{ category, fields }[]` 형태로 통일해 뷰에 전달한다.
+- `setting_type`/`setting_value`/`required_request`는 문서 표시용 외에 API Reference "테스트" 샌드박스(`docs/business-rules.md` §10)의 요청 헤더 자동입력 규칙에도 재사용된다(`fix`→값 그대로, `variable`→일부 필드만 공식 계산, `required_request==='×'`→요청 제외).
 
 ### roles (`21`) — 역할(권한 그룹)
 `id PK`, `code VARCHAR(30) UNIQUE`(`admin`/`BigCorp`/...), `name`, `description`, `is_active`, `created_at`, `updated_at`.

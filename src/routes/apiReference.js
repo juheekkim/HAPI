@@ -8,5 +8,6 @@ const isAuthenticated = require('../middlewares/isAuthenticated');
 router.use(isAuthenticated);
 
 router.get('/', apiReferenceController.index);
+router.post('/try', apiReferenceController.tryEndpoint);
 
 module.exports = router;

@@ -495,6 +495,11 @@ a { text-decoration: none; color: inherit; }
   background: #fff; border-radius: 10px; padding: 28px;
   width: 420px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
 }
+.sandbox-modal {
+  background: #fff; border-radius: 10px; padding: 24px;
+  width: 720px; max-width: 95vw; max-height: 88vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
 
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; }

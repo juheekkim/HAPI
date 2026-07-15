@@ -286,7 +286,13 @@
         <div class="api-section">
           <div class="api-section-header" onclick="toggleSection(this)">
             <h3><%= ep.description %></h3>
-            <span class="api-section-toggle">▶ 펼치기</span>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <% if (typeof ep.url === 'string' && !ep.url.startsWith('/')) { %>
+              <button type="button" class="btn btn-outline" style="padding:4px 12px; font-size:12px;"
+                onclick="event.stopPropagation(); openTryModal(<%= idx %>)">🧪 테스트</button>
+              <% } %>
+              <span class="api-section-toggle">▶ 펼치기</span>
+            </div>
           </div>
           <div class="api-section-body" style="display:none;">
             <div class="api-url">
@@ -345,6 +351,47 @@
   </div>
 </div>
 
+<!-- API 테스트(샌드박스) 모달 -->
+<div id="modal-try" class="modal-overlay" style="display:none">
+  <div class="sandbox-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h3 id="tryModalTitle" style="font-size:15px;font-weight:700;color:#1a3a6b;"></h3>
+      <button type="button" onclick="closeTryModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#8a9bb0">✕</button>
+    </div>
+    <div style="font-size:12px;color:#8a9bb0;margin-bottom:10px;">
+      <span class="method-badge method-post">POST</span> 서버에 설정된 게이트웨이 주소 + 아래 시스템코드로 실제 호출됩니다. 필드값은 자유롭게 수정할 수 있습니다.
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <label style="width:230px;flex-shrink:0;font-size:12px;color:#4a5568;">시스템코드 (URL 경로, 예: OCH/LCB)</label>
+      <input id="trySystemCode" oninput="onSystemCodeChange()" style="flex:1;padding:6px 8px;border:1px solid #dde3ea;border-radius:5px;font-size:12px;font-family:inherit;">
+    </div>
+
+    <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;font-size:11px;color:#8a9bb0;">
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#f1f5f9;border:1px solid #cbd5e1;margin-right:4px;"></span>고정값 — 자동 채워짐, 확인만</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#fff7ed;border:1px solid #fb923c;margin-right:4px;"></span>필수 입력 — 값을 직접 채워야 함</span>
+      <span><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#fafbfc;border:1px solid #e2e8f0;margin-right:4px;"></span>선택 — 비워둬도 됨</span>
+    </div>
+
+    <div class="tab-group" style="margin-bottom:14px;">
+      <button type="button" id="tryTabStructured" class="tab-btn active" onclick="switchTryView('structured')">▼ 구조화 보기</button>
+      <button type="button" id="tryTabRaw" class="tab-btn" onclick="switchTryView('raw')">▼ Raw JSON</button>
+    </div>
+
+    <div id="tryStructured"></div>
+    <div id="tryRawWrap" style="display:none;">
+      <textarea id="tryRawJson" spellcheck="false"
+        style="width:100%;min-height:280px;padding:12px;border:1.5px solid #dde3ea;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12.5px;resize:vertical;"></textarea>
+    </div>
+
+    <div id="tryResultPanel" style="display:none;margin-top:16px;max-height:320px;overflow-y:auto;"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+      <button type="button" onclick="closeTryModal()" class="btn btn-outline">취소</button>
+      <button type="button" id="tryRunBtn" onclick="runTry()" class="btn btn-primary">실행</button>
+    </div>
+  </div>
+</div>
+
 <script>
 function toggleSection(header) {
   const body = header.nextElementSibling;
@@ -373,5 +420,391 @@ function filterSidebar(query) {
   document.querySelectorAll('.sidebar-item').forEach(item => {
     item.style.display = item.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
+}
+
+// ── API 테스트(샌드박스) ──────────────────────────────
+// 헤더 필드(system/transaction/message)는 컨트롤러가 이미 내려주는 headerFields를 재사용.
+// 실제 게이트웨이 봉투: { SystemHeader, TransactionHeader, MessageHeader, Data } 4개 최상위 키
+// (Data.<파라미터 접두사>는 배열, 예: Data.ds_search = [ {필드...} ]). 자동 조립은 "기본값"일 뿐이고
+// 실행 전 사용자가 구조화 보기/Raw JSON에서 항상 확인·수정할 수 있게 한다.
+const headerFieldsData = <%- JSON.stringify(headerFields) %>;
+const specEndpoints = <%- JSON.stringify(selectedSpec ? selectedSpec.endpoints : []) %>;
+const currentDomain = <%- JSON.stringify(selectedDoc) %>;
+let tryModalEndpointIdx = null;
+let currentPayload = {};
+
+// header_fields.setting_type/setting_value/required_request 메타데이터 기반 자동입력 규칙.
+// - required_request === '×' (요청측 미생성): 키는 남기고 값은 null(관측된 실제 봉투 예시 기준).
+// - setting_type === 'fix': setting_value를 그대로 채운다(값을 추측하지 않음).
+// - setting_type === 'variable' | 'none': 서비스/호출마다 달라질 수 있어 자동으로 채우지 않고
+//   빈 값으로 두고 사용자가 직접 입력한다. UI에서 variable=필수, none=선택으로 구분 표시한다
+//   (fieldKind가 그 구분을 담당).
+function computeHeaderDefault(field) {
+  if (field.requiredRequest === '×') return null;
+  if (field.settingType === 'fix') return field.settingValue;
+  return '';
+}
+
+function fieldKind(settingType) {
+  if (settingType === 'fix') return 'fix';
+  if (settingType === 'variable') return 'variable';
+  return 'none';
+}
+
+function buildHeaderSection(groups) {
+  const out = {};
+  (groups || []).forEach(g => (g.fields || []).forEach(f => {
+    out[f.fieldNameEn] = computeHeaderDefault(f);
+  }));
+  return out;
+}
+
+// INTF_ID = 시스템코드(URL 경로) + "00" + SVC ID(ep.url). 시스템코드 입력칸(trySystemCode)이
+// 바뀌면 onSystemCodeChange()가 이 값을 다시 계산해 잠긴 입력칸에 반영한다.
+function computeIntfId(ep) {
+  const sysCode = (document.getElementById('trySystemCode').value || '').trim();
+  return sysCode + '00' + (ep ? ep.url : '');
+}
+
+function onSystemCodeChange() {
+  const ep = specEndpoints[tryModalEndpointIdx];
+  if (!ep || !currentPayload.SystemHeader) return;
+  const intfId = computeIntfId(ep);
+  currentPayload.SystemHeader.INTF_ID = intfId;
+  const el = document.getElementById('tryFieldIntfId');
+  if (el) el.value = intfId;
+}
+
+// 필수/선택 파라미터 모두 대상(필수 여부는 UI 배지로 구분). 이름에 점(.)이 있으면
+// (예: ds_inSearch.CORP_CD) 접두사를 Data 하위의 배열 키로 그룹핑한다
+// (실제 관측된 봉투 예시: Data.ds_search = [ {필드...} ]). 점이 없으면 Data 바로 아래.
+function buildDataSection(params) {
+  const top = {};
+  const groups = {};
+  (params || []).forEach(p => {
+    const parts = p.name.split('.');
+    if (parts.length === 1) {
+      top[parts[0]] = '';
+    } else {
+      const prefix = parts[0];
+      const leaf = parts.slice(1).join('.');
+      groups[prefix] = groups[prefix] || {};
+      groups[prefix][leaf] = '';
+    }
+  });
+  const data = Object.assign({}, top);
+  Object.keys(groups).forEach((prefix) => { data[prefix] = [groups[prefix]]; });
+  return data;
+}
+
+// kind: 'fix'(자동 채워짐, 확인만) | 'variable'(반드시 채워야 함) | 'none'(비워둬도 됨)
+// | 'locked'(테스트 대상 API에서 자동 산출, 수정 불가 — RECV_SVC_CD/INTF_ID 전용)
+const FIELD_KIND_STYLE = {
+  fix:      { text: '고정값',        color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1' },
+  variable: { text: '필수 입력',     color: '#c2410c', bg: '#fff7ed', border: '#fb923c' },
+  none:     { text: '선택',          color: '#94a3b8', bg: '#fafbfc', border: '#e2e8f0' },
+  locked:   { text: '자동 고정(수정불가)', color: '#475569', bg: '#e2e8f0', border: '#94a3b8' },
+};
+
+function makeFieldRow(labelText, value, onInput, kind, placeholderHint, inputId) {
+  const style = FIELD_KIND_STYLE[kind] || FIELD_KIND_STYLE.none;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:5px 8px;'
+    + 'border-left:3px solid ' + style.border + ';background:' + style.bg + ';border-radius:4px;';
+  const label = document.createElement('label');
+  label.style.cssText = 'width:230px;flex-shrink:0;font-size:12px;color:#4a5568;display:flex;align-items:center;gap:6px;';
+  const badge = document.createElement('span');
+  badge.textContent = style.text;
+  badge.style.cssText = 'flex-shrink:0;font-size:10px;font-weight:700;color:' + style.color + ';'
+    + 'background:#fff;border:1px solid ' + style.border + ';border-radius:10px;padding:1px 7px;';
+  const labelSpan = document.createElement('span');
+  labelSpan.textContent = labelText;
+  label.appendChild(badge);
+  label.appendChild(labelSpan);
+  const input = document.createElement('input');
+  input.style.cssText = 'flex:1;padding:6px 8px;border:1px solid #dde3ea;border-radius:5px;font-size:12px;font-family:inherit;';
+  input.value = value !== undefined && value !== null ? value : '';
+  if (placeholderHint) input.placeholder = placeholderHint;
+  if (inputId) input.id = inputId;
+  if (kind === 'locked') {
+    input.readOnly = true;
+    input.style.background = '#eef1f4';
+    input.style.color = '#475569';
+    input.style.cursor = 'not-allowed';
+  } else {
+    input.oninput = () => onInput(input.value);
+  }
+  row.appendChild(label);
+  row.appendChild(input);
+  return row;
+}
+
+function renderStructuredView(ep) {
+  const container = document.getElementById('tryStructured');
+  container.innerHTML = '';
+
+  // 실제 봉투는 SystemHeader/TransactionHeader/MessageHeader/Data 4개 최상위 키로 구성된다.
+  [
+    ['SystemHeader', '시스템 공통헤더', headerFieldsData.system],
+    ['TransactionHeader', '거래 공통헤더', headerFieldsData.transaction],
+    ['MessageHeader', '메시지 헤더', headerFieldsData.message],
+  ].forEach(([sectionKey, title, groups]) => {
+    const fields = (groups || []).flatMap(g => g.fields || []).filter(f => f.requiredRequest !== '×');
+    if (fields.length === 0) return;
+    currentPayload[sectionKey] = currentPayload[sectionKey] || {};
+    const box = document.createElement('div');
+    box.style.marginBottom = '16px';
+    const h = document.createElement('div');
+    h.style.cssText = 'font-weight:700;font-size:13px;color:#1a3a6b;margin-bottom:8px;';
+    h.textContent = title;
+    box.appendChild(h);
+    fields.forEach(f => {
+      // RECV_SVC_CD(수신서비스코드)와 INTF_ID(인터페이스ID)는 테스트 대상 API 자체로 결정되는
+      // 값이라 setting_type과 무관하게 자동 산출하고 수정을 막는다(사용자 지시).
+      if (sectionKey === 'SystemHeader' && f.fieldNameEn === 'RECV_SVC_CD') {
+        currentPayload.SystemHeader.RECV_SVC_CD = ep.url;
+        box.appendChild(makeFieldRow(
+          f.fieldNameKo + ' (' + f.fieldNameEn + ')', ep.url, null, 'locked', '', 'tryFieldRecvSvcCd'
+        ));
+        return;
+      }
+      if (sectionKey === 'SystemHeader' && f.fieldNameEn === 'INTF_ID') {
+        const intfId = computeIntfId(ep);
+        currentPayload.SystemHeader.INTF_ID = intfId;
+        box.appendChild(makeFieldRow(
+          f.fieldNameKo + ' (' + f.fieldNameEn + ')', intfId, null, 'locked', '', 'tryFieldIntfId'
+        ));
+        return;
+      }
+
+      const kind = fieldKind(f.settingType);
+      // variable은 값 형식을 짐작할 수 있는 setting_value(예: "Random(1) + unix time(13)")를
+      // placeholder로만 보여준다(실제 입력값으로 자동 채우지 않음).
+      const hint = kind === 'variable' ? (f.settingValue || '') : '';
+      box.appendChild(makeFieldRow(
+        f.fieldNameKo + ' (' + f.fieldNameEn + ')',
+        currentPayload[sectionKey][f.fieldNameEn],
+        (v) => { currentPayload[sectionKey][f.fieldNameEn] = v; },
+        kind,
+        hint
+      ));
+    });
+    container.appendChild(box);
+  });
+
+  const params = ep.params || [];
+  if (params.length > 0) {
+    currentPayload.Data = currentPayload.Data || {};
+    const box = document.createElement('div');
+    const h = document.createElement('div');
+    h.style.cssText = 'font-weight:700;font-size:13px;color:#1a3a6b;margin-bottom:8px;';
+    h.textContent = 'Data';
+    box.appendChild(h);
+    params.forEach(p => {
+      const parts = p.name.split('.');
+      // Data.<prefix>는 배열(예: ds_search: [ {...} ]) — 항상 0번째 원소를 편집한다.
+      let cur = currentPayload.Data;
+      let leafKey = parts[parts.length - 1];
+      if (parts.length > 1) {
+        const prefix = parts[0];
+        cur[prefix] = cur[prefix] || [{}];
+        cur = cur[prefix][0];
+        leafKey = parts.slice(1).join('.');
+      }
+      const target = cur;
+      // API 스펙의 필수(Y) 파라미터만 "필수 입력", 나머지는 "선택".
+      box.appendChild(makeFieldRow(
+        (p.label || p.desc || p.name) + ' (' + p.name + ')',
+        target[leafKey],
+        (v) => { target[leafKey] = v; },
+        p.required ? 'variable' : 'none'
+      ));
+    });
+    container.appendChild(box);
+  }
+}
+
+function switchTryView(view) {
+  const isRaw = view === 'raw';
+  if (isRaw) {
+    document.getElementById('tryRawJson').value = JSON.stringify(currentPayload, null, 2);
+  } else {
+    try {
+      currentPayload = JSON.parse(document.getElementById('tryRawJson').value);
+    } catch (e) {
+      alert('JSON 형식이 올바르지 않아 구조화 보기로 반영하지 못했습니다: ' + e.message);
+      return;
+    }
+    renderStructuredView(specEndpoints[tryModalEndpointIdx]);
+  }
+  document.getElementById('tryStructured').style.display = isRaw ? 'none' : '';
+  document.getElementById('tryRawWrap').style.display = isRaw ? '' : 'none';
+  document.getElementById('tryTabStructured').classList.toggle('active', !isRaw);
+  document.getElementById('tryTabRaw').classList.toggle('active', isRaw);
+}
+
+function openTryModal(idx) {
+  tryModalEndpointIdx = idx;
+  const ep = specEndpoints[idx];
+  if (!ep) return;
+
+  // 실제 봉투 구조: { SystemHeader, TransactionHeader, MessageHeader, Data } 4개 최상위 키.
+  currentPayload = {
+    SystemHeader: buildHeaderSection(headerFieldsData.system),
+    TransactionHeader: buildHeaderSection(headerFieldsData.transaction),
+    MessageHeader: buildHeaderSection(headerFieldsData.message),
+    Data: buildDataSection(ep.params),
+  };
+
+  document.getElementById('tryModalTitle').textContent = ep.description + ' · ' + ep.url;
+  // URL 경로의 시스템코드는 API마다 다르다(예: OCH, LCB) — description의 "{시스템코드} / ..." 첫 토큰을
+  // 추천값으로 채우고, 실행 전 사용자가 직접 확인/수정한다.
+  document.getElementById('trySystemCode').value = (ep.description || '').split(' / ')[0].trim();
+  const resultPanel = document.getElementById('tryResultPanel');
+  resultPanel.style.display = 'none';
+  resultPanel.textContent = '';
+  document.getElementById('tryStructured').style.display = '';
+  document.getElementById('tryRawWrap').style.display = 'none';
+  document.getElementById('tryTabStructured').classList.add('active');
+  document.getElementById('tryTabRaw').classList.remove('active');
+  renderStructuredView(ep);
+  document.getElementById('modal-try').style.display = 'flex';
+}
+
+function closeTryModal() {
+  document.getElementById('modal-try').style.display = 'none';
+  tryModalEndpointIdx = null;
+}
+
+document.getElementById('modal-try').addEventListener('click', function (e) {
+  if (e.target === this) closeTryModal();
+});
+
+async function runTry() {
+  const idx = tryModalEndpointIdx;
+  if (idx === null) return;
+  const resultPanel = document.getElementById('tryResultPanel');
+  const isRawView = document.getElementById('tryRawWrap').style.display !== 'none';
+
+  let payload = currentPayload;
+  if (isRawView) {
+    try {
+      payload = JSON.parse(document.getElementById('tryRawJson').value);
+    } catch (e) {
+      resultPanel.style.display = '';
+      resultPanel.textContent = 'JSON 형식이 올바르지 않습니다: ' + e.message;
+      return;
+    }
+  }
+
+  const runBtn = document.getElementById('tryRunBtn');
+  runBtn.disabled = true;
+  runBtn.textContent = '실행 중...';
+  resultPanel.style.display = '';
+  resultPanel.textContent = '요청 전송 중...';
+
+  try {
+    const result = await apiClient.post('/api-reference/try', {
+      domain: currentDomain,
+      endpointIndex: idx,
+      systemCode: document.getElementById('trySystemCode').value.trim(),
+      body: payload,
+    });
+    renderTryResult(resultPanel, result);
+  } catch (err) {
+    resultPanel.textContent = '오류: ' + (err.message || '요청에 실패했습니다.');
+  } finally {
+    runBtn.disabled = false;
+    runBtn.textContent = '실행';
+  }
+}
+
+function makeRawToggle(panel, raw, expanded) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn btn-outline';
+  btn.style.cssText = 'padding:4px 10px;font-size:11px;margin-bottom:8px;';
+  const block = document.createElement('div');
+  block.className = 'code-block';
+  block.style.cssText = 'font-size:12px;' + (expanded ? '' : 'display:none;');
+  block.textContent = raw;
+  const setLabel = () => {
+    btn.textContent = block.style.display === 'none' ? '▶ 전체 응답 보기' : '▼ 전체 응답 접기';
+  };
+  setLabel();
+  btn.onclick = () => {
+    block.style.display = block.style.display === 'none' ? '' : 'none';
+    setLabel();
+  };
+  panel.appendChild(btn);
+  panel.appendChild(block);
+}
+
+// 게이트웨이는 정상/오류 모두 SystemHeader/TransactionHeader가 있는 JSON 봉투로 응답한다
+// (관측된 실 예시). Data(반환 결과)와 MessageHeader.MSG_DATA_SUB의 MSG_CD/MSG_CTNS(메시지
+// 코드/내용, 성공·실패 모두 채워짐)를 요약으로 먼저 보여주고, 전체 원본 응답은 접어서 아래에 둔다.
+function renderTryResult(panel, result) {
+  panel.innerHTML = '';
+  const body = result.body;
+  const raw = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+  const isEnvelope = body && typeof body === 'object' && !Array.isArray(body)
+    && ('SystemHeader' in body) && ('TransactionHeader' in body);
+
+  const statusLine = document.createElement('div');
+  statusLine.style.cssText = 'font-size:12px;color:#8a9bb0;margin-bottom:10px;';
+  statusLine.textContent = 'HTTP ' + result.status;
+  panel.appendChild(statusLine);
+
+  if (!isEnvelope) {
+    const warn = document.createElement('div');
+    warn.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;'
+      + 'border-radius:6px;padding:10px 14px;margin-bottom:10px;font-size:12.5px;';
+    warn.textContent = '⚠ 예상된 응답 형식(SystemHeader/TransactionHeader 포함 JSON)이 아닙니다. '
+      + '필수 파라미터 값을 채웠는지, 시스템코드가 맞는지 확인해 주세요.';
+    panel.appendChild(warn);
+    makeRawToggle(panel, raw, true);
+    return;
+  }
+
+  const msgHeader = body.MessageHeader || {};
+  const msgResult = msgHeader.MSG_PRCS_RSLT_CD;
+  const isError = msgResult && msgResult !== '0';
+  const subMsgs = msgHeader.MSG_DATA_SUB || [];
+
+  const summary = document.createElement('div');
+  summary.style.cssText = 'border:1px solid ' + (isError ? '#fca5a5' : '#bbf7d0') + ';'
+    + 'background:' + (isError ? '#fef2f2' : '#f0fdf4') + ';border-radius:8px;padding:12px 14px;margin-bottom:12px;';
+
+  const summaryTitle = document.createElement('div');
+  summaryTitle.style.cssText = 'font-weight:700;font-size:12.5px;margin-bottom:8px;'
+    + 'color:' + (isError ? '#b91c1c' : '#15803d') + ';';
+  summaryTitle.textContent = isError ? '⚠ 처리 실패' : '✓ 처리 결과';
+  summary.appendChild(summaryTitle);
+
+  subMsgs.forEach((m) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'font-size:12.5px;margin-bottom:4px;color:#1a2332;';
+    const codeSpan = document.createElement('span');
+    codeSpan.style.cssText = 'font-family:"JetBrains Mono",monospace;font-weight:700;color:#475569;margin-right:8px;';
+    codeSpan.textContent = m.MSG_CD || '';
+    row.appendChild(codeSpan);
+    row.appendChild(document.createTextNode(m.MSG_CTNS || ''));
+    summary.appendChild(row);
+  });
+
+  const dataLabel = document.createElement('div');
+  dataLabel.style.cssText = 'font-weight:700;font-size:12px;color:#4a5568;margin-top:10px;margin-bottom:4px;';
+  dataLabel.textContent = 'Data';
+  summary.appendChild(dataLabel);
+
+  const hasData = body.Data && typeof body.Data === 'object' && Object.keys(body.Data).length > 0;
+  const dataBlock = document.createElement('div');
+  dataBlock.className = 'code-block';
+  dataBlock.style.cssText = 'font-size:12px;margin:0;';
+  dataBlock.textContent = hasData ? JSON.stringify(body.Data, null, 2) : '(비어 있음)';
+  summary.appendChild(dataBlock);
+
+  panel.appendChild(summary);
+  makeRawToggle(panel, raw, false);
 }
 </script>

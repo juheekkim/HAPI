@@ -43,7 +43,7 @@
             <h3>표준전문 구조</h3>
           </div>
           <div class="api-section-body">
-            <table class="param-table" style="text-align:center;">
+            <table class="param-table subtle-grid" style="text-align:center;">
               <thead>
                 <tr>
                   <th colspan="3" style="text-align:center; background:#1a3a6b; color:#fff; letter-spacing:0.05em;">헤더부</th>
@@ -64,6 +64,20 @@
                 </tr>
               </tbody>
             </table>
+
+            <!-- 전문 예시 (표준전문 구조 안에 접어 넣음) -->
+            <div class="api-section" style="margin-top:16px; margin-bottom:0;">
+              <div class="api-section-header" onclick="toggleSection(this)">
+                <h3 style="font-size:14px;">전문 예시 <span style="font-size:12px; font-weight:400; color:#8a9bb0;">(실제 요청 전문 예시)</span></h3>
+                <span class="api-section-toggle">▶ 펼치기</span>
+              </div>
+              <div class="api-section-body" style="display:none;">
+                <p style="font-size:12px; color:#4a5568; background:#f0f7ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 14px; margin-bottom:12px;">
+                  💡 헤더정보 탭의 Setting Value 규칙(고정값은 채워서, 필수 입력/선택은 빈 값으로)을 그대로 적용한 요청 전문 예시입니다. <span class="mono">Data</span>부는 API마다 달라 왼쪽 메뉴에서 실제 API를 선택 후 해당 문서의 파라미터 표를 참고하세요.
+                </p>
+                <div id="structureExampleJson" class="code-block">불러오는 중...</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -73,38 +87,7 @@
             <h3>시스템 정보</h3>
           </div>
           <div class="api-section-body">
-            <table class="param-table" style="text-align:center;">
-              <thead>
-                <tr>
-                  <th style="text-align:center;">시스템 명</th>
-                  <th style="text-align:center;">시스템 코드</th>
-                  <th style="text-align:center;">Protocol</th>
-                  <th style="text-align:center;">구분</th>
-                  <th style="text-align:center;">Source</th>
-                  <th style="text-align:center;">Target</th>
-                  <th style="text-align:center;">전문 포맷</th>
-                  <th style="text-align:center;">문자코드</th>
-                  <th style="text-align:center;">비고</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td rowspan="2" style="vertical-align:middle; font-weight:600;">대형법인사업체</td>
-                  <td rowspan="2" class="mono" style="vertical-align:middle; font-weight:600; color:#1a3a6b;">LCB</td>
-                  <td rowspan="2" style="vertical-align:middle; font-weight:600;">HTTPS</td>
-                  <td style="color:#4a5568; font-size:13px;">회원</td>
-                  <td style="color:#8a9bb0;">—</td>
-                  <td rowspan="2" style="vertical-align:middle; color:#1a3a6b; font-weight:600; white-space:nowrap;">한화 리조트 대외채널 MCI</td>
-                  <td rowspan="2" class="mono" style="vertical-align:middle; font-weight:600;">JSON String</td>
-                  <td rowspan="2" style="vertical-align:middle; font-weight:600;">UTF-8</td>
-                  <td rowspan="2" style="color:#8a9bb0;">—</td>
-                </tr>
-                <tr>
-                  <td style="color:#4a5568; font-size:13px;">비회원</td>
-                  <td style="color:#8a9bb0;">—</td>
-                </tr>
-              </tbody>
-            </table>
+            <%- include('_systemInfoTable', { systemInfo: systemInfo }) %>
           </div>
         </div>
 
@@ -131,15 +114,16 @@
                     <tr>
                       <th style="background:#eef4ff; color:#1e6fce;">URL</th>
                       <td>
-                        <a href="https://exgatedev.hanwharesort.co.kr:443/iGate/LCB/json.jdo" class="mono" style="color:#1e6fce; word-break:break-all; font-size:12px;">
-                          https://exgatedev.hanwharesort.co.kr:443/iGate/LCB/json.jdo
-                        </a>
+                        <span class="mono" style="color:#1e6fce; word-break:break-all; font-size:12px;">
+                          https://exgatedev.hanwharesort.co.kr:443/iGate/<strong>{시스템코드}</strong>/json.jdo
+                        </span>
                       </td>
                     </tr>
                   </tbody>
                 </table>
                 <div style="background:#fffbeb; border-top:1px solid #fde68a; padding:10px 16px; font-size:12px; color:#92400e;">
-                  ※ 개발 서버의 경우 도메인 등록이 되어 있지 않아 hosts 등록 후 접속 바랍니다.
+                  ※ 개발 서버의 경우 도메인 등록이 되어 있지 않아 hosts 등록 후 접속 바랍니다.<br>
+                  ※ <span class="mono">{시스템코드}</span>는 고정값이 아니며 API마다 다릅니다 — 위 시스템 정보 표의 시스템 코드 값으로 대체하세요.
                 </div>
               </div>
               <!-- 운영 -->
@@ -159,14 +143,14 @@
                       <th style="background:#f3e8ff; color:#7c3aed;">URL</th>
                       <td>
                         <span class="mono" style="color:#7c3aed; font-size:12px; word-break:break-all;">
-                          https://exgate.hanwharesort.co.kr:443/iGate/LCB/json.jdo
+                          https://exgate.hanwharesort.co.kr:443/iGate/<strong>{시스템코드}</strong>/json.jdo
                         </span>
                       </td>
                     </tr>
                   </tbody>
                 </table>
-                <div style="background:#f3e8ff; border-top:1px solid #f3e8ff; padding:10px 16px; font-size:12px; color:#8a9bb0;">
-                  &nbsp;
+                <div style="background:#f3e8ff; border-top:1px solid #f3e8ff; padding:10px 16px; font-size:12px; color:#7c3aed;">
+                  ※ <span class="mono">{시스템코드}</span>는 고정값이 아니며 API마다 다릅니다 — 위 시스템 정보 표의 시스템 코드 값으로 대체하세요.
                 </div>
               </div>
             </div>
@@ -176,21 +160,23 @@
       </div>
       <!-- 탭1 끝 -->
 
-      <!-- 탭2: 헤더정보 -->
+      <!-- 전문구조/헤더정보 탭의 데이터 그리드(표준전문 구조, 시스템 정보, 헤더정보) 공통 스타일.
+           컬럼이 많아 실선 없이도 구분되도록 옅은 세로 구분선 + 줄무늬만 적용
+           (공통 .param-table 스타일은 건드리지 않고 .subtle-grid로 opt-in) -->
       <style>
-        /* 헤더정보 테이블(구분/필드명/생성주체/Setting Value)은 컬럼이 많아 실선 없이도 구분되도록
-           옅은 세로 구분선 + 줄무늬만 적용 (공통 .param-table 스타일은 건드리지 않음) */
-        #htab-headers .header-field-table td + td,
-        #htab-headers .header-field-table th + th {
+        .subtle-grid td + td,
+        .subtle-grid th + th {
           border-left: 1px solid rgba(15, 23, 42, 0.06);
         }
-        #htab-headers .header-field-table tbody tr:nth-child(even) td {
+        .subtle-grid tbody tr:nth-child(even) td {
           background: #f9fafb;
         }
-        #htab-headers .header-field-table tbody tr:hover td {
+        .subtle-grid tbody tr:hover td {
           background: #eef4ff;
         }
       </style>
+
+      <!-- 탭2: 헤더정보 -->
       <div id="htab-headers" style="display:none;">
 
         <!-- 시스템공통헤더 -->
@@ -246,6 +232,8 @@
           btnStructure.style.color = '#8a9bb0'; btnStructure.style.borderBottomColor = 'transparent';
         }
       }
+      // 다른 화면(시작하기 등)에서 특정 탭으로 바로 들어올 수 있도록 URL 해시(#headers)를 확인.
+      if (window.location.hash === '#headers') { switchHeaderTab('headers'); }
       </script>
 
     <% } else if (selectedSpec) { %>
@@ -282,6 +270,12 @@
 
       <!-- 엔드포인트 목록 -->
       <% if (selectedSpec.endpoints && selectedSpec.endpoints.length > 0) { %>
+        <!-- 요청 파라미터/응답 예시/Data부 샘플 소블록 공통 스타일(이 화면 전용 scoped style, common.css 미변경) -->
+        <style>
+          .api-subblock { margin-bottom: 20px; }
+          .api-subblock:last-child { margin-bottom: 0; }
+          .api-subblock-title { font-size: 13px; font-weight: 700; color: #1a3a6b; margin: 0 0 8px; }
+        </style>
         <% selectedSpec.endpoints.forEach((ep, idx) => { %>
         <div class="api-section">
           <div class="api-section-header" onclick="toggleSection(this)">
@@ -300,42 +294,57 @@
               <%= ep.url %>
             </div>
 
+            <!-- 요청 파라미터: 파라미터명이 "ds_inSearch.CORP_CD"처럼 점 표기라 평면 나열하면 실제로는
+                 ds_inSearch라는 데이터셋(배열) 안에 CORP_CD가 들어있는 중첩 구조가 잘 안 보인다.
+                 클라이언트에서 점 경로를 그룹(데이터셋)/리프(필드)로 트리 구조화해 들여쓰기로 렌더링한다
+                 (renderRequestTable, 아래 스크립트). -->
             <% if (ep.params && ep.params.length > 0) { %>
-            <div class="tab-group" id="tabgrp-<%= idx %>">
-              <button class="tab-btn active" onclick="switchTab(this, 'params-<%= idx %>')">▼ 요청 파라미터</button>
-              <% if (ep.responseExample) { %>
-              <button class="tab-btn" onclick="switchTab(this, 'res-<%= idx %>')">▼ 응답 예시</button>
-              <% } %>
-            </div>
-
-            <div id="params-<%= idx %>">
-              <table class="param-table">
+            <div class="api-subblock">
+              <h4 class="api-subblock-title">요청 파라미터</h4>
+              <table class="param-table" id="req-table-<%= idx %>">
                 <thead><tr><th>파라미터ID</th><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead>
-                <tbody>
-                  <% ep.params.forEach(p => {
-                    // 구버전 데이터(label 없이 desc에 한글명이 들어있던 시절) 호환: label이 없으면
-                    // desc 값을 파라미터명으로 보여주고 설명 칸은 비운다(관리자 화면 addParamRow와 동일 규칙).
-                    const hasLabel = p.label !== undefined && p.label !== null && p.label !== '';
-                    const displayLabel = hasLabel ? p.label : (p.desc || '');
-                    const displayDesc = hasLabel ? (p.desc || '') : '';
-                  %>
-                  <tr>
-                    <td><%= p.name %></td>
-                    <td><%= displayLabel %></td>
-                    <td class="mono type-text"><%= p.type %></td>
-                    <td class="<%= p.required ? 'param-req' : '' %>"><%= p.required ? 'Y' : 'N' %></td>
-                    <td><%= displayDesc %></td>
-                  </tr>
-                  <% }) %>
-                </tbody>
+                <tbody></tbody>
               </table>
             </div>
+            <% } %>
 
+            <!-- 응답 예시: 요청 파라미터와 같은 표 형식(필드ID/Data type/예시 값)+동일한 그룹 트리 렌더링으로
+                 통일해 한 화면에 함께 보인다(버튼 전환 없음). 응답 예시는 필드별 라벨/필수/설명 메타데이터 없이
+                 JSON 텍스트만 저장돼 있어(엑셀·이미지 자동입력은 OUTPUT 필드를 예시 JSON으로만 남김), 클라이언트에서
+                 파싱 후 중첩 구조를 그대로 트리로 펼쳐 표를 채운다(renderResponseTable, 아래 스크립트). -->
             <% if (ep.responseExample) { %>
-            <div id="res-<%= idx %>" style="display:none">
-              <div class="code-block"><%= ep.responseExample %></div>
+            <div class="api-subblock">
+              <h4 class="api-subblock-title">응답 예시</h4>
+              <table class="param-table" id="res-table-<%= idx %>">
+                <thead><tr><th>필드ID</th><th>Data type</th><th>예시 값</th></tr></thead>
+                <tbody></tbody>
+              </table>
             </div>
             <% } %>
+
+            <!-- Data부 요청/응답 JSON 샘플: 위 표는 필드 단위 나열이라 실제 전송/응답 봉투 형태(접두사 그룹이
+                 배열로 감싸지는 등)를 한눈에 보기 어려워, 최종 JSON 모양 그대로 하단에 별도 표시한다.
+                 실제 게이트웨이 봉투는 요청/응답 모두 최상위 키가 Data인 형태(business-rules.md §10)라
+                 요청·응답 두 샘플 모두 { "Data": {...} } 형태로 통일해 감싼다.
+                 요청 샘플은 테스트 샌드박스와 동일한 buildDataSection()을 재사용(로직 중복 없음). -->
+            <% if ((ep.params && ep.params.length > 0) || ep.responseExample) { %>
+            <div class="api-subblock">
+              <h4 class="api-subblock-title">Data부 JSON 샘플</h4>
+              <div style="display:grid; grid-template-columns:<%= (ep.params && ep.params.length > 0 && ep.responseExample) ? '1fr 1fr' : '1fr' %>; gap:16px;">
+                <% if (ep.params && ep.params.length > 0) { %>
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:#4a5568; margin-bottom:6px;">요청</div>
+                  <div class="code-block" id="req-sample-<%= idx %>">불러오는 중...</div>
+                </div>
+                <% } %>
+                <% if (ep.responseExample) { %>
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:#4a5568; margin-bottom:6px;">응답</div>
+                  <div class="code-block" id="res-sample-<%= idx %>">불러오는 중...</div>
+                </div>
+                <% } %>
+              </div>
+            </div>
             <% } %>
           </div>
         </div>
@@ -405,16 +414,6 @@ function toggleSection(header) {
   }
 }
 
-function switchTab(btn, targetId) {
-  const group = btn.closest('.api-section-body');
-  group.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const sectionBody = btn.closest('.api-section-body');
-  sectionBody.querySelectorAll('[id^="params-"], [id^="res-"]').forEach(el => el.style.display = 'none');
-  const target = document.getElementById(targetId);
-  if (target) target.style.display = '';
-}
-
 function filterSidebar(query) {
   const q = query.toLowerCase();
   document.querySelectorAll('.sidebar-item').forEach(item => {
@@ -428,10 +427,222 @@ function filterSidebar(query) {
 // (Data.<파라미터 접두사>는 배열, 예: Data.ds_search = [ {필드...} ]). 자동 조립은 "기본값"일 뿐이고
 // 실행 전 사용자가 구조화 보기/Raw JSON에서 항상 확인·수정할 수 있게 한다.
 const headerFieldsData = <%- JSON.stringify(headerFields) %>;
+
+// 전문구조 탭 "전문 예시" 블록 — 아래 buildHeaderSection()(테스트 샌드박스와 동일 로직)을
+// 그대로 재사용해 별도 계산 없이 실제 요청 전문 예시를 렌더링한다. buildHeaderSection은
+// function 선언(호이스팅)이라 이 시점에 정의보다 먼저 호출해도 안전하다.
+(function renderStructureExample() {
+  const el = document.getElementById('structureExampleJson');
+  if (!el) return;
+  const example = {
+    SystemHeader: buildHeaderSection(headerFieldsData.system),
+    TransactionHeader: buildHeaderSection(headerFieldsData.transaction),
+    MessageHeader: buildHeaderSection(headerFieldsData.message),
+    Data: { '...': 'API마다 다름 — 왼쪽에서 API를 선택한 뒤 해당 문서의 파라미터 표를 참고' },
+  };
+  el.textContent = JSON.stringify(example, null, 2);
+})();
+
 const specEndpoints = <%- JSON.stringify(selectedSpec ? selectedSpec.endpoints : []) %>;
 const currentDomain = <%- JSON.stringify(selectedDoc) %>;
 let tryModalEndpointIdx = null;
 let currentPayload = {};
+
+// ── 엔드포인트 목록의 "요청 파라미터"/"응답 예시" 표 + "Data부 JSON 샘플" 렌더링 ──────────
+// 파라미터명이 "ds_inSearch.CORP_CD"처럼 점 표기라 그대로 한 줄에 나열하면 실제로는
+// ds_inSearch라는 데이터셋(배열) 안에 CORP_CD가 들어있는 중첩 구조라는 게 잘 안 보인다(가독성 문제).
+// 요청/응답 모두 같은 방식(점 경로를 그룹/리프 트리로 묶고 들여쓰기로 렌더링)으로 통일한다.
+// 그룹은 이 포털의 Data 봉투 규칙(business-rules.md §10, 점 표기 접두사는 항상 배열로 감싸짐)에
+// 따라 "배열" 배지를 붙이고, 실제 JSON 값이 순수 객체인 경우(응답 쪽에서만 발생 가능)만 "객체"로 표기한다.
+function makeGroupRow(name, depth, colspan, isArray) {
+  const tr = document.createElement('tr');
+  const td = document.createElement('td');
+  td.colSpan = colspan;
+  td.style.cssText = 'padding:7px 14px; padding-left:' + (14 + depth * 18) + 'px; background:#eef4ff;';
+  const badge = document.createElement('span');
+  badge.textContent = isArray ? '배열' : '객체';
+  badge.style.cssText = 'flex-shrink:0; font-size:10px; font-weight:700; color:#1e6fce; background:#fff;'
+    + 'border:1px solid #93c5fd; border-radius:10px; padding:1px 7px; margin-right:8px;';
+  td.appendChild(badge);
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'mono';
+  nameSpan.style.cssText = 'font-weight:700; font-size:12.5px; color:#1e6fce;';
+  nameSpan.textContent = name;
+  td.appendChild(nameSpan);
+  tr.appendChild(td);
+  return tr;
+}
+
+// 요청 파라미터: ep.params[].name(점 경로, 임의 depth 가능 — apiSpecImportMapper.buildParams의
+// Group ▷ 들여쓰기가 그대로 점 경로에 녹아 있음)을 그룹/리프 트리로 묶는다. Map은 삽입 순서를
+// 보장하므로 원본 파라미터 나열 순서가 그대로 유지된다.
+function buildParamTree(params) {
+  const root = { children: new Map() };
+  (params || []).forEach((p) => {
+    const parts = p.name.split('.');
+    let node = root;
+    parts.forEach((part, i) => {
+      if (!node.children.has(part)) node.children.set(part, { children: new Map() });
+      node = node.children.get(part);
+      if (i === parts.length - 1) node.param = p;
+    });
+  });
+  return root;
+}
+
+function makeParamLeafRow(p, leafName, depth) {
+  // 구버전 데이터(label 없이 desc에 한글명이 들어있던 시절) 호환: label이 없으면 desc 값을
+  // 파라미터명으로 보여주고 설명 칸은 비운다(관리자 화면 addParamRow와 동일 규칙).
+  const hasLabel = p.label !== undefined && p.label !== null && p.label !== '';
+  const displayLabel = hasLabel ? p.label : (p.desc || '');
+  const displayDesc = hasLabel ? (p.desc || '') : '';
+  const tr = document.createElement('tr');
+  const idTd = document.createElement('td');
+  idTd.className = 'mono';
+  idTd.style.paddingLeft = (14 + depth * 18) + 'px';
+  idTd.textContent = leafName;
+  idTd.title = p.name; // 전체 점 경로는 툴팁으로 확인 가능
+  tr.appendChild(idTd);
+  const labelTd = document.createElement('td');
+  labelTd.textContent = displayLabel;
+  tr.appendChild(labelTd);
+  const typeTd = document.createElement('td');
+  typeTd.className = 'mono type-text';
+  typeTd.textContent = p.type;
+  tr.appendChild(typeTd);
+  const reqTd = document.createElement('td');
+  if (p.required) reqTd.className = 'param-req';
+  reqTd.textContent = p.required ? 'Y' : 'N';
+  tr.appendChild(reqTd);
+  const descTd = document.createElement('td');
+  descTd.textContent = displayDesc;
+  tr.appendChild(descTd);
+  return tr;
+}
+
+function renderParamTreeRows(tbody, node, depth) {
+  node.children.forEach((child, key) => {
+    if (child.children.size > 0) {
+      tbody.appendChild(makeGroupRow(key, depth, 5, true));
+      renderParamTreeRows(tbody, child, depth + 1);
+    } else if (child.param) {
+      tbody.appendChild(makeParamLeafRow(child.param, key, depth));
+    }
+  });
+}
+
+function renderRequestTable(idx, params) {
+  const table = document.getElementById('req-table-' + idx);
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  renderParamTreeRows(tbody, buildParamTree(params), 0);
+}
+
+// 응답 예시: 필드별 라벨/필수/설명 메타데이터 없이 JSON 텍스트만 저장돼 있어(엑셀·이미지 자동입력은
+// OUTPUT 필드를 예시 JSON으로만 남김, apiSpecImportMapper.buildResponseExampleObject), 파싱한 JSON을
+// 그대로 재귀 순회해 그룹(객체/배열)/리프(값) 행 목록을 만든다. 최상위 컨테이너 자체는 그룹 행 없이
+// 바로 그 자식들을 depth 0부터 펼친다(요청 파라미터 표의 최상위 파라미터들과 톤을 맞추기 위함).
+function buildResponseRows(root) {
+  const rows = [];
+  function walk(value, name, depth, isRoot) {
+    if (Array.isArray(value)) {
+      if (!isRoot) rows.push({ kind: 'group', name, depth, isArray: true });
+      if (value.length === 0) return;
+      const item = value[0];
+      const childDepth = isRoot ? depth : depth + 1;
+      if (item !== null && typeof item === 'object' && !Array.isArray(item)) {
+        Object.keys(item).forEach((k) => walk(item[k], k, childDepth, false));
+      } else {
+        walk(item, null, childDepth, false);
+      }
+      return;
+    }
+    if (value !== null && typeof value === 'object') {
+      if (!isRoot) rows.push({ kind: 'group', name, depth, isArray: false });
+      const childDepth = isRoot ? depth : depth + 1;
+      Object.keys(value).forEach((k) => walk(value[k], k, childDepth, false));
+      return;
+    }
+    let type = 'String';
+    if (typeof value === 'number') type = 'Number';
+    else if (typeof value === 'boolean') type = 'Boolean';
+    rows.push({ kind: 'leaf', name, depth, type, example: value === null ? '' : String(value) });
+  }
+  walk(root, null, 0, true);
+  return rows;
+}
+
+function makeResponseLeafRow(r) {
+  const tr = document.createElement('tr');
+  const idTd = document.createElement('td');
+  idTd.className = 'mono';
+  idTd.style.paddingLeft = (14 + r.depth * 18) + 'px';
+  idTd.textContent = r.name;
+  tr.appendChild(idTd);
+  const typeTd = document.createElement('td');
+  typeTd.className = 'mono type-text';
+  typeTd.textContent = r.type;
+  tr.appendChild(typeTd);
+  const exTd = document.createElement('td');
+  exTd.className = 'mono';
+  exTd.textContent = r.example;
+  tr.appendChild(exTd);
+  return tr;
+}
+
+function renderResponseTable(idx, responseExample) {
+  const table = document.getElementById('res-table-' + idx);
+  if (!table) return null;
+  const tbody = table.querySelector('tbody');
+  let parsed;
+  try {
+    parsed = JSON.parse(responseExample);
+  } catch (e) {
+    parsed = null;
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = 3;
+    td.textContent = 'JSON 형식이 아니어서 표로 변환할 수 없습니다.';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return null;
+  }
+  buildResponseRows(parsed).forEach((r) => {
+    tbody.appendChild(r.kind === 'group' ? makeGroupRow(r.name, r.depth, 3, r.isArray) : makeResponseLeafRow(r));
+  });
+  return parsed;
+}
+
+// buildDataSection()은 테스트 샌드박스 팝업에서도 쓰는 함수(아래 정의, 함수 선언은 호이스팅되어
+// 이 시점에 먼저 호출해도 안전)를 그대로 재사용해, 요청 파라미터를 접두사 기준으로 그룹핑한
+// 실제 전송 봉투 형태(Data.ds_search = [ {...} ] 등)를 요청 파라미터 표와 별도로 보여준다.
+function renderRequestSample(idx, params) {
+  const el = document.getElementById('req-sample-' + idx);
+  if (!el) return;
+  el.textContent = JSON.stringify({ Data: buildDataSection(params) }, null, 2);
+}
+
+// 실제 게이트웨이 응답 봉투는 최상위 키가 Data인 형태(business-rules.md §10, 요청 봉투와 동일 톤)라
+// 요청 샘플과 짝을 맞춰 { "Data": {...} }로 감싼다. renderResponseTable이 이미 파싱한 결과를 그대로
+// 재사용해 JSON.parse를 두 번 하지 않는다. 파싱 실패(JSON 아닌 값) 시엔 원문을 그대로 보여준다.
+function renderResponseSample(idx, parsed, rawText) {
+  const el = document.getElementById('res-sample-' + idx);
+  if (!el) return;
+  el.textContent = parsed ? JSON.stringify({ Data: parsed }, null, 2) : rawText;
+}
+
+specEndpoints.forEach((ep, idx) => {
+  if (ep.params && ep.params.length > 0) {
+    renderRequestTable(idx, ep.params);
+    renderRequestSample(idx, ep.params);
+  }
+  if (ep.responseExample) {
+    const parsed = renderResponseTable(idx, ep.responseExample);
+    renderResponseSample(idx, parsed, ep.responseExample);
+  }
+});
 
 // header_fields.setting_type/setting_value/required_request 메타데이터 기반 자동입력 규칙.
 // - required_request === '×' (요청측 미생성): 키는 남기고 값은 null(관측된 실제 봉투 예시 기준).

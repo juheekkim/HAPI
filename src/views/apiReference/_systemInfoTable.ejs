@@ -1,0 +1,48 @@
+<%
+// locals: systemInfo = [{ system_name, system_code, protocol, target, message_format, charset,
+// remark, rows: [{ id, division, source }, ...] }, ...] (see systemInfoModel.getAllGrouped)
+// 운영 중 시스템 코드가 계속 추가될 수 있어(db/scripts/32_create_system_info_table.sql 참고)
+// 하드코딩 대신 DB에서 조회한 목록을 그대로 순회한다 — 신규 시스템은 DB에 행만 추가하면 된다.
+%>
+<table class="param-table subtle-grid" style="text-align:center;">
+  <thead>
+    <tr>
+      <th style="text-align:center;">시스템 명</th>
+      <th style="text-align:center;">시스템 코드</th>
+      <th style="text-align:center;">Protocol</th>
+      <th style="text-align:center;">구분</th>
+      <th style="text-align:center;">Source</th>
+      <th style="text-align:center;">Target</th>
+      <th style="text-align:center;">전문 포맷</th>
+      <th style="text-align:center;">문자코드</th>
+      <th style="text-align:center;">비고</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (!systemInfo || systemInfo.length === 0) { %>
+    <tr>
+      <td colspan="9" style="color:#8a9bb0; padding:20px;">등록된 시스템 정보가 없습니다.</td>
+    </tr>
+    <% } %>
+    <% systemInfo.forEach(sys => { %>
+      <% const rows = sys.rows || []; %>
+      <% rows.forEach((row, idx) => { %>
+      <tr>
+        <% if (idx === 0) { %>
+        <td rowspan="<%= rows.length %>" style="vertical-align:middle; font-weight:600;"><%= sys.system_name %></td>
+        <td rowspan="<%= rows.length %>" class="mono" style="vertical-align:middle; font-weight:600; color:#1a3a6b;"><%= sys.system_code %></td>
+        <td rowspan="<%= rows.length %>" style="vertical-align:middle; font-weight:600;"><%= sys.protocol || '—' %></td>
+        <% } %>
+        <td style="color:#4a5568; font-size:13px;"><%= row.division || '—' %></td>
+        <td style="color:#8a9bb0;"><%= row.source || '—' %></td>
+        <% if (idx === 0) { %>
+        <td rowspan="<%= rows.length %>" style="vertical-align:middle; color:#1a3a6b; font-weight:600; white-space:nowrap;"><%= sys.target || '—' %></td>
+        <td rowspan="<%= rows.length %>" class="mono" style="vertical-align:middle; font-weight:600;"><%= sys.message_format || '—' %></td>
+        <td rowspan="<%= rows.length %>" style="vertical-align:middle; font-weight:600;"><%= sys.charset || '—' %></td>
+        <td rowspan="<%= rows.length %>" style="color:#8a9bb0;"><%= sys.remark || '—' %></td>
+        <% } %>
+      </tr>
+      <% }) %>
+    <% }) %>
+  </tbody>
+</table>

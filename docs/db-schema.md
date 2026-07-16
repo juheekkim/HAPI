@@ -4,7 +4,7 @@
 
 ## 스크립트 관리 규칙
 - `db/scripts/`는 순번 prefix 누적 관리. **기존 스크립트 수정 금지 — 새 순번 스크립트 추가.**
-- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql`, `25_rename_roles_menu_label.sql`, `26_rename_partner_role_to_bigcorp.sql`, `27_add_partner_role_mapping.sql`, `28_local_data_snapshot.sql`(로컬 데이터 스냅샷, `29`가 대체), `29_local_data_snapshot_v2.sql`(최신 로컬 데이터 스냅샷 — `header_fields` 포함 11개 테이블 TRUNCATE 후 재적재), `30_remove_orphan_partner_role.sql`(`29` 스냅샷에 딸려온 고아 `roles.code='partner'` 행 정리), `31_mark_frs_rqst_sys_cd_variable.sql`(`FRS_RQST_SYS_CD`를 `fix`→`variable`로 정정 — 서비스마다 값이 다름, `LCB` 고정 아님) (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
+- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql`, `25_rename_roles_menu_label.sql`, `26_rename_partner_role_to_bigcorp.sql`, `27_add_partner_role_mapping.sql`, `28_local_data_snapshot.sql`(로컬 데이터 스냅샷, `29`가 대체), `29_local_data_snapshot_v2.sql`(최신 로컬 데이터 스냅샷 — `header_fields` 포함 11개 테이블 TRUNCATE 후 재적재), `30_remove_orphan_partner_role.sql`(`29` 스냅샷에 딸려온 고아 `roles.code='partner'` 행 정리), `31_mark_frs_rqst_sys_cd_variable.sql`(`FRS_RQST_SYS_CD`를 `fix`→`variable`로 정정 — 서비스마다 값이 다름, `LCB` 고정 아님), `32_create_system_info_table.sql`(`system_info` 테이블 신설 — API Reference "전문구조" 탭 시스템 정보 표를 하드코딩에서 DB로 이전, `LCB` 2행만 시드), `33_shorten_recv_svc_cd_intf_id_examples.sql`(`RECV_SVC_CD`/`INTF_ID`의 `setting_value` 예시 5개 나열 → 대표 1개+"등"으로 축약 — 실제 가능한 값 전체 목록이 아니라 형식 예시일 뿐임을 명확히 함), `34_label_recv_svc_cd_intf_id_examples.sql`(같은 두 필드의 `setting_value` 앞에 `"예: "` 접두어 추가 — `variable` 타입 필드의 값이 고정값으로 오해되지 않도록 예시임을 명시) (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
 - 드라이버: `pg` Pool(`src/config/database.js`, `DATABASE_URL`). 파라미터 바인딩(`$1,$2,...`)만 사용.
 
 ## 주요 테이블
@@ -46,6 +46,13 @@
 - 인덱스: `idx_header_fields_section`, `idx_header_fields_category`.
 - 쿼리: `headerFieldModel.getAllWithGrouping()` → section/category 그룹화 후 EJS 동적 렌더링. 컨트롤러는 system/transaction/message 모두 `{ category, fields }[]` 형태로 통일해 뷰에 전달한다.
 - `setting_type`/`setting_value`/`required_request`는 문서 표시용 외에 API Reference "테스트" 샌드박스(`docs/business-rules.md` §10)의 요청 헤더 자동입력 규칙에도 재사용된다(`fix`→값 그대로, `variable`→일부 필드만 공식 계산, `required_request==='×'`→요청 제외).
+
+### system_info (`32`) — API Reference "전문구조" 탭 시스템 정보
+`id PK`, `system_name`, `system_code`, `protocol`, `division`(구분, 예: 회원/비회원), `source`, `target`, `message_format`, `charset`, `remark`, `display_order`, `created_at`.
+- 같은 `system_code`가 `division`별로 여러 행을 가질 수 있다(예: `LCB`의 회원/비회원 2행) — `system_name`/`protocol`/`target`/`message_format`/`charset`/`remark`는 같은 시스템이면 모든 행에 동일하게 반복 저장한다(정규화하지 않음, `header_fields`의 category 그룹핑과 동일한 패턴).
+- 이전에는 `index.ejs`에 `LCB` 한 건만 하드코딩돼 있었으나, 운영 중 신규 시스템 코드가 계속 추가되는 구조라 DB로 이전했다(`32_create_system_info_table.sql`이 `LCB` 2행만 시드). 신규 시스템(예: `OCH`)은 관리자 UI 없이 새 번호의 `db/scripts/` INSERT 스크립트로 추가한다 — 화면 코드 변경 불필요.
+- 쿼리: `systemInfoModel.getAllGrouped()` → `system_code`(+동일 반복 컬럼) 기준 `GROUP BY`, `division`/`source`는 `array_agg`로 `rows` JSON 배열에 담아 반환. 뷰(`_systemInfoTable.ejs`)가 `rows.length`만큼 `rowspan`을 계산해 렌더링.
+- 인덱스: `idx_system_info_system_code`.
 
 ### roles (`21`) — 역할(권한 그룹)
 `id PK`, `code VARCHAR(30) UNIQUE`(`admin`/`BigCorp`/...), `name`, `description`, `is_active`, `created_at`, `updated_at`.

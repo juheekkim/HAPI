@@ -15,12 +15,14 @@
 ## 모듈별 상세
 
 ### Home
-- 역할: 포털 소개/랜딩.
-- 위치: `routes/home.js` → `controllers/homeController.js` → `views/home/index.ejs`. 모델 없음(정적 렌더).
+- 역할: 포털 소개/랜딩. 퀵 가이드 4카드(코드발급·로그인+방화벽 신청→API 확인→개발 서버 테스트→시작하기 상세가이드, `guide`와 동일 순서로 정정)는 요약 티저이고 상세는 `/guide`로 유도(중복 최소화).
+- 위치: `routes/home.js` → `controllers/homeController.js` → `views/home/index.ejs`. `apiSpecModel.getAll()`/`noticeModel.getVisible()`을 조회해 API 명세 총계·카테고리별(공통/리조트/에스테이트) 개수, 최근 공지 2건을 동적으로 렌더링(이전엔 "API 명세 총 28개" 등 하드코딩된 정적 텍스트였음).
 
 ### Guide (시작하기)
-- 역할: API 연동 절차/개발 환경 안내(정적 콘텐츠).
+- 역할: API 연동 온보딩 절차(코드 발급·로그인+방화벽 신청(개발/운영 모두)→API 확인→개발 서버 테스트→운영 테스트) + 용어집(정적 콘텐츠). 방화벽은 온보딩 초반에 개발/운영 서버 모두 한 번에 신청하는 순서 — 마지막 단계가 아님(실제 운영 프로세스 기준, 코드 흐름상 순서 강제는 없음). 접속정보/헤더 필드 같은 기술 상세는 중복 보관하지 않고 API Reference로 링크만 건다(단일 소스 유지).
 - 위치: `routes/guide.js` → `guideController.js` → `views/guide/index.ejs`. 모델 없음.
+- "운영 전환 체크리스트": 운영서버 방화벽 해제 완료 + 고객번호/회원번호 등 기준정보 사전 등록 완료 + 운영 접속정보 실호출 테스트 정상 응답 확인, 3개 항목.
+- "자주 쓰는 용어" 표(파트너사 코드/systemCode/INTF_ID/RECV_SVC_CD/MCI/방화벽 토큰)는 `docs/business-rules.md`·`header_fields` 설명에서 뽑았다. `MCI`는 실제 쓰임(대외채널 연동 백엔드)만 확인되고 정식 명칭/풀네임은 미확인 — **[Needs verification]**.
 
 ### API Reference
 - 역할: API 스펙/엔드포인트/파라미터/응답 예시/에러 코드 조회. `?doc=<domain>`로 선택.
@@ -55,6 +57,15 @@
   - 요청 본문 구조(확인됨): 최상위 `{ SystemHeader, TransactionHeader, MessageHeader, Data }`. 헤더 3영역 필드값은 `header_fields.setting_type`/`setting_value`/`required_request` 메타데이터로 자동입력(규칙은 `docs/business-rules.md` 참고), `Data`는 `ep.params` 전체를 입력 필드로 노출하고(스펙상 `required` 여부에 따라 "필수 입력"/"선택" 배지로 구분) 파라미터명의 점(`.`) 접두사(`ds_inSearch.CORP_CD` 등)를 `Data.ds_inSearch = [ {...} ]`처럼 배열로 그룹핑한다. 자동 조립은 기본값일 뿐이며 실행 전 항상 사용자가 수정 가능(Raw JSON 뷰). 응답은 `SystemHeader`/`TransactionHeader` 포함 여부와 `MessageHeader.MSG_PRCS_RSLT_CD`로 정상/비즈니스 오류/형식 오류를 구분해 안내한다(`docs/business-rules.md` §10).
   - 호출 URL의 시스템코드(`systemCode`, 예: `OCH`/`LCB`)는 API마다 다르다 — `ep.description`이 `"{시스템코드} / ..."` 형식이라는 관찰된 규칙으로 첫 토큰을 추천값으로 채우고(모달의 "시스템코드" 입력칸, 편집 가능), 서버가 `^[A-Za-z0-9_-]{1,20}$`로 형식을 강제한다.
   - 클라이언트는 게이트웨이 host를 지정할 수 없다(SSRF 방지, `SANDBOX_GATEWAY_BASE_URL`은 서버 env 고정). `SANDBOX_GATEWAY_BASE_URL` 미설정 시 501.
+- **헤더 문서 "전문구조" 탭(갱신)**: `?doc=header`의 첫 번째 탭. 이전에는 "시스템 정보"/"접속정보"가 `index.ejs`에 `LCB` 한 건만 하드코딩돼 있었으나(신규 시스템 코드가 운영 중 계속 추가되는 구조라 정적 데이터로는 유지 불가), `system_info` 테이블(`db/db-schema.md` 참고, `systemInfoModel.getAllGrouped()`)로 이전해 화면은 DB 조회 결과를 그대로 렌더링한다(`_systemInfoTable.ejs`). 신규 시스템은 관리자 UI 없이 `db/scripts/`에 새 번호 스크립트로 INSERT해 추가한다.
+  - 접속정보 URL도 `.../iGate/LCB/json.jdo` 고정값 대신 `.../iGate/{시스템코드}/json.jdo` 플레이스홀더로 표시하고, 실제 값은 시스템 정보 표를 참고하도록 안내한다(`systemCode`가 API마다 다르다는 §55/§56 규칙과 동일 맥락).
+  - "전문 예시" 섹션(신규): 헤더 3영역(`SystemHeader`/`TransactionHeader`/`MessageHeader`)에 대해 "테스트" 샌드박스와 동일한 `buildHeaderSection()`/`computeHeaderDefault()` 로직(클라이언트 JS, 로직 중복 없이 재사용)을 실행해 실제 요청 전문 예시를 `<pre class="code-block">`로 보여준다. `Data`부는 API마다 달라 안내 문구만 표시.
+- **엔드포인트 상세(요청 파라미터/응답 예시/Data부 샘플, 갱신)**: 모든 API 문서의 엔드포인트 아코디언 공통 구조(`index.ejs`, `selectedSpec.endpoints.forEach`라 전 도메인에 자동 적용). 예전엔 "요청 파라미터"/"응답 예시"가 버튼 탭 전환(`switchTab`)으로 하나씩만 보였고 응답 예시는 raw JSON 텍스트였으나, 지금은 버튼 없이 한 화면에 순서대로 나열된다:
+  1. 요청 파라미터 — 파라미터ID/파라미터명/Data type/필수/설명 표.
+  2. 응답 예시 — 요청 파라미터와 같은 톤의 표(필드ID/Data type/예시 값)로 통일. `ep.responseExample`은 필드별 라벨·필수·설명 메타데이터 없이 JSON 텍스트만 저장돼 있어(엑셀/이미지 자동입력이 OUTPUT 필드를 예시 JSON으로만 남김, `apiSpecImportMapper.buildResponseExampleObject`), 클라이언트 JS(`buildResponseRows`/`renderResponseTable`)가 파싱해 재귀 순회한다(값이 JSON이 아니면 "표로 변환할 수 없습니다" 안내).
+  - **그룹(데이터셋) 트리 렌더링(갱신)**: 파라미터명이 `ds_inSearch.CORP_CD`처럼 점 표기라 평면 나열하면 실제로는 `ds_inSearch`라는 데이터셋(배열) 안에 `CORP_CD`가 들어있는 중첩 구조라는 게 잘 안 보인다는 피드백으로, 요청·응답 표 모두 점 경로를 그룹/리프 트리로 묶어 들여쓰기로 렌더링한다. 요청 쪽은 `buildParamTree`(점 경로 임의 depth 지원, `apiSpecImportMapper.buildParams`가 Group `▷` 들여쓰기를 그대로 점 경로에 반영하므로)+`renderParamTreeRows`, 응답 쪽은 파싱된 JSON을 그대로 재귀 순회하는 `buildResponseRows`가 담당하고, 그룹 헤더 행은 두 표가 공통으로 쓰는 `makeGroupRow`로 렌더링한다(파란 배지 + 들여쓰기). 이 포털의 Data 봉투 규칙(`docs/business-rules.md` §10)상 점 표기 접두사는 항상 배열로 감싸지므로 요청 쪽 그룹은 항상 "배열" 배지, 응답 쪽은 실제 JSON 값이 배열이면 "배열", 순수 객체면 "객체"로 표기한다.
+  3. Data부 JSON 샘플 — 위 두 표는 필드 단위 나열이라 실제 전송/응답 봉투 모양(접두사 그룹이 배열로 감싸지는 형태 등)이 한눈에 안 보여 하단에 별도로 추가. 실제 게이트웨이 봉투는 요청/응답 모두 최상위 키가 `Data`인 형태(`docs/business-rules.md` §10)라 두 샘플 모두 `{ "Data": {...} }`로 통일해서 감싼다. 요청 쪽은 테스트 샌드박스와 동일한 `buildDataSection()`을 재사용(로직 중복 없음), 응답 쪽은 `renderResponseTable`이 이미 파싱한 결과를 재사용해 `{ Data: <파싱된 responseExample> }`로 감싸 보여준다(JSON 파싱 실패 시엔 원문 그대로). 요청 파라미터가 없거나 응답 예시가 없으면 해당 한쪽만 1열로 표시.
+  - `ep.params`가 비어 있어도 `ep.responseExample`만 있으면 응답 표가 보이도록 두 조건을 독립적으로 분리(예전엔 파라미터가 있을 때만 응답 예시 블록이 렌더링되는 제약이 있었음).
 
 ### Auth
 - 역할: 로그인/로그아웃, 파트너사 코드 신청.

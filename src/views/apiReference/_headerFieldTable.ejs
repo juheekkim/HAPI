@@ -1,15 +1,22 @@
 <%
 // locals: groups = [{ category, fields: [...] }, ...] (see headerFieldModel.getAllWithGrouping)
+// setting_type 뱃지 스타일 — index.ejs의 테스트 모달(FIELD_KIND_STYLE)과 동일한 색상 체계로 통일해
+// variable(필수 입력)이 none/fix보다 시각적으로 두드러지게 한다.
+const SETTING_TYPE_STYLE = {
+  fix:      { text: '고정값',    color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1' },
+  variable: { text: '필수 입력', color: '#c2410c', bg: '#fff7ed', border: '#fb923c' },
+  none:     { text: '선택',      color: '#94a3b8', bg: '#fafbfc', border: '#e2e8f0' },
+};
 %>
 <% if (groups && groups.length > 0) { %>
 <p style="font-size:12px; color:#4a5568; background:#f0f7ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px 14px; margin-bottom:12px;">
-  💡 Setting Value의 Type이 <span class="mono">fix</span> 또는 <span class="mono">variable</span>인 항목은 value 값을 채워 주셔야 합니다.
+  💡 <span style="display:inline-block; font-size:10px; font-weight:700; color:#c2410c; background:#fff; border:1px solid #fb923c; border-radius:10px; padding:1px 8px;">필수 입력</span> 뱃지가 붙은 항목은 value 값을 반드시 채워 주셔야 합니다. <span style="display:inline-block; font-size:10px; font-weight:700; color:#64748b; background:#fff; border:1px solid #cbd5e1; border-radius:10px; padding:1px 8px;">고정값</span>은 명시된 value를 그대로 사용하시면 됩니다.
 </p>
 <p style="font-size:12px; color:#8a9bb0; margin-bottom:12px;">
   생성주체: <strong style="color:#1a3a6b;">○</strong> 데이터 생성 &nbsp;|&nbsp; <strong>●</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong>△</strong> 필요시 데이터 생성 &nbsp;|&nbsp; <strong>▲</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong style="color:#ef4444;">×</strong> 해당 항목 데이터 사용 안함
 </p>
 <div style="overflow-x:auto;">
-<table class="param-table header-field-table" style="font-size:12.5px;">
+<table class="param-table header-field-table subtle-grid" style="font-size:12.5px;">
   <thead>
     <tr>
       <th rowspan="2" style="text-align:center; vertical-align:middle;">구분</th>
@@ -46,8 +53,11 @@
         <td style="text-align:center;"><%= field.requiredMci || '' %></td>
         <td style="text-align:center;"><%= field.requiredResponse || '' %></td>
         <td style="font-size:12px; white-space:pre-line;"><%= field.description %></td>
-        <td style="text-align:center;"><%= field.settingType || '' %></td>
-        <td style="text-align:center; white-space:pre-line;"><%= field.settingValue || '' %></td>
+        <% const st = SETTING_TYPE_STYLE[field.settingType] || SETTING_TYPE_STYLE.none; %>
+        <td style="text-align:center; background:<%= st.bg %>;">
+          <span style="display:inline-block; font-size:10px; font-weight:700; color:<%= st.color %>; background:#fff; border:1px solid <%= st.border %>; border-radius:10px; padding:1px 8px; white-space:nowrap;"><%= st.text %></span>
+        </td>
+        <td style="text-align:center; white-space:pre-line; background:<%= st.bg %>; color:<%= field.settingType === 'none' ? '#c3ccd6' : '#33415c' %>;"><%= field.settingValue || (field.settingType === 'none' ? '–' : '') %></td>
       </tr>
       <% }) %>
     <% }) %>

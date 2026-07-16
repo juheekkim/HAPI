@@ -1,0 +1,322 @@
+<div class="admin-nav">
+  <span class="admin-nav-title">⚙ 관리자 페이지</span>
+  <span>|</span>
+  <span>코드 관리</span>
+</div>
+
+<div class="admin-tabs">
+  <a href="/admin/apis" class="admin-tab">🧩 API 등록/관리</a>
+  <a href="/admin/codes" class="admin-tab active">🔖 코드 관리</a>
+  <a href="/admin/menus" class="admin-tab">🗂 메뉴 관리</a>
+  <a href="/admin/roles" class="admin-tab">🔑 권한 그룹 관리</a>
+  <a href="/admin/partner-roles" class="admin-tab">🧑‍💼 사용자별 권한관리</a>
+  <a href="/admin/partners" class="admin-tab">👤 파트너사 코드 신청</a>
+  <a href="/admin/firewall" class="admin-tab">🔓 방화벽·토큰 요청</a>
+  <a href="/admin/inquiries" class="admin-tab">💬 문의 확인</a>
+  <a href="/admin/notices" class="admin-tab">📢 공지사항 관리</a>
+</div>
+
+<div class="admin-content">
+  <% if (error) { %>
+  <div style="background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;">
+    ⚠ <%= error %>
+  </div>
+  <% } %>
+
+  <!-- API Reference "공통 코드"/"에러 코드" 화면(index.ejs, doc=common-codes/error-codes)이 읽는
+       데이터를 db/scripts 없이 관리자가 직접 등록/수정/삭제할 수 있게 한 화면. 두 데이터는 저장 위치가
+       다르다(common_codes 전용 테이블 vs api_specs.domain='error-codes'의 error_codes JSONB) — 화면만
+       하나로 통합하고 내부는 헤더 문서(전문구조/헤더정보)와 같은 방식으로 탭 전환한다. -->
+  <div style="display:flex; gap:0; margin-bottom:24px; border-bottom:2px solid #dde3ea;">
+    <button type="button" id="ctab-btn-common" class="tab-btn active" onclick="switchCodeTab('common')" style="padding:10px 24px;">📚 공통 코드</button>
+    <button type="button" id="ctab-btn-error" class="tab-btn" onclick="switchCodeTab('error')" style="padding:10px 24px;">⚠️ 에러 코드</button>
+  </div>
+
+  <!-- 공통 코드 -->
+  <div id="ctab-common">
+    <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>공통 코드 목록</span>
+      <button class="btn btn-primary btn-sm" onclick="openCommonCreateModal()">+ 새 코드 등록</button>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:160px;">대분류명</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:140px;">대분류 코드</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:120px;">세부 코드</th>
+          <th style="text-align:left;background:#d9e8fb;color:#5a7194;">코드 설명</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:90px;">정렬순서</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:150px;">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!commonCodes || commonCodes.length === 0) { %>
+        <tr><td colspan="6" style="text-align:center;color:#8a9bb0;padding:32px;">등록된 공통 코드가 없습니다.</td></tr>
+        <% } %>
+        <% (commonCodes || []).forEach((c) => { %>
+        <tr>
+          <td style="text-align:center;"><%= c.group_name %></td>
+          <td class="mono" style="text-align:center;color:#1a3a6b;"><%= c.group_code %></td>
+          <td class="mono" style="text-align:center;"><%= c.detail_code %></td>
+          <td><%= c.description %></td>
+          <td style="text-align:center;color:#8a9bb0;"><%= c.display_order %></td>
+          <td style="text-align:center;">
+            <div class="action-btns" style="justify-content:center;">
+              <button class="btn btn-sm btn-edit-outline"
+                onclick="openCommonEditModal(<%= c.id %>, `<%= (c.group_code||'').replace(/`/g,'\\`') %>`, `<%= (c.group_name||'').replace(/`/g,'\\`') %>`, `<%= (c.detail_code||'').replace(/`/g,'\\`') %>`, `<%= (c.description||'').replace(/`/g,'\\`') %>`, <%= c.display_order %>)">
+                수정
+              </button>
+              <form action="/admin/codes/common/<%= c.id %>/delete" method="POST" style="display:inline;"
+                onsubmit="return confirm('이 공통 코드를 삭제하시겠습니까?')">
+                <button type="submit" class="btn btn-sm btn-delete-outline">삭제</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 에러 코드 -->
+  <div id="ctab-error" style="display:none;">
+    <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>에러 코드 목록</span>
+      <button class="btn btn-primary btn-sm" onclick="openErrorCreateModal()">+ 새 코드 등록</button>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:160px;">메시지코드</th>
+          <th style="text-align:left;background:#d9e8fb;color:#5a7194;width:260px;">메시지명</th>
+          <th style="text-align:left;background:#d9e8fb;color:#5a7194;">설명</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:150px;">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!errorCodes || errorCodes.length === 0) { %>
+        <tr><td colspan="4" style="text-align:center;color:#8a9bb0;padding:32px;">등록된 에러 코드가 없습니다.</td></tr>
+        <% } %>
+        <% (errorCodes || []).forEach((ec) => { %>
+        <tr>
+          <td class="mono" style="text-align:center;color:#1a3a6b;"><%= ec.code %></td>
+          <td><%= ec.name %></td>
+          <td><%= ec.desc %></td>
+          <td style="text-align:center;">
+            <div class="action-btns" style="justify-content:center;">
+              <button class="btn btn-sm btn-edit-outline"
+                onclick="openErrorEditModal(`<%= (ec.code||'').replace(/`/g,'\\`') %>`, `<%= (ec.name||'').replace(/`/g,'\\`') %>`, `<%= (ec.desc||'').replace(/`/g,'\\`') %>`)">
+                수정
+              </button>
+              <form action="/admin/codes/error/<%= encodeURIComponent(ec.code) %>/delete" method="POST" style="display:inline;"
+                onsubmit="return confirm('이 에러 코드를 삭제하시겠습니까?')">
+                <button type="submit" class="btn btn-sm btn-delete-outline">삭제</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 공통 코드 등록 모달 -->
+<div id="commonCreateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">새 공통 코드 등록</h3>
+    <form action="/admin/codes/common" method="POST">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">대분류명</label>
+          <input type="text" name="group_name" placeholder="예: 사업장코드" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">대분류 코드</label>
+          <input type="text" name="group_code" placeholder="예: BRCH_CD" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">세부 코드</label>
+          <input type="text" name="detail_code" placeholder="예: 0100" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">정렬순서(그룹 내)</label>
+          <input type="number" name="display_order" value="0"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">코드 설명</label>
+        <input type="text" name="description" placeholder="예: 설악" required
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="closeCommonCreateModal()"
+          style="padding:8px 20px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#374151;font-size:13px;cursor:pointer;">취소</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;padding:8px 20px;">등록</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 공통 코드 수정 모달 -->
+<div id="commonEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">공통 코드 수정</h3>
+    <form id="commonEditForm" method="POST">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">대분류명</label>
+          <input type="text" id="commonEditGroupName" name="group_name" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">대분류 코드</label>
+          <input type="text" id="commonEditGroupCode" name="group_code" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">세부 코드</label>
+          <input type="text" id="commonEditDetailCode" name="detail_code" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">정렬순서(그룹 내)</label>
+          <input type="number" id="commonEditDisplayOrder" name="display_order"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">코드 설명</label>
+        <input type="text" id="commonEditDescription" name="description" required
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="closeCommonEditModal()"
+          style="padding:8px 20px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#374151;font-size:13px;cursor:pointer;">취소</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;padding:8px 20px;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 에러 코드 등록 모달 -->
+<div id="errorCreateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">새 에러 코드 등록</h3>
+    <form action="/admin/codes/error" method="POST">
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">메시지코드</label>
+        <input type="text" name="code" placeholder="예: REME000057" required
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">메시지명</label>
+        <input type="text" name="name" placeholder="예: 고객번호가 없습니다." required
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">설명</label>
+        <input type="text" name="desc" placeholder="예: 입력 값에 고객번호(CUST_NO)가 없을 경우"
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="closeErrorCreateModal()"
+          style="padding:8px 20px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#374151;font-size:13px;cursor:pointer;">취소</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;padding:8px 20px;">등록</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 에러 코드 수정 모달 -->
+<div id="errorEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">에러 코드 수정</h3>
+    <form id="errorEditForm" method="POST">
+      <input type="hidden" id="errorEditOriginalCode" name="original_code">
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">메시지코드</label>
+        <input type="text" id="errorEditCode" name="code" required
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">메시지명</label>
+        <input type="text" id="errorEditName" name="name" required
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">설명</label>
+        <input type="text" id="errorEditDesc" name="desc"
+          style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="closeErrorEditModal()"
+          style="padding:8px 20px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#374151;font-size:13px;cursor:pointer;">취소</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;padding:8px 20px;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// 공통 코드/에러 코드 페이지 내 탭 전환(헤더 문서 switchHeaderTab과 동일한 방식)
+function switchCodeTab(tab) {
+  var common = document.getElementById('ctab-common');
+  var error = document.getElementById('ctab-error');
+  var btnCommon = document.getElementById('ctab-btn-common');
+  var btnError = document.getElementById('ctab-btn-error');
+  if (tab === 'common') {
+    common.style.display = ''; error.style.display = 'none';
+    btnCommon.classList.add('active'); btnError.classList.remove('active');
+  } else {
+    common.style.display = 'none'; error.style.display = '';
+    btnCommon.classList.remove('active'); btnError.classList.add('active');
+  }
+}
+
+function openCommonCreateModal() { document.getElementById('commonCreateModal').style.display = 'flex'; }
+function closeCommonCreateModal() { document.getElementById('commonCreateModal').style.display = 'none'; }
+function openCommonEditModal(id, groupCode, groupName, detailCode, description, displayOrder) {
+  document.getElementById('commonEditForm').action = '/admin/codes/common/' + id + '/update';
+  document.getElementById('commonEditGroupCode').value = groupCode;
+  document.getElementById('commonEditGroupName').value = groupName;
+  document.getElementById('commonEditDetailCode').value = detailCode;
+  document.getElementById('commonEditDescription').value = description;
+  document.getElementById('commonEditDisplayOrder').value = displayOrder;
+  document.getElementById('commonEditModal').style.display = 'flex';
+}
+function closeCommonEditModal() { document.getElementById('commonEditModal').style.display = 'none'; }
+
+function openErrorCreateModal() { document.getElementById('errorCreateModal').style.display = 'flex'; }
+function closeErrorCreateModal() { document.getElementById('errorCreateModal').style.display = 'none'; }
+function openErrorEditModal(code, name, desc) {
+  document.getElementById('errorEditForm').action = '/admin/codes/error/' + encodeURIComponent(code) + '/update';
+  document.getElementById('errorEditOriginalCode').value = code;
+  document.getElementById('errorEditCode').value = code;
+  document.getElementById('errorEditName').value = name;
+  document.getElementById('errorEditDesc').value = desc;
+  document.getElementById('errorEditModal').style.display = 'flex';
+}
+function closeErrorEditModal() { document.getElementById('errorEditModal').style.display = 'none'; }
+
+// 모달 외부 클릭 시 닫기
+[['commonCreateModal', closeCommonCreateModal], ['commonEditModal', closeCommonEditModal],
+ ['errorCreateModal', closeErrorCreateModal], ['errorEditModal', closeErrorEditModal]].forEach(function(pair) {
+  document.getElementById(pair[0]).addEventListener('click', function(e) {
+    if (e.target === this) pair[1]();
+  });
+});
+
+// 에러 발생 시(중복 코드 등) 서버가 error 메시지와 함께 렌더링 — 어떤 탭에서 실패했는지 알 수 없으므로
+// 두 폼 다 유지된 채 첫 로드 상태(공통 코드 탭)로 보여준다. 사용자가 필요시 직접 탭 전환.
+</script>

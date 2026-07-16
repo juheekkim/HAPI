@@ -322,6 +322,38 @@ a { text-decoration: none; color: inherit; }
 .param-table tr:hover td { background: #f8fafc; }
 .param-req { color: var(--danger); font-weight: 700; font-size: 12px; }
 .type-text { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--blue); }
+/* 컬럼 많은 데이터 그리드 opt-in(표준전문 구조/시스템 정보/헤더정보/엔드포인트 요청·응답 표 등).
+   실선 없이도 컬럼이 구분되도록 옅은 세로 구분선 + 줄무늬만 추가(.param-table 기본 스타일은 그대로 둠). */
+.subtle-grid td + td,
+.subtle-grid th + th {
+  border-left: 1px solid rgba(15, 23, 42, 0.06);
+}
+.subtle-grid tbody tr:nth-child(even) td {
+  background: #f9fafb;
+}
+.subtle-grid tbody tr:hover td {
+  background: #eef4ff;
+}
+/* rowspan으로 그룹핑된 표(system_info/common_codes/header_fields "구분" 컬럼 등) 전용.
+   subtle-grid의 td+td 세로선은 rowspan으로 셀이 생략된 행에서 끊기고, tr:nth-child 줄무늬는
+   rowspan 컬럼과 일반 컬럼의 배경이 어긋나 얼룩덜룩해 보인다. 대신 컬럼마다 border-right를
+   명시(rowspan 셀도 자기 높이만큼 테두리가 그대로 이어짐)하고, 줄무늬는 물리적 행이 아니라
+   그룹 단위로 교차시킨다(.group-alt를 그룹의 모든 tr에 부여, EJS에서 그룹 인덱스로 계산). */
+.grouped-rowspan-grid th + th {
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+.grouped-rowspan-grid td {
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+}
+.grouped-rowspan-grid td:last-child {
+  border-right: none;
+}
+.grouped-rowspan-grid .group-alt td {
+  background: #f9fafb;
+}
+.grouped-rowspan-grid tbody tr:hover td {
+  background: #eef4ff;
+}
 .code-block {
   background: #1e2d40; color: #e2e8f0; border-radius: 8px;
   padding: 20px; font-family: 'JetBrains Mono', monospace;

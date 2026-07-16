@@ -51,5 +51,12 @@ router.post('/roles/:id/delete', adminController.deleteRole);
 router.post('/roles/:id/menus', adminController.assignMenus);
 router.get('/partner-roles', adminController.partnerRoles);
 router.post('/partner-roles/:id/update', adminController.updatePartnerRole);
+router.get('/codes', adminController.codes);
+router.post('/codes/common', adminController.createCommonCode);
+router.post('/codes/common/:id/update', adminController.updateCommonCode);
+router.post('/codes/common/:id/delete', adminController.deleteCommonCode);
+router.post('/codes/error', adminController.createErrorCode);
+router.post('/codes/error/:code/update', adminController.updateErrorCode);
+router.post('/codes/error/:code/delete', adminController.deleteErrorCode);
 
 module.exports = router;

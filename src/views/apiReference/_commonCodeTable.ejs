@@ -1,0 +1,36 @@
+<%
+// locals: commonCodes = [{ group_code, group_name, rows: [{ detailCode, description }, ...] }, ...]
+// (see commonCodeModel.getAllGrouped) 운영 중 코드 그룹이 계속 추가될 수 있어(db/scripts/39 참고)
+// 하드코딩 대신 DB 조회 결과를 그대로 순회한다 — 신규 그룹은 DB에 행만 추가하면 된다.
+%>
+<table class="param-table grouped-rowspan-grid" style="text-align:center;">
+  <thead>
+    <tr>
+      <th style="text-align:center;">대분류명</th>
+      <th style="text-align:center;">대분류 코드</th>
+      <th style="text-align:center;">세부 코드</th>
+      <th style="text-align:left;">코드 설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (!commonCodes || commonCodes.length === 0) { %>
+    <tr>
+      <td colspan="4" style="color:#8a9bb0; padding:20px;">등록된 공통 코드가 없습니다.</td>
+    </tr>
+    <% } %>
+    <% commonCodes.forEach((group, groupIdx) => { %>
+      <% const rows = group.rows || []; %>
+      <% const trClass = groupIdx % 2 === 1 ? 'group-alt' : ''; %>
+      <% rows.forEach((row, idx) => { %>
+      <tr class="<%= trClass %>">
+        <% if (idx === 0) { %>
+        <td rowspan="<%= rows.length %>" style="vertical-align:middle; font-weight:600;"><%= group.group_name %></td>
+        <td rowspan="<%= rows.length %>" class="mono" style="vertical-align:middle; font-weight:600; color:#1a3a6b;"><%= group.group_code %></td>
+        <% } %>
+        <td class="mono"><%= row.detailCode %></td>
+        <td style="text-align:left;"><%= row.description %></td>
+      </tr>
+      <% }) %>
+    <% }) %>
+  </tbody>
+</table>

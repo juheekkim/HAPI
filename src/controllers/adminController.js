@@ -13,6 +13,7 @@ const apiSpecModel = require('../models/apiSpecModel');
 const apiSpecImportMapper = require('../models/apiSpecImportMapper');
 const menuModel = require('../models/menuModel');
 const roleModel = require('../models/roleModel');
+const commonCodeModel = require('../models/commonCodeModel');
 
 // ── 이미지 업로드 자동입력: Claude Vision 구조화 추출 ──────
 // apiSpecImportMapper의 필드 shape({depth,id,label,type,usage,length,decimal,default,isArray,note})과
@@ -768,6 +769,144 @@ const adminController = {
       console.error(err);
     }
     res.redirect('/admin/partner-roles');
+  },
+
+  // ── 코드 관리 (공통 코드 + 에러 코드, 한 화면에서 탭으로 전환) ──────
+  // API Reference "공통 > 공통 코드"/"공통 > 에러 코드" 화면이 참조하는 데이터를 관리자가
+  // db/scripts 없이도 등록/수정/삭제할 수 있도록 한다(system_info류는 여전히 스크립트 관리).
+  async codes(req, res) {
+    try {
+      const [commonCodes, errorCodesResult] = await Promise.all([
+        commonCodeModel.getAllForAdmin(),
+        apiSpecModel.getErrorCodesForAdmin(),
+      ]);
+      res.render('admin/codes', {
+        title: '코드 관리',
+        currentMenu: 'admin',
+        activeTab: 'codes',
+        commonCodes,
+        errorCodes: errorCodesResult.errorCodes,
+        error: null,
+      });
+    } catch (err) {
+      console.error(err);
+      res.render('admin/codes', {
+        title: '코드 관리',
+        currentMenu: 'admin',
+        activeTab: 'codes',
+        commonCodes: [],
+        errorCodes: [],
+        error: null,
+      });
+    }
+  },
+
+  async createCommonCode(req, res) {
+    const { group_code, group_name, detail_code, description, display_order } = req.body;
+    try {
+      await commonCodeModel.create({
+        groupCode: group_code,
+        groupName: group_name,
+        detailCode: detail_code,
+        description,
+        displayOrder: parseInt(display_order, 10) || 0,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/codes');
+  },
+
+  async updateCommonCode(req, res) {
+    const { group_code, group_name, detail_code, description, display_order } = req.body;
+    try {
+      await commonCodeModel.update(req.params.id, {
+        groupCode: group_code,
+        groupName: group_name,
+        detailCode: detail_code,
+        description,
+        displayOrder: parseInt(display_order, 10) || 0,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/codes');
+  },
+
+  async deleteCommonCode(req, res) {
+    try {
+      await commonCodeModel.delete(req.params.id);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/codes');
+  },
+
+  async createErrorCode(req, res) {
+    const { code, name, desc } = req.body;
+    try {
+      const { errorCodes } = await apiSpecModel.getErrorCodesForAdmin();
+      if (errorCodes.some((ec) => ec.code === code)) {
+        throw Object.assign(new Error('duplicate code'), { duplicateCode: code });
+      }
+      await apiSpecModel.addErrorCode({ code, name, desc });
+      return res.redirect('/admin/codes');
+    } catch (err) {
+      console.error(err);
+      const error = err.duplicateCode
+        ? `이미 등록된 메시지코드입니다: ${err.duplicateCode}`
+        : '에러 코드 등록 중 오류가 발생했습니다.';
+      const [commonCodes, errorCodesResult] = await Promise.all([
+        commonCodeModel.getAllForAdmin(),
+        apiSpecModel.getErrorCodesForAdmin(),
+      ]);
+      return res.render('admin/codes', {
+        title: '코드 관리',
+        currentMenu: 'admin',
+        activeTab: 'codes',
+        commonCodes,
+        errorCodes: errorCodesResult.errorCodes,
+        error,
+      });
+    }
+  },
+
+  async updateErrorCode(req, res) {
+    const { original_code, code, name, desc } = req.body;
+    try {
+      const { errorCodes } = await apiSpecModel.getErrorCodesForAdmin();
+      if (code !== original_code && errorCodes.some((ec) => ec.code === code)) {
+        throw Object.assign(new Error('duplicate code'), { duplicateCode: code });
+      }
+      await apiSpecModel.updateErrorCode(original_code, { code, name, desc });
+      return res.redirect('/admin/codes');
+    } catch (err) {
+      console.error(err);
+      const error = err.duplicateCode
+        ? `이미 등록된 메시지코드입니다: ${err.duplicateCode}`
+        : '에러 코드 수정 중 오류가 발생했습니다.';
+      const [commonCodes, errorCodesResult] = await Promise.all([
+        commonCodeModel.getAllForAdmin(),
+        apiSpecModel.getErrorCodesForAdmin(),
+      ]);
+      return res.render('admin/codes', {
+        title: '코드 관리',
+        currentMenu: 'admin',
+        activeTab: 'codes',
+        commonCodes,
+        errorCodes: errorCodesResult.errorCodes,
+        error,
+      });
+    }
+  },
+
+  async deleteErrorCode(req, res) {
+    try {
+      await apiSpecModel.deleteErrorCode(req.params.code);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/codes');
   },
 };
 

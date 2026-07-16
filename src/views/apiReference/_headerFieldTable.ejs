@@ -16,7 +16,7 @@ const SETTING_TYPE_STYLE = {
   생성주체: <strong style="color:#1a3a6b;">○</strong> 데이터 생성 &nbsp;|&nbsp; <strong>●</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong>△</strong> 필요시 데이터 생성 &nbsp;|&nbsp; <strong>▲</strong> 생성된 데이터 유지 &nbsp;|&nbsp; <strong style="color:#ef4444;">×</strong> 해당 항목 데이터 사용 안함
 </p>
 <div style="overflow-x:auto;">
-<table class="param-table header-field-table subtle-grid" style="font-size:12.5px;">
+<table class="param-table header-field-table grouped-rowspan-grid" style="font-size:12.5px;">
   <thead>
     <tr>
       <th rowspan="2" style="text-align:center; vertical-align:middle;">구분</th>
@@ -38,9 +38,10 @@ const SETTING_TYPE_STYLE = {
     </tr>
   </thead>
   <tbody>
-    <% groups.forEach(group => { %>
+    <% groups.forEach((group, groupIdx) => { %>
+      <% const trClass = groupIdx % 2 === 1 ? 'group-alt' : ''; %>
       <% group.fields.forEach((field, idx) => { %>
-      <tr>
+      <tr class="<%= trClass %>">
         <% if (idx === 0) { %>
         <td rowspan="<%= group.fields.length %>" style="text-align:center; font-weight:600; color:#1a3a6b; vertical-align:middle; background:#f8fafc; white-space:pre-line;"><%= group.category || '' %></td>
         <% } %>

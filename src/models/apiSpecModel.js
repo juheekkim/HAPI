@@ -134,12 +134,12 @@ const STATIC_SPECS = [
     description: '모든 API에서 공통으로 사용하는 에러 코드 정의입니다.',
     endpoints: [],
     errorCodes: [
-      { code: '0000', http: 200, desc: '성공' },
-      { code: '0001', http: 400, desc: '유효하지 않은 파트너사 코드' },
-      { code: '0002', http: 401, desc: '인증 토큰 만료' },
-      { code: '0003', http: 403, desc: '접근 권한 없음' },
-      { code: '0004', http: 404, desc: '리소스를 찾을 수 없음' },
-      { code: '9999', http: 500, desc: '서버 내부 오류' },
+      { code: '0000', name: 'HTTP 200', desc: '성공' },
+      { code: '0001', name: 'HTTP 400', desc: '유효하지 않은 파트너사 코드' },
+      { code: '0002', name: 'HTTP 401', desc: '인증 토큰 만료' },
+      { code: '0003', name: 'HTTP 403', desc: '접근 권한 없음' },
+      { code: '0004', name: 'HTTP 404', desc: '리소스를 찾을 수 없음' },
+      { code: '9999', name: 'HTTP 500', desc: '서버 내부 오류' },
     ],
   },
   {
@@ -218,6 +218,59 @@ const apiSpecModel = {
 
   async delete(id) {
     await pool.query('DELETE FROM api_specs WHERE id=$1', [id]);
+  },
+
+  // 에러 코드 관리(관리자 화면, /admin/codes) — error_codes는 api_specs.domain='error-codes' 단일 행의
+  // JSONB 배열(각 원소 {code,name,desc})이라 api_specs CRUD와 별도로 code를 키로 다룬다(db/scripts/36 참고).
+  async getErrorCodesForAdmin() {
+    const result = await pool.query("SELECT * FROM api_specs WHERE domain = 'error-codes'");
+    const row = result.rows[0];
+    return { spec: row || null, errorCodes: (row && row.error_codes) || [] };
+  },
+
+  // code 중복은 호출자(컨트롤러)가 getErrorCodesForAdmin() 결과로 먼저 검사 후 호출한다(roles의
+  // UNIQUE 위반 처리와 달리 JSONB엔 DB 제약을 걸 수 없어 애플리케이션 레벨 검증).
+  async addErrorCode({ code, name, desc }) {
+    const existing = await pool.query("SELECT id FROM api_specs WHERE domain = 'error-codes'");
+    if (existing.rows.length === 0) {
+      await pool.query(
+        `INSERT INTO api_specs (category, domain, name, description, endpoints, error_codes, display_order)
+         VALUES ('common', 'error-codes', '에러 코드',
+                 '공통으로 발생하는 응답 메시지 코드(MessageHeader.MSG_DATA_SUB[].MSG_CD/MSG_CTNS)와 설명입니다.',
+                 '[]'::jsonb, $1::jsonb, 0)`,
+        [JSON.stringify([{ code, name, desc }])]
+      );
+      return;
+    }
+    await pool.query(
+      `UPDATE api_specs SET error_codes = error_codes || $1::jsonb WHERE domain = 'error-codes'`,
+      [JSON.stringify([{ code, name, desc }])]
+    );
+  },
+
+  async updateErrorCode(originalCode, { code, name, desc }) {
+    await pool.query(
+      `UPDATE api_specs
+       SET error_codes = (
+         SELECT jsonb_agg(CASE WHEN elem->>'code' = $1 THEN $2::jsonb ELSE elem END)
+         FROM jsonb_array_elements(error_codes) elem
+       )
+       WHERE domain = 'error-codes'`,
+      [originalCode, JSON.stringify({ code, name, desc })]
+    );
+  },
+
+  async deleteErrorCode(code) {
+    await pool.query(
+      `UPDATE api_specs
+       SET error_codes = (
+         SELECT COALESCE(jsonb_agg(elem), '[]'::jsonb)
+         FROM jsonb_array_elements(error_codes) elem
+         WHERE elem->>'code' != $1
+       )
+       WHERE domain = 'error-codes'`,
+      [code]
+    );
   },
 };
 

@@ -160,22 +160,6 @@
       </div>
       <!-- 탭1 끝 -->
 
-      <!-- 전문구조/헤더정보 탭의 데이터 그리드(표준전문 구조, 시스템 정보, 헤더정보) 공통 스타일.
-           컬럼이 많아 실선 없이도 구분되도록 옅은 세로 구분선 + 줄무늬만 적용
-           (공통 .param-table 스타일은 건드리지 않고 .subtle-grid로 opt-in) -->
-      <style>
-        .subtle-grid td + td,
-        .subtle-grid th + th {
-          border-left: 1px solid rgba(15, 23, 42, 0.06);
-        }
-        .subtle-grid tbody tr:nth-child(even) td {
-          background: #f9fafb;
-        }
-        .subtle-grid tbody tr:hover td {
-          background: #eef4ff;
-        }
-      </style>
-
       <!-- 탭2: 헤더정보 -->
       <div id="htab-headers" style="display:none;">
 
@@ -236,6 +220,15 @@
       if (window.location.hash === '#headers') { switchHeaderTab('headers'); }
       </script>
 
+    <% } else if (selectedDoc === 'common-codes') { %>
+      <!-- "공통 코드" 문서(menus.id=75, doc=common-codes)는 api_specs와 무관한 자체 데이터
+           (common_codes 테이블, commonCodeModel.getAllGrouped)라 header 탭과 같은 방식으로
+           selectedSpec 분기 밖에서 독립적으로 렌더링한다. -->
+      <div class="breadcrumb">API Reference › 공통 › 공통 코드</div>
+      <div class="api-page-title">공통 코드</div>
+      <div class="api-page-desc">API에서 공통으로 참조하는 코드 그룹(대분류 코드-세부 코드-설명)입니다.</div>
+      <%- include('_commonCodeTable', { commonCodes: typeof commonCodes !== 'undefined' ? commonCodes : [] }) %>
+
     <% } else if (selectedSpec) { %>
       <div class="breadcrumb">
         API Reference ›
@@ -245,20 +238,21 @@
       <div class="api-page-title"><%= selectedSpec.name %></div>
       <div class="api-page-desc"><%= selectedSpec.description %></div>
 
-      <!-- 에러 코드 테이블 (error-codes 도메인) -->
+      <!-- 에러 코드 테이블 (error-codes 도메인). 필드는 실제 게이트웨이 응답의 MessageHeader.MSG_DATA_SUB[]
+           (MSG_CD/MSG_CTNS, business-rules.md §10)와 맞춰 메시지코드(code)/메시지명(name)/설명(desc). -->
       <% if (selectedSpec.errorCodes && selectedSpec.errorCodes.length > 0) { %>
       <div class="api-section">
         <div class="api-section-header">
           <h3>에러 코드 목록</h3>
         </div>
         <div class="api-section-body">
-          <table class="param-table">
-            <thead><tr><th>코드</th><th>HTTP 상태</th><th>설명</th></tr></thead>
+          <table class="param-table subtle-grid">
+            <thead><tr><th>메시지코드</th><th>메시지명</th><th>설명</th></tr></thead>
             <tbody>
               <% selectedSpec.errorCodes.forEach(ec => { %>
               <tr>
                 <td class="mono"><%= ec.code %></td>
-                <td><%= ec.http %></td>
+                <td><%= ec.name %></td>
                 <td><%= ec.desc %></td>
               </tr>
               <% }) %>
@@ -289,10 +283,28 @@
             </div>
           </div>
           <div class="api-section-body" style="display:none;">
+            <!-- SVC-ID 스타일 엔드포인트(엑셀/이미지 자동입력, ep.url이 "/"로 시작하지 않음)는 ep.url이
+                 실제 호출 경로가 아니라 RECV_SVC_CD/INTF_ID에 들어가는 서비스 코드값이다(테스트 샌드박스의
+                 computeIntfId와 동일 조합 규칙, 아래 스크립트). "POST {ep.url}"처럼 URL인 것처럼 보여주면
+                 실제 호출 URL(헤더 문서의 고정 게이트웨이 주소)과 혼동되므로 분리해서 보여준다. 수기 등록된
+                 REST 스타일 엔드포인트(ep.url이 "/"로 시작)는 그대로 실제 URL이라 기존 방식 유지. -->
+            <% if (typeof ep.url === 'string' && !ep.url.startsWith('/')) { %>
+            <% const sysCode = (ep.description || '').split(' / ')[0].trim() || '{시스템코드}'; %>
+            <div class="api-url">
+              <span class="method-badge method-post">POST</span>
+              <span class="mono">.../iGate/<%= sysCode %>/json.jdo</span>
+              <a href="/api-reference?doc=header" style="margin-left:10px; font-size:12px; font-family:inherit;" title="실제 도메인/포트는 헤더 문서 접속정보 참고">접속정보 ›</a>
+            </div>
+            <div class="api-url" style="margin-bottom:16px;">
+              <span style="display:inline-block; font-size:10px; font-weight:700; color:#1e6fce; background:#fff; border:1px solid #93c5fd; border-radius:10px; padding:2px 8px; margin-right:10px; font-family:inherit;">RECV_SVC_CD</span>
+              <%= ep.url %>
+            </div>
+            <% } else { %>
             <div class="api-url">
               <span class="method-badge method-<%= ep.method.toLowerCase() %>"><%= ep.method %></span>
               <%= ep.url %>
             </div>
+            <% } %>
 
             <!-- 요청 파라미터: 파라미터명이 "ds_inSearch.CORP_CD"처럼 점 표기라 평면 나열하면 실제로는
                  ds_inSearch라는 데이터셋(배열) 안에 CORP_CD가 들어있는 중첩 구조가 잘 안 보인다.
@@ -301,22 +313,36 @@
             <% if (ep.params && ep.params.length > 0) { %>
             <div class="api-subblock">
               <h4 class="api-subblock-title">요청 파라미터</h4>
-              <table class="param-table" id="req-table-<%= idx %>">
-                <thead><tr><th>파라미터ID</th><th>파라미터명</th><th>Data type</th><th>필수</th><th>설명</th></tr></thead>
+              <table class="param-table subtle-grid" id="req-table-<%= idx %>">
+                <thead><tr>
+                  <th style="width:14%;">파라미터ID</th>
+                  <th style="width:18%;">파라미터명</th>
+                  <th style="width:10%;">Data type</th>
+                  <th style="width:10%;">필수</th>
+                  <th>설명</th>
+                </tr></thead>
                 <tbody></tbody>
               </table>
             </div>
             <% } %>
 
-            <!-- 응답 예시: 요청 파라미터와 같은 표 형식(필드ID/Data type/예시 값)+동일한 그룹 트리 렌더링으로
-                 통일해 한 화면에 함께 보인다(버튼 전환 없음). 응답 예시는 필드별 라벨/필수/설명 메타데이터 없이
-                 JSON 텍스트만 저장돼 있어(엑셀·이미지 자동입력은 OUTPUT 필드를 예시 JSON으로만 남김), 클라이언트에서
-                 파싱 후 중첩 구조를 그대로 트리로 펼쳐 표를 채운다(renderResponseTable, 아래 스크립트). -->
+            <!-- 응답 예시: 요청 파라미터와 같은 표 형식(필드ID/필드명/Data type/예시 값/설명)+동일한 폭
+                 배분·그룹 트리 렌더링으로 통일해 한 화면에 함께 보인다(버튼 전환 없음). 응답 예시는 필드별
+                 라벨/설명 메타데이터 없이 JSON 텍스트만 저장돼 있어(엑셀·이미지 자동입력은 OUTPUT 필드를 예시
+                 JSON으로만 남김) "필드명"/"설명" 값은 항상 비어 있지만, 요청 파라미터 표와 컬럼 수·순서(마지막
+                 칸이 설명)·폭(모든 칸이 요청 표와 동일 %)을 맞추기 위해 칸은 유지한다.
+                 클라이언트에서 파싱 후 중첩 구조를 그대로 트리로 펼쳐 표를 채운다(renderResponseTable, 아래 스크립트). -->
             <% if (ep.responseExample) { %>
             <div class="api-subblock">
               <h4 class="api-subblock-title">응답 예시</h4>
-              <table class="param-table" id="res-table-<%= idx %>">
-                <thead><tr><th>필드ID</th><th>Data type</th><th>예시 값</th></tr></thead>
+              <table class="param-table subtle-grid" id="res-table-<%= idx %>">
+                <thead><tr>
+                  <th style="width:14%;">필드ID</th>
+                  <th style="width:18%;">필드명</th>
+                  <th style="width:10%;">Data type</th>
+                  <th style="width:10%;">예시 값</th>
+                  <th>설명</th>
+                </tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -579,6 +605,7 @@ function makeResponseLeafRow(r) {
   idTd.style.paddingLeft = (14 + r.depth * 18) + 'px';
   idTd.textContent = r.name;
   tr.appendChild(idTd);
+  tr.appendChild(document.createElement('td')); // 필드명 — 응답 예시엔 라벨 메타데이터가 없어 항상 빈 칸
   const typeTd = document.createElement('td');
   typeTd.className = 'mono type-text';
   typeTd.textContent = r.type;
@@ -587,6 +614,7 @@ function makeResponseLeafRow(r) {
   exTd.className = 'mono';
   exTd.textContent = r.example;
   tr.appendChild(exTd);
+  tr.appendChild(document.createElement('td')); // 설명 — 응답 예시엔 설명 메타데이터가 없어 항상 빈 칸
   return tr;
 }
 
@@ -603,14 +631,14 @@ function renderResponseTable(idx, responseExample) {
   if (!parsed || typeof parsed !== 'object') {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 3;
+    td.colSpan = 5;
     td.textContent = 'JSON 형식이 아니어서 표로 변환할 수 없습니다.';
     tr.appendChild(td);
     tbody.appendChild(tr);
     return null;
   }
   buildResponseRows(parsed).forEach((r) => {
-    tbody.appendChild(r.kind === 'group' ? makeGroupRow(r.name, r.depth, 3, r.isArray) : makeResponseLeafRow(r));
+    tbody.appendChild(r.kind === 'group' ? makeGroupRow(r.name, r.depth, 5, r.isArray) : makeResponseLeafRow(r));
   });
   return parsed;
 }

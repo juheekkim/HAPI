@@ -4,7 +4,7 @@
 
 ## 스크립트 관리 규칙
 - `db/scripts/`는 순번 prefix 누적 관리. **기존 스크립트 수정 금지 — 새 순번 스크립트 추가.**
-- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql`, `25_rename_roles_menu_label.sql`, `26_rename_partner_role_to_bigcorp.sql`, `27_add_partner_role_mapping.sql`, `28_local_data_snapshot.sql`(로컬 데이터 스냅샷, `29`가 대체), `29_local_data_snapshot_v2.sql`(최신 로컬 데이터 스냅샷 — `header_fields` 포함 11개 테이블 TRUNCATE 후 재적재), `30_remove_orphan_partner_role.sql`(`29` 스냅샷에 딸려온 고아 `roles.code='partner'` 행 정리), `31_mark_frs_rqst_sys_cd_variable.sql`(`FRS_RQST_SYS_CD`를 `fix`→`variable`로 정정 — 서비스마다 값이 다름, `LCB` 고정 아님), `32_create_system_info_table.sql`(`system_info` 테이블 신설 — API Reference "전문구조" 탭 시스템 정보 표를 하드코딩에서 DB로 이전, `LCB` 2행만 시드), `33_shorten_recv_svc_cd_intf_id_examples.sql`(`RECV_SVC_CD`/`INTF_ID`의 `setting_value` 예시 5개 나열 → 대표 1개+"등"으로 축약 — 실제 가능한 값 전체 목록이 아니라 형식 예시일 뿐임을 명확히 함), `34_label_recv_svc_cd_intf_id_examples.sql`(같은 두 필드의 `setting_value` 앞에 `"예: "` 접두어 추가 — `variable` 타입 필드의 값이 고정값으로 오해되지 않도록 예시임을 명시) (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
+- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql`, `25_rename_roles_menu_label.sql`, `26_rename_partner_role_to_bigcorp.sql`, `27_add_partner_role_mapping.sql`, `28_local_data_snapshot.sql`(로컬 데이터 스냅샷, `29`가 대체), `29_local_data_snapshot_v2.sql`(최신 로컬 데이터 스냅샷 — `header_fields` 포함 11개 테이블 TRUNCATE 후 재적재), `30_remove_orphan_partner_role.sql`(`29` 스냅샷에 딸려온 고아 `roles.code='partner'` 행 정리), `31_mark_frs_rqst_sys_cd_variable.sql`(`FRS_RQST_SYS_CD`를 `fix`→`variable`로 정정 — 서비스마다 값이 다름, `LCB` 고정 아님), `32_create_system_info_table.sql`(`system_info` 테이블 신설 — API Reference "전문구조" 탭 시스템 정보 표를 하드코딩에서 DB로 이전, `LCB` 2행만 시드), `33_shorten_recv_svc_cd_intf_id_examples.sql`(`RECV_SVC_CD`/`INTF_ID`의 `setting_value` 예시 5개 나열 → 대표 1개+"등"으로 축약 — 실제 가능한 값 전체 목록이 아니라 형식 예시일 뿐임을 명확히 함), `34_label_recv_svc_cd_intf_id_examples.sql`(같은 두 필드의 `setting_value` 앞에 `"예: "` 접두어 추가 — `variable` 타입 필드의 값이 고정값으로 오해되지 않도록 예시임을 명시), `35_remove_auth_api_doc_menu.sql`(API Reference "공통 > 인증" 문서 메뉴 삭제 — 로그인/로그아웃은 대외 API가 아니라 포털 자체 기능이라 `api_specs` 항목 없이 참고용으로만 남아 있었음, `role_menus` 매핑은 CASCADE로 함께 정리), `36_seed_error_codes_spec.sql`(`api_specs`에 `domain='error-codes'` 행 신설 — 실제 응답 메시지 코드(REME 계열) 20건을 `error_codes` JSONB로 시드, `menus.id=18` "공통 > 에러 코드"가 그동안 빈 화면이었던 것을 해소), `37_add_error_codes_batch2.sql`(같은 목록에 신규 확인된 5건 추가 — `code` 기준 중복 제외 append 방식이라 반복 실행해도 안전, 현재 총 25건), `38_fix_reme000054_desc_typo.sql`(`REME000054`의 `desc`가 원본 문서 오타로 "종료일자(CUST_NO)"였던 것을 "종료일자(END_DATE)"로 정정 — 같은 배치의 `REME000053`과 대응되는 필드명), `39_create_common_codes_table.sql`(`common_codes` 테이블 신설 — API Reference "공통 > 공통 코드"(`menus.id=75`, doc=common-codes) 화면용 코드 그룹표, 사업장코드/`BRCH_CD` 12건 시드), `40_seed_loc_cd_common_codes.sql`(같은 테이블에 영업장코드/`LOC_CD` 그룹 15건 추가), `41_seed_corp_cd_common_code.sql`(법인코드/`CORP_CD` 그룹 1건 추가 — `display_order=0`으로 다른 그룹보다 위에 오도록 지정) (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
 - 드라이버: `pg` Pool(`src/config/database.js`, `DATABASE_URL`). 파라미터 바인딩(`$1,$2,...`)만 사용.
 
 ## 주요 테이블
@@ -30,8 +30,9 @@
 
 ### api_specs (`01`)
 `id PK`, `category`(`resort`/`estate`/`common`), `domain UNIQUE`, `name`, `description`, `endpoints JSONB`, `error_codes JSONB`, `display_order`, `created_at`.
-- 비었으면 `apiSpecModel.STATIC_SPECS` 반환. 컬럼 `error_codes` → 모델에서 `errorCodes`로 매핑.
-- **Admin이 직접 CRUD**(`/admin/apis`, `adminController.apis/createApi/updateApi/deleteApi` → `apiSpecModel.create/update/delete`). 관리자 목록 화면은 fallback 없는 `apiSpecModel.getAllForAdmin()`을 사용해 DB 실제 상태만 보여준다. `domain UNIQUE` 위반은 `err.code === '23505'`로 잡아 폼에 에러 메시지로 표시(다른 admin 모듈처럼 조용히 무시하지 않음). `endpoints`는 삽입/수정 시 `JSON.stringify`로 직렬화.
+- **테이블에 행이 하나라도 있으면 STATIC_SPECS는 전혀 쓰이지 않는다**(`apiSpecModel.getAll()`이 `result.rows.length > 0`이면 DB 행만 반환 — 도메인별 fallback이 아니라 테이블 전체 단위 fallback). 컬럼 `error_codes` → 모델에서 `errorCodes`로 매핑, 각 원소는 `{code, name, desc}`(메시지코드/메시지명/설명 — `MessageHeader.MSG_DATA_SUB[].MSG_CD`/`MSG_CTNS`, `business-rules.md` §10과 맞춘 형태, `36`에서 `{code,http,desc}`였던 STATIC_SPECS 필드도 함께 정정).
+- `error-codes` 도메인(API Reference "공통 > 에러 코드" 메뉴, `menus.id=18`)은 `36`(최초 20건)+`37`(추가 5건, 현재 총 25건)로 실데이터 시드. **`/admin/apis`(`api-form.ejs`)는 여전히 `error_codes` 편집 UI가 없지만**, 별도로 `/admin/codes`(코드 관리) 화면에서 `code`를 키로 개별 추가/수정/삭제 가능 — `apiSpecModel.getErrorCodesForAdmin/addErrorCode/updateErrorCode/deleteErrorCode`가 `error-codes` 도메인 행(없으면 최초 추가 시 자동 생성)의 `error_codes` JSONB 배열만 다룬다. `code` 중복은 JSONB라 DB 제약을 걸 수 없어 컨트롤러(`adminController.createErrorCode/updateErrorCode`)가 기존 배열을 조회해 애플리케이션 레벨로 검증(중복 시 폼에 에러 메시지).
+- **Admin이 직접 CRUD**(`/admin/apis`, `adminController.apis/createApi/updateApi/deleteApi` → `apiSpecModel.create/update/delete`) — 단, 위와 같이 `error_codes`는 이 화면에서 다루지 않고 `/admin/codes`가 별도로 다룬다. 관리자 목록 화면은 fallback 없는 `apiSpecModel.getAllForAdmin()`을 사용해 DB 실제 상태만 보여준다. `domain UNIQUE` 위반은 `err.code === '23505'`로 잡아 폼에 에러 메시지로 표시(다른 admin 모듈처럼 조용히 무시하지 않음). `endpoints`는 삽입/수정 시 `JSON.stringify`로 직렬화.
 
 ### partner_firewall_applies (`07`) — 실사용
 `id PK`, `user_id → users.id`, `source_ip`, `source_hostname`, `dest_ip`, `dest_hostname`, `dest_port`, `approval_status`(`pending`/`approved`/`rejected`), `reject_reason`, `token`, `note`, `requested_at`, `approved_at`.
@@ -54,6 +55,13 @@
 - 쿼리: `systemInfoModel.getAllGrouped()` → `system_code`(+동일 반복 컬럼) 기준 `GROUP BY`, `division`/`source`는 `array_agg`로 `rows` JSON 배열에 담아 반환. 뷰(`_systemInfoTable.ejs`)가 `rows.length`만큼 `rowspan`을 계산해 렌더링.
 - 인덱스: `idx_system_info_system_code`.
 
+### common_codes (`39`) — API Reference "공통 코드" 탭
+`id PK`, `group_code`(예: `BRCH_CD`, `LOC_CD`), `group_name`(예: 사업장코드, 영업장코드), `detail_code`, `description`, `display_order`, `created_at`.
+- `group_code` 하나에 `detail_code` 여러 건이 딸리는 구조(`system_info`와 동일한 "그룹 rowspan" 패턴, 정규화하지 않고 `group_code`/`group_name`을 각 행에 반복 저장). menus.id=75 "공통 > 공통 코드"(`doc=common-codes`)가 참조.
+- 최초 시드는 `db/scripts/` INSERT(`39`~`41`)로 관리자 UI 없이 넣었으나, **이후 `/admin/codes`(코드 관리, `commonCodeModel.getAllForAdmin/create/update/delete`)에서 개별 행 단위 CRUD 가능**해짐 — 신규 그룹/코드는 이제 관리자 화면에서 등록하는 것을 권장, db/scripts는 최초 대량 시드나 팀 공유용 스냅샷에만 사용. 현재 시드된 그룹: `CORP_CD`(법인코드, `41`, 1건, 화면 맨 위), `BRCH_CD`(사업장코드, `39`, 12건), `LOC_CD`(영업장코드, `40`, 15건). 정렬 순서를 앞세우려면 `display_order`를 기존 그룹보다 작은 값으로.
+- 쿼리: `commonCodeModel.getAllGrouped()`(API Reference 조회용) → `group_code`+`group_name` 기준 `GROUP BY`, `detail_code`/`description`은 `array_agg`로 `rows` JSON 배열(`detailCode`/`description`)에 담아 반환. 뷰(`_commonCodeTable.ejs`)가 `rows.length`만큼 `rowspan` 렌더링. `getAllForAdmin()`은 관리자 화면 전용으로 그룹핑 없이 `id` 기준 플랫 목록 반환.
+- 인덱스: `idx_common_codes_group_code`.
+
 ### roles (`21`) — 역할(권한 그룹)
 `id PK`, `code VARCHAR(30) UNIQUE`(`admin`/`BigCorp`/...), `name`, `description`, `is_active`, `created_at`, `updated_at`.
 - `roleModel` CRUD. `code UNIQUE` 위반은 컨트롤러가 `err.code === '23505'`로 잡아 폼 에러로 표시(`createRole`/`updateRole`).
@@ -62,7 +70,7 @@
 ### menus (`21`) — 계층 메뉴
 `id PK`, `parent_id → menus.id (ON DELETE CASCADE)`(최상위는 NULL), `name`, `path`(그룹 헤더는 NULL), `menu_type`(`nav`/`admin-tab`/`api-doc`/`group`), `icon`, `admin_only`, `display_order`, `is_active`, `created_at`, `updated_at`.
 - `menuModel`. 트리는 `getAllWithChildren()`이 평면 조회 후 JS에서 `parent_id`로 `children[]` 조립(재귀 CTE 미사용, 얕은 계층).
-- 시드(`22`): 상단 nav 5 + 관리자 서브탭 7 + apiReference 사이드바(그룹 3 → 문서 8, **2단계 중첩**). API 사이드바 계층은 `24_restructure_api_menu_hierarchy.sql`으로 정상화됨 — **그룹(공통/리조트/에스테이트)이 각 문서(api-doc)의 부모**. API 대메뉴 path는 `/api-reference`(doc 미지정).
+- 시드(`22`): 상단 nav 5 + 관리자 서브탭 7 + apiReference 사이드바(그룹 3 → 문서 8, **2단계 중첩**, `35`에서 "공통 > 인증" 삭제로 현재 7). API 사이드바 계층은 `24_restructure_api_menu_hierarchy.sql`으로 정상화됨 — **그룹(공통/리조트/에스테이트)이 각 문서(api-doc)의 부모**. API 대메뉴 path는 `/api-reference`(doc 미지정).
 - 렌더링: 상단 대메뉴(`loadNavMenus` 미들웨어)와 API 사이드바(`apiReferenceController` + `menuModel.getApiSidebarByRole`) 모두 `role_menus` 기반 **동적 렌더링 적용됨**. `getApiSidebarByRole`는 API 서브트리를 **임의 depth 재귀**로 순회(2단계 고정 아님)하므로 메뉴 관리에서 만든 깊은 계층이 그대로 반영된다. 관리자 `admin-tabs`만 아직 하드코딩.
 
 ### role_menus (`21`) — 역할↔메뉴 매핑

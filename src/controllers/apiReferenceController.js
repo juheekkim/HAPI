@@ -3,6 +3,7 @@
 const apiSpecModel = require('../models/apiSpecModel');
 const headerFieldModel = require('../models/headerFieldModel');
 const systemInfoModel = require('../models/systemInfoModel');
+const commonCodeModel = require('../models/commonCodeModel');
 const menuModel = require('../models/menuModel');
 const partnerModel = require('../models/partnerModel');
 
@@ -59,6 +60,7 @@ const apiReferenceController = {
       });
 
       const systemInfo = await systemInfoModel.getAllGrouped();
+      const commonCodes = await commonCodeModel.getAllGrouped();
 
       res.render('apiReference/index', {
         title: 'API Reference',
@@ -68,6 +70,7 @@ const apiReferenceController = {
         selectedDoc,
         headerFields,
         systemInfo,
+        commonCodes,
         sidebar,
       });
     } catch (err) {
@@ -80,6 +83,7 @@ const apiReferenceController = {
         selectedDoc: req.query.doc || null,
         headerFields: { system: [], transaction: [], message: [] },
         systemInfo: [],
+        commonCodes: [],
         sidebar: [],
       });
     }

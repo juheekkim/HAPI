@@ -4,7 +4,7 @@
 
 ## 스크립트 관리 규칙
 - `db/scripts/`는 순번 prefix 누적 관리. **기존 스크립트 수정 금지 — 새 순번 스크립트 추가.**
-- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql`, `25_rename_roles_menu_label.sql`, `26_rename_partner_role_to_bigcorp.sql`, `27_add_partner_role_mapping.sql`, `28_local_data_snapshot.sql`(로컬 데이터 스냅샷, `29`가 대체), `29_local_data_snapshot_v2.sql`(최신 로컬 데이터 스냅샷 — `header_fields` 포함 11개 테이블 TRUNCATE 후 재적재), `30_remove_orphan_partner_role.sql`(`29` 스냅샷에 딸려온 고아 `roles.code='partner'` 행 정리), `31_mark_frs_rqst_sys_cd_variable.sql`(`FRS_RQST_SYS_CD`를 `fix`→`variable`로 정정 — 서비스마다 값이 다름, `LCB` 고정 아님), `32_create_system_info_table.sql`(`system_info` 테이블 신설 — API Reference "전문구조" 탭 시스템 정보 표를 하드코딩에서 DB로 이전, `LCB` 2행만 시드), `33_shorten_recv_svc_cd_intf_id_examples.sql`(`RECV_SVC_CD`/`INTF_ID`의 `setting_value` 예시 5개 나열 → 대표 1개+"등"으로 축약 — 실제 가능한 값 전체 목록이 아니라 형식 예시일 뿐임을 명확히 함), `34_label_recv_svc_cd_intf_id_examples.sql`(같은 두 필드의 `setting_value` 앞에 `"예: "` 접두어 추가 — `variable` 타입 필드의 값이 고정값으로 오해되지 않도록 예시임을 명시), `35_remove_auth_api_doc_menu.sql`(API Reference "공통 > 인증" 문서 메뉴 삭제 — 로그인/로그아웃은 대외 API가 아니라 포털 자체 기능이라 `api_specs` 항목 없이 참고용으로만 남아 있었음, `role_menus` 매핑은 CASCADE로 함께 정리), `36_seed_error_codes_spec.sql`(`api_specs`에 `domain='error-codes'` 행 신설 — 실제 응답 메시지 코드(REME 계열) 20건을 `error_codes` JSONB로 시드, `menus.id=18` "공통 > 에러 코드"가 그동안 빈 화면이었던 것을 해소), `37_add_error_codes_batch2.sql`(같은 목록에 신규 확인된 5건 추가 — `code` 기준 중복 제외 append 방식이라 반복 실행해도 안전, 현재 총 25건), `38_fix_reme000054_desc_typo.sql`(`REME000054`의 `desc`가 원본 문서 오타로 "종료일자(CUST_NO)"였던 것을 "종료일자(END_DATE)"로 정정 — 같은 배치의 `REME000053`과 대응되는 필드명), `39_create_common_codes_table.sql`(`common_codes` 테이블 신설 — API Reference "공통 > 공통 코드"(`menus.id=75`, doc=common-codes) 화면용 코드 그룹표, 사업장코드/`BRCH_CD` 12건 시드), `40_seed_loc_cd_common_codes.sql`(같은 테이블에 영업장코드/`LOC_CD` 그룹 15건 추가), `41_seed_corp_cd_common_code.sql`(법인코드/`CORP_CD` 그룹 1건 추가 — `display_order=0`으로 다른 그룹보다 위에 오도록 지정) (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
+- 현재 존재: `01_create_tables.sql`, `02_seed_data.sql`, `07_partner_firewall_applies.sql`, `16_seed_dev_data.sql`, `17_header_fields_table.sql`, `18_system_header_fields_update.sql`, `19_transaction_header_fields_update.sql`, `20_message_header_fields_update.sql`, `21_create_menu_role_tables.sql`, `22_seed_menu_role_data.sql`, `23_seed_partner_menu_mappings.sql`, `24_restructure_api_menu_hierarchy.sql`, `25_rename_roles_menu_label.sql`, `26_rename_partner_role_to_bigcorp.sql`, `27_add_partner_role_mapping.sql`, `28_local_data_snapshot.sql`(로컬 데이터 스냅샷, `29`가 대체), `29_local_data_snapshot_v2.sql`(최신 로컬 데이터 스냅샷 — `header_fields` 포함 11개 테이블 TRUNCATE 후 재적재), `30_remove_orphan_partner_role.sql`(`29` 스냅샷에 딸려온 고아 `roles.code='partner'` 행 정리), `31_mark_frs_rqst_sys_cd_variable.sql`(`FRS_RQST_SYS_CD`를 `fix`→`variable`로 정정 — 서비스마다 값이 다름, `LCB` 고정 아님), `32_create_system_info_table.sql`(`system_info` 테이블 신설 — API Reference "전문구조" 탭 시스템 정보 표를 하드코딩에서 DB로 이전, `LCB` 2행만 시드), `33_shorten_recv_svc_cd_intf_id_examples.sql`(`RECV_SVC_CD`/`INTF_ID`의 `setting_value` 예시 5개 나열 → 대표 1개+"등"으로 축약 — 실제 가능한 값 전체 목록이 아니라 형식 예시일 뿐임을 명확히 함), `34_label_recv_svc_cd_intf_id_examples.sql`(같은 두 필드의 `setting_value` 앞에 `"예: "` 접두어 추가 — `variable` 타입 필드의 값이 고정값으로 오해되지 않도록 예시임을 명시), `35_remove_auth_api_doc_menu.sql`(API Reference "공통 > 인증" 문서 메뉴 삭제 — 로그인/로그아웃은 대외 API가 아니라 포털 자체 기능이라 `api_specs` 항목 없이 참고용으로만 남아 있었음, `role_menus` 매핑은 CASCADE로 함께 정리), `36_seed_error_codes_spec.sql`(`api_specs`에 `domain='error-codes'` 행 신설 — 실제 응답 메시지 코드(REME 계열) 20건을 `error_codes` JSONB로 시드, `menus.id=18` "공통 > 에러 코드"가 그동안 빈 화면이었던 것을 해소), `37_add_error_codes_batch2.sql`(같은 목록에 신규 확인된 5건 추가 — `code` 기준 중복 제외 append 방식이라 반복 실행해도 안전, 현재 총 25건), `38_fix_reme000054_desc_typo.sql`(`REME000054`의 `desc`가 원본 문서 오타로 "종료일자(CUST_NO)"였던 것을 "종료일자(END_DATE)"로 정정 — 같은 배치의 `REME000053`과 대응되는 필드명), `39_create_common_codes_table.sql`(`common_codes` 테이블 신설 — API Reference "공통 > 공통 코드"(`menus.id=75`, doc=common-codes) 화면용 코드 그룹표, 사업장코드/`BRCH_CD` 12건 시드), `40_seed_loc_cd_common_codes.sql`(같은 테이블에 영업장코드/`LOC_CD` 그룹 15건 추가), `41_seed_corp_cd_common_code.sql`(법인코드/`CORP_CD` 그룹 1건 추가 — `display_order=0`으로 다른 그룹보다 위에 오도록 지정), `42_create_chatbot_messages_table.sql`(챗봇 위젯 대화 이력 테이블 `chatbot_messages` 신설, `docs/chatbot.md` 참고), `43_create_chatbot_clears_table.sql`(`chatbot_clears` 신설 — "새 대화"가 `chatbot_messages`를 삭제하지 않고 사용자별 초기화 시점만 기록하도록 소프트 리셋 방식으로 변경) (03~06, 08~15 번호 공백 — 이력/누락 여부 **[Needs verification]**).
 - 드라이버: `pg` Pool(`src/config/database.js`, `DATABASE_URL`). 파라미터 바인딩(`$1,$2,...`)만 사용.
 
 ## 주요 테이블
@@ -79,6 +79,17 @@
 - 매트릭스 화면은 `roleModel.getAllMenuIdsByRole()`로 `{roleId: [menuId...]}`를 1쿼리로 조회(N+1 방지). 시드(`22`)에서 `admin`은 전체 메뉴 매핑.
 - **동적 렌더링은 "매핑된 메뉴만 노출"(opt-in)** 모델이다. `22`에서 `partner`가 무매핑이라 대메뉴가 비던 문제를, `23_seed_partner_menu_mappings.sql`이 `partner`에 `admin_only=false` 전체 메뉴를 매핑해 복구한다(= 관리자 제외 전체). 이후 새 role은 `/admin/roles`에서 명시적으로 매핑해야 메뉴가 보인다. (매핑은 `role_id` 기준이라 `26`의 `partner`→`BigCorp` code 변경 후에도 그대로 유지됨.)
 
+### chatbot_messages (`42`) — 챗봇 위젯 대화 원본 기록
+`id PK`, `user_id → users.id (ON DELETE CASCADE)`, `role`(`user`/`assistant`), `content TEXT`, `created_at TIMESTAMPTZ DEFAULT now()`.
+- 사용자당 단일 연속 스레드(append-only, 대화방 개념 없음). **행을 삭제하지 않는다** — "새 대화"는 `chatbot_clears`만 갱신(아래).
+- 인덱스: `idx_chatbot_messages_user_id(user_id, created_at)` — 사용자별 시간순 조회 최적화.
+- 상세는 `docs/chatbot.md` 참고(Tools 목록, 보안 범위, LLM 연동 환경변수).
+
+### chatbot_clears (`43`) — 챗봇 "새 대화" 경계
+`user_id PK → users.id (ON DELETE CASCADE)`, `cleared_at TIMESTAMPTZ NOT NULL DEFAULT now()`.
+- 사용자당 최대 1행(upsert). `chatbotModel.getHistory()`가 `chatbot_messages.created_at > cleared_at`인 행만 조회해 위젯/LLM 컨텍스트에 노출한다 — `chatbot_messages` 원본은 그대로 두는 소프트 리셋.
+- `chatbotModel.clearHistory(userId)`가 `INSERT ... ON CONFLICT (user_id) DO UPDATE`로 갱신.
+
 ## 관계 요약
 - `users.partner_id → partners.id` (**FK 제약 없음 [Needs verification]**; 컬럼만 존재).
 - `firewall_requests.partner_code → partners.partner_code` (ON DELETE SET NULL).
@@ -87,8 +98,8 @@
 - `users.role`(문자열) ↔ `roles.code`는 FK 없이 **문자열 매칭**으로 연결됨(`menuModel.getNavMenusByRole`, `menuModel.getApiSidebarByRole` 등이 `WHERE code = $1`로 조회). 두 값은 항상 동기화되어야 함 — 예: `26_rename_partner_role_to_bigcorp.sql`은 `roles.code`와 `users.role`을 동시에 변경.
 - `partners.role_id → roles.id`(`27`, 실제 FK): 파트너 로그인 사용자는 이 매핑이 `users.role` 문자열 매칭보다 **우선 적용**된다(`loadNavMenus`, `apiReferenceController`가 `sessionUser.partnerId`로 조회). 관리자(admin, `partnerId` 없음)는 `users.role`만 사용. 사용자 단위(개별 users row) FK는 여전히 없음 — 다음 이터레이션 **[예정]**.
 
-## 인덱스 (`01`, `07`, `21`)
-`idx_partners_status`, `idx_firewall_approval_status`, `idx_notices_created_at(DESC)`, `idx_inquiries_status`, `idx_api_specs_category`, `idx_pfa_user`, `idx_menus_parent_id`, `idx_menus_display_order`, `idx_role_menus_menu_id`.
+## 인덱스 (`01`, `07`, `21`, `42`)
+`idx_partners_status`, `idx_firewall_approval_status`, `idx_notices_created_at(DESC)`, `idx_inquiries_status`, `idx_api_specs_category`, `idx_pfa_user`, `idx_menus_parent_id`, `idx_menus_display_order`, `idx_role_menus_menu_id`, `idx_chatbot_messages_user_id`.
 
 ## 주요 쿼리 (models)
 - 조회: 대부분 `SELECT ... ORDER BY created_at/requested_at DESC`. Admin 방화벽은 `partner_firewall_applies`에 `users`·`partners` LEFT JOIN.

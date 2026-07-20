@@ -11,6 +11,7 @@
 | Support | 운영 지원 | 김은성 | 로그인 필요 |
 | Admin | 관리자 | 임가윤 | admin 전용 |
 | Auth | (로그인/신청) | 공통 | 공개 |
+| Chatbot | (우측 하단 위젯) | 공통 | 로그인 필요 |
 
 ## 모듈별 상세
 
@@ -74,6 +75,11 @@
 ### Auth
 - 역할: 로그인/로그아웃, 파트너사 코드 신청.
 - 위치: `routes/auth.js` → `authController.js` → `userModel`, `partnerModel` → `views/auth/login.ejs`(`layout:false`).
+
+### Chatbot (공통 위젯)
+- 역할: 로그인한 모든 페이지 우측 하단 아이콘 → 대화 패널. OpenAI function calling으로 `hapi_db` 데이터와 포털 정적 콘텐츠(공지/FAQ/API 문서/공통코드/에러코드/시스템정보/헤더필드/가이드)를 조회해 답하고, 로그인 사용자 본인의 문의·방화벽 신청 현황도 세션 범위로 조회 가능. 특정 개발자 소유가 아닌 레이아웃/파셜과 동일한 **공통 영역**(`team-ownership.md` §3).
+- 위치: `routes/chatbot.js`(`isAuthenticated` 일괄 적용) → `chatbotController.js` → `chatbotModel.js`(대화 이력 CRUD + 기존 모델 재사용 컨텍스트 헬퍼) → `views/partials/chatbot.ejs`(레이아웃에 공통 포함) + `public/js/common/chatbot.js` + `public/css/chatbot.css`.
+- 대화 이력은 `chatbot_messages` 테이블(`42`)에 사용자당 단일 스레드로 영구 저장 — 페이지 이동/재접속에도 이어짐. 상세(Tools 목록, 보안 범위, 환경변수, 아이콘 교체 방법)는 `docs/chatbot.md` 참고.
 
 ## 모듈 간 의존성 / 분기
 - 공통: 세션(`res.locals.user`), 헤더 partial(`currentMenu`, admin 노출 분기), `apiClient.js`.

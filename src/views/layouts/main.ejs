@@ -6,13 +6,16 @@
   <title><%= typeof title !== 'undefined' ? title + ' — HAPI Portal' : 'HAPI Portal' %></title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/chatbot.css">
 </head>
 <body>
   <%- include('../partials/header') %>
   <div class="page-wrapper">
     <%- body %>
   </div>
+  <%- include('../partials/chatbot') %>
   <script src="/js/common/apiClient.js"></script>
+  <script src="/js/common/chatbot.js"></script>
   <script>
     // 비고 툴팁 마우스 위치 추적
     document.addEventListener('mousemove', function(e) {

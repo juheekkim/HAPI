@@ -1,0 +1,22 @@
+<% if (locals.user) { %>
+<div id="chatbot-widget" class="chatbot-widget">
+  <button id="chatbot-toggle" class="chatbot-toggle" type="button" aria-label="챗봇 열기">
+    <img id="chatbot-toggle-icon" src="" alt="챗봇" />
+  </button>
+
+  <div id="chatbot-panel" class="chatbot-panel" hidden>
+    <div class="chatbot-panel-header">
+      <span>HAPI 챗봇</span>
+      <div class="chatbot-panel-header-actions">
+        <button id="chatbot-clear" type="button" title="새 대화">새 대화</button>
+        <button id="chatbot-close" type="button" aria-label="닫기">✕</button>
+      </div>
+    </div>
+    <div id="chatbot-messages" class="chatbot-messages"></div>
+    <form id="chatbot-form" class="chatbot-form">
+      <textarea id="chatbot-input" placeholder="궁금한 점을 물어보세요" rows="1" maxlength="2000"></textarea>
+      <button id="chatbot-send" type="submit">전송</button>
+    </form>
+  </div>
+</div>
+<% } %>

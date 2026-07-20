@@ -52,6 +52,7 @@ const guideRoutes = require('./routes/guide');
 const apiReferenceRoutes = require('./routes/apiReference');
 const supportRoutes = require('./routes/support');
 const adminRoutes = require('./routes/admin');
+const chatbotRoutes = require('./routes/chatbot');
 
 app.use('/auth', authRoutes);
 app.use('/home', homeRoutes);
@@ -59,6 +60,7 @@ app.use('/guide', guideRoutes);
 app.use('/api-reference', apiReferenceRoutes);
 app.use('/support', supportRoutes);
 app.use('/admin', adminRoutes);
+app.use('/chatbot', chatbotRoutes);
 
 // Root redirect
 app.get('/', (req, res) => {

@@ -21,16 +21,17 @@ HAPI는 **리조트 API 플랫폼 가이드 포털**이다.
 src/
 ├── app.js                 # 앱 진입점, 미들웨어/라우트 등록, 404·에러 핸들러
 ├── config/database.js     # pg Pool (DATABASE_URL)
-├── routes/                # auth, home, guide, apiReference, support, admin
+├── routes/                # auth, home, guide, apiReference, support, admin, chatbot
 ├── controllers/           # 라우트별 컨트롤러 (동명)
 ├── models/                # DB 쿼리 모듈 (= 데이터 접근 계층)
 ├── middlewares/           # isAuthenticated, isAdmin
 ├── scripts/               # setup.js(어드민 생성), createPartnerUser.js
-├── views/                 # EJS: layouts/, partials/, home/, guide/, apiReference/, support/, admin/, auth/, error/
-└── public/                # css/common.css, js/common/apiClient.js
-db/scripts/                # 01_, 02_, 07_, 16_ ... 누적 DDL/DML
+├── views/                 # EJS: layouts/, partials/(header, chatbot), home/, guide/, apiReference/, support/, admin/, auth/, error/
+└── public/                # css/common.css, css/chatbot.css, js/common/apiClient.js, js/common/chatbot.js, images/chatbot-icon.svg
+db/scripts/                # 01_, 02_, 07_, 16_ ... 42_ 누적 DDL/DML
 docs/                      # 본 문서 세트
 ```
+- 챗봇(우측 하단 위젯, `docs/chatbot.md`)은 모든 로그인 페이지 레이아웃에 공통 포함되는 **공통 영역** 모듈로, `routes/chatbot.js → controllers/chatbotController.js → models/chatbotModel.js`가 OpenAI function calling으로 기존 모델(공지/FAQ/API스펙/공통코드/에러코드/시스템정보/헤더필드/방화벽신청)을 재사용해 응답한다.
 AI 지시문: 루트(`AGENTS.md`/`CLAUDE.md`/`GEMINI.md`/`.github/copilot-instructions.md`), 영역별(`frontend/`, `backend/`, `db/`), 경로별(`.github/instructions/*.instructions.md`), 오버라이드(`AGENTS.override.md`).
 
 ## 4. 계층 & 요청 흐름
@@ -60,4 +61,4 @@ Browser ──HTTP──▶ Express (app.js)
 - DB 미연결 시 여러 모델이 STATIC fallback 데이터를 반환(데모 목적).
 
 ## 관련 문서
-`docs/modules.md`, `docs/db-schema.md`, `docs/business-rules.md`, `docs/auth.md`, `docs/api.md`, `docs/menu-routing.md`, `docs/development.md`, 루트 `team-ownership.md`, `coding-convention.md`.
+`docs/modules.md`, `docs/db-schema.md`, `docs/business-rules.md`, `docs/auth.md`, `docs/api.md`, `docs/menu-routing.md`, `docs/development.md`, `docs/chatbot.md`, 루트 `team-ownership.md`, `coding-convention.md`.

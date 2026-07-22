@@ -1,10 +1,10 @@
 # DB Area Instructions
 
 Scope: schema and queries. DDL/DML live under `db/scripts/**` (numbered prefix); query modules live under `src/models/**`. This folder holds only AI instructions.
-Root instructions in `/CLAUDE.md` (and `/AGENTS.md`, `/GEMINI.md`) take priority over this file.
+Root instructions in `/CLAUDE.md` (and `/AGENTS.md`, `/GEMINI.md`, `/CODEX.md`) take priority over this file.
 
 ## Before You Edit
-- Read `docs/db-schema.md` (and for the product you use, the matching `db/AGENTS.md` / `db/CLAUDE.md` / `db/GEMINI.md` / `.github/instructions/db.instructions.md`).
+- Read `docs/db-schema.md` (and for the product you use, the matching `db/AGENTS.md` / `db/CLAUDE.md` / `db/GEMINI.md` / `db/CODEX.md` / `.github/instructions/db.instructions.md`).
 - Inspect existing scripts and model queries; reuse current naming and patterns.
 
 ## Key Facts (source of truth = code)

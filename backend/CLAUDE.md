@@ -1,7 +1,7 @@
 # Backend Area Instructions
 
 Scope: server logic. Actual code lives under `src/` (`app.js`, `config/`, `routes/`, `controllers/`, `models/`, `middlewares/`, `scripts/`). This folder holds only AI instructions.
-Root instructions in `/CLAUDE.md` (and `/AGENTS.md`, `/GEMINI.md`) take priority over this file.
+Root instructions in `/CLAUDE.md` (and `/AGENTS.md`, `/GEMINI.md`, `/CODEX.md`) take priority over this file.
 
 ## Before You Edit
 - Read `docs/backend.md`, `docs/business-rules.md`, `docs/api.md`, and `docs/auth.md`.

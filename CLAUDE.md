@@ -13,7 +13,7 @@ HAPI = 리조트 API 플랫폼 포털. Node.js/Express, EJS, PostgreSQL (pg Pool
 ## Required References
 
 Before editing, read: docs/architecture.md, docs/db-schema.md, docs/business-rules.md, docs/modules.md, docs/development.md.
-Then read the area file for your work: frontend/, backend/, or db/ (CLAUDE.md / AGENTS.md / GEMINI.md).
+Then read the area file for your work: frontend/, backend/, or db/ (CLAUDE.md / AGENTS.md / GEMINI.md / CODEX.md).
 
 ## Documentation Rule
 
@@ -25,4 +25,4 @@ Instruct AI in English. Korean is fine for business notes. Keep code/DB/API/tabl
 
 ## Maintenance
 
-Source code is the source of truth. Keep root files compact; details under docs/. Keep CLAUDE.md, AGENTS.md, GEMINI.md, Copilot synced.
+Source code is the source of truth. Keep root files compact; details under docs/. Keep CLAUDE.md, AGENTS.md, GEMINI.md, CODEX.md, Copilot synced.

@@ -1,7 +1,7 @@
 # Frontend Area Instructions
 
 Scope: server-rendered UI. Actual code lives under `src/views/**` (EJS) and `src/public/**` (css/js). This folder holds only AI instructions.
-Root instructions in `/CLAUDE.md` (and `/AGENTS.md`, `/GEMINI.md`) take priority over this file.
+Root instructions in `/CLAUDE.md` (and `/AGENTS.md`, `/GEMINI.md`, `/CODEX.md`) take priority over this file.
 
 ## Before You Edit
 - Read `docs/frontend.md`, `docs/modules.md`, and `docs/menu-routing.md`.

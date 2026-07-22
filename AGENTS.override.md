@@ -3,7 +3,7 @@
 Use this file ONLY for temporary, exceptional situations (hotfix, spike, migration, one-off experiment).
 
 ## Priority
-This file does NOT take priority over the root instructions (`/AGENTS.md`, `/CLAUDE.md`, `/GEMINI.md`, `.github/copilot-instructions.md`).
+This file does NOT take priority over the root instructions (`/AGENTS.md`, `/CLAUDE.md`, `/GEMINI.md`, `/CODEX.md`, `.github/copilot-instructions.md`).
 When anything here conflicts with root or area instructions, root/area wins.
 
 ## Rules

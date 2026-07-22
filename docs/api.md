@@ -1,6 +1,6 @@
 # API — 포털이 문서화하는 리조트 API 스펙
 
-> 이 문서는 **포털이 외부 연동사에 안내하는 리조트 API 스펙**을 정리한다. 실제 구현체는 이 저장소에 없다(외부 백엔드). Source of truth: `src/models/apiSpecModel.js`(STATIC_SPECS) + `api_specs` 테이블 + `db/scripts/02_seed_data.sql`.
+> 이 문서는 **포털이 외부 연동사에 안내하는 리조트 API 스펙**을 정리한다. 실제 구현체는 이 저장소에 없다(외부 백엔드). Source of truth: `src/models/apiSpecModel.js`(STATIC_SPECS) + `api_specs` 테이블 + `db/scripts/**`.
 
 ## 데이터 소스
 - 화면(`/api-reference`)은 `apiSpecModel.getAll()` 사용: `api_specs`에 행이 있으면 DB, 없거나 오류면 `STATIC_SPECS`.
@@ -19,6 +19,11 @@
 | estate | estate-facility | 부대시설 예약 API | GET `/api/v1/estate/facilities` |
 | common | error-codes | 공통 에러 코드 | (errorCodes 목록) |
 | common | auth | 인증 API | POST `/api/v1/auth/token` |
+
+## 대형법인사 리조트 예약 등록 (DB 스펙)
+- `44_update_bigcorp_resort_reservation_api.sql`이 `domain='condo'`의 예약 등록 엔드포인트를 `POST HBSREMPRR9901`로 갱신한다.
+- 관리자 화면에서 확정한 Request 파라미터 21개와 `예약 등록` 설명을 `api_specs.endpoints` JSONB에 저장한다.
+- 기존 예약 조회·취소 엔드포인트는 보존하며, 같은 서비스 ID 또는 기존 레거시 예약 등록 엔드포인트를 교체하므로 반복 실행해도 중복되지 않는다.
 
 ## 공통 규약 (스펙상)
 - 응답: `{ resultCode, resultMsg, data }`. 성공 `resultCode="0000"`.

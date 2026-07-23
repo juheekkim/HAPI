@@ -80,6 +80,8 @@
 - 역할: 로그인한 모든 페이지 우측 하단 아이콘 → 대화 패널. OpenAI function calling으로 `hapi_db` 데이터와 포털 정적 콘텐츠(공지/FAQ/API 문서/공통코드/에러코드/시스템정보/헤더필드/가이드)를 조회해 답하고, 로그인 사용자 본인의 문의·방화벽 신청 현황도 세션 범위로 조회 가능. 특정 개발자 소유가 아닌 레이아웃/파셜과 동일한 **공통 영역**(`team-ownership.md` §3).
 - 위치: `routes/chatbot.js`(`isAuthenticated` 일괄 적용) → `chatbotController.js` → `chatbotModel.js`(대화 이력 CRUD + 기존 모델 재사용 컨텍스트 헬퍼) → `views/partials/chatbot.ejs`(레이아웃에 공통 포함) + `public/js/common/chatbot.js` + `public/css/chatbot.css`.
 - 대화 이력은 `chatbot_messages` 테이블(`42`)에 사용자당 단일 스레드로 영구 저장 — 페이지 이동/재접속에도 이어짐. 상세(Tools 목록, 보안 범위, 환경변수, 아이콘 교체 방법)는 `docs/chatbot.md` 참고.
+- UI 갱신: 패널 기본 크기를 `440x680`으로 확장했고(모바일은 뷰포트 제한), assistant 답변은 markdown/코드 블록/JSON 트리 뷰어로 구조화해 표시한다. API 질의에서는 답변 하단에 "API 문서 트리"(문서→상세 API→요청/응답 필드)를 제공하며, LLM 통신 trace(Request/Response/Tool Calls) 패널은 운영 사용자 화면에서 숨긴다.
+- 추가 UX: 챗봇 답변 내 API/헤더/필드 언급 텍스트를 클릭하면 챗봇창을 유지한 채 API Reference로 즉시 점프한다. 이동은 본문 영역 비동기 교체 + 히스토리 pushState 기반이며, 도착지에서 탭/아코디언 자동 펼침과 위치 강조를 수행한다.
 
 ## 모듈 간 의존성 / 분기
 - 공통: 세션(`res.locals.user`), 헤더 partial(`currentMenu`, admin 노출 분기), `apiClient.js`.

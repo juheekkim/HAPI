@@ -22,7 +22,16 @@ const apiClient = {
     return res.json();
   },
 
+  async requestText(method, url) {
+    const res = await fetch(url, { method, credentials: 'same-origin' });
+    if (!res.ok) {
+      throw { status: res.status, message: '요청에 실패했습니다.' };
+    }
+    return res.text();
+  },
+
   get(url)        { return this.request('GET', url); },
+  getText(url)    { return this.requestText('GET', url); },
   post(url, data) { return this.request('POST', url, data); },
   put(url, data)  { return this.request('PUT', url, data); },
   delete(url)     { return this.request('DELETE', url); },

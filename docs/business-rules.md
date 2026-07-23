@@ -65,6 +65,13 @@
 - 헤더 메뉴는 로그인 사용자 공통, `role==='admin'`일 때만 "관리자" 탭 노출.
 - 별도 포탈(파트너 전용/관리자 전용) URL 분리는 없고 단일 포털에서 권한으로 분기. 세부는 `docs/menu-routing.md`.
 
+## 9-1. 챗봇 표시 규칙(UI)
+- 챗봇 패널 기본 크기는 데스크톱 `440x680`(모바일은 뷰포트 기반 축소)이며, 대화 가독성을 위해 assistant 출력은 markdown + 코드 블록 + JSON 트리 뷰어 형태로 구조화한다.
+- 일반 질의는 텍스트 중심으로 표시하고, API 질의는 답변 하단에 "API 문서 트리"(문서→상세 API→요청/응답 필드)를 함께 표시한다.
+- LLM 통신 과정의 trace(Request/Response/Tool Calls) JSON은 운영 사용자 화면에 노출하지 않는다.
+- `apiDocs`/trace 데이터는 `/chatbot/message` 응답에만 포함되는 현재 턴 정보이며, `chatbot_messages` 원문에는 저장하지 않는다(이력 조회 시 assistant 텍스트 원문만 복원).
+- 챗봇 응답에서 API 문서/헤더/필드로 매핑 가능한 텍스트를 클릭하면 챗봇창을 닫지 않고(열림/스크롤/입력중 상태 유지) API Reference 목표 위치로 이동한다. 이동 후 관련 탭/아코디언은 자동으로 펼치고 대상 섹션/행을 강조 표시한다.
+
 ## 10. API Reference "테스트" 샌드박스
 - 대상: `api_specs.endpoints[].url`이 `/`로 시작하지 않는 엔드포인트만(HABIS 엑셀/이미지 자동입력으로 등록된 SVC-ID 스타일). `url`이 `/api/v1/...` 같은 REST 경로인 레거시/수기 스펙(STATIC_SPECS 계열)은 실제 호출 대상이 확인되지 않아 버튼 자체가 노출되지 않는다.
 - 흐름: `index.ejs`의 🧪 테스트 버튼 → 팝업에서 파라미터 확인/수정 → `POST /api-reference/try`(`isAuthenticated`만 적용, admin 전용 아님 — 파트너도 자신에게 매핑된 문서는 사용 가능) → 서버가 게이트웨이로 프록시 호출 후 결과를 그대로 반환.

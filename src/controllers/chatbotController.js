@@ -6,6 +6,7 @@ const MAX_MESSAGE_LENGTH = 2000;
 const MAX_HISTORY = 50;
 const MAX_TOOL_ITERATIONS = 5;
 const REQUEST_TIMEOUT_MS = 30000;
+const TRACE_TEXT_LIMIT = 4000;
 
 const SYSTEM_PROMPT = `너는 HAPI(리조트 API 플랫폼 포털)의 안내 챗봇이다.
 제공된 도구로 조회한 사실만 근거로 한국어로 답하고, 도구 조회 결과에 없는 내용은 "확인되지 않습니다"라고 답하며 지어내지 않는다.
@@ -166,6 +167,44 @@ async function callLlm({ baseUrl, apiKey, model }, messages) {
   return data.choices[0].message;
 }
 
+function safeParseJson(value) {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function truncateTrace(value) {
+  if (value === null || value === undefined) return value;
+  const raw = typeof value === 'string' ? value : JSON.stringify(value);
+  if (!raw || raw.length <= TRACE_TEXT_LIMIT) return value;
+  return {
+    truncated: true,
+    preview: raw.slice(0, TRACE_TEXT_LIMIT),
+  };
+}
+
+function isApiFocusedMessage(message) {
+  if (!message) return false;
+  return /(\bapi\b|endpoint|json|요청|응답|파라미터|헤더|전문|시스템코드|systemheader|transactionheader|messageheader|intf_id|recv_svc_cd)/i.test(
+    message
+  );
+}
+
+function hasApiToolCall(toolCalls) {
+  if (!Array.isArray(toolCalls) || toolCalls.length === 0) return false;
+  const apiTools = new Set([
+    'search_api_docs',
+    'get_header_fields',
+    'get_system_info',
+    'get_error_codes',
+    'get_common_codes',
+  ]);
+  return toolCalls.some((call) => apiTools.has(call.name));
+}
+
 const chatbotController = {
   async getHistory(req, res) {
     const history = await chatbotModel.getHistory(req.session.user.id, MAX_HISTORY);
@@ -208,9 +247,21 @@ const chatbotController = {
       ];
 
       let reply = null;
+      const trace = {
+        model: config.model,
+        iterations: 0,
+        toolCalls: [],
+        request: { query: message },
+      };
+      let apiDocs = [];
 
       for (let i = 0; i < MAX_TOOL_ITERATIONS; i += 1) {
+        trace.iterations = i + 1;
         const responseMessage = await callLlm(config, messages);
+        trace.response = truncateTrace({
+          content: responseMessage.content || '',
+          toolCalls: responseMessage.tool_calls || [],
+        });
 
         if (!responseMessage.tool_calls || responseMessage.tool_calls.length === 0) {
           reply = responseMessage.content || '답변을 생성하지 못했습니다.';
@@ -226,6 +277,15 @@ const chatbotController = {
             args = {};
           }
           const result = await executeTool(toolCall.function.name, args);
+          if (toolCall.function.name === 'search_api_docs' && Array.isArray(result)) {
+            apiDocs = result;
+          }
+          trace.toolCalls.push({
+            id: toolCall.id,
+            name: toolCall.function.name,
+            args: truncateTrace(args),
+            result: truncateTrace(result),
+          });
           messages.push({
             role: 'tool',
             tool_call_id: toolCall.id,
@@ -234,12 +294,26 @@ const chatbotController = {
         }
       }
 
+      const showApiTrace = isApiFocusedMessage(message) || hasApiToolCall(trace.toolCalls);
+
       if (!reply) {
         reply = '죄송합니다, 지금은 답변을 완성하지 못했습니다. 다시 시도해 주세요.';
       }
 
       await chatbotModel.addMessage(sessionUser.id, 'assistant', reply);
-      res.json({ success: true, reply });
+      res.json({
+        success: true,
+        reply,
+        apiDocs,
+        trace: {
+          model: trace.model,
+          iterations: trace.iterations,
+          showApiTrace,
+          request: trace.request,
+          toolCalls: trace.toolCalls,
+          response: safeParseJson(reply),
+        },
+      });
     } catch (error) {
       console.error('chatbot sendMessage 오류:', error);
       res.status(502).json({

@@ -52,6 +52,9 @@
 - `domain`은 `UNIQUE` 제약이 있어 중복 등록 시 폼으로 되돌아가 에러 메시지를 보여준다(다른 admin 모듈과 달리 실패를 조용히 무시하지 않음).
 - **중요**: `apiSpecModel.getAll()`(API Reference가 사용)은 `api_specs`에 **1건이라도 저장되어 있으면 STATIC_SPECS 폴백을 더 이상 반환하지 않는다.** 즉 관리자가 API를 처음 등록하는 순간부터 기존 데모용 STATIC_SPECS 화면은 보이지 않게 되고 DB에 등록된 내용만 노출된다.
 - 등록된 API는 API Reference 화면(`/api-reference?doc=<domain>`)에서 바로 조회 가능하나, 좌측 사이드바는 하드코딩된 domain 목록이라 새 domain이 자동으로 사이드바에 추가되지는 않는다 — **[Needs verification: 사이드바 동적화 필요 여부]**.
+- **파라미터ID의 점(.) 표기 = Data 배열 그룹핑(요청, 갱신)**: "수기 작성" 파라미터 입력칸(`파라미터ID`)에 `ds_inSearch.CORP_CD`처럼 점을 포함해 입력하면 API Reference 테스트 샌드박스(§10)와 동일한 규칙으로 `Data.ds_inSearch = [ {...} ]` 배열로 그룹핑된다 — 별도 UI(그룹 선택 등) 없이 파라미터ID 값 자체가 그룹 지정 수단이다. `api-form.ejs`는 각 엔드포인트 블록에 이 규칙을 그대로 재현한 "Data 봉투 미리보기"(읽기전용, 파라미터ID 입력 시 실시간 갱신)를 제공해 관리자가 저장 전 실제 전송 봉투 모양을 확인할 수 있다.
+- **응답 예시도 요청 파라미터와 동일한 필드 표로 관리(요청, 신규)**: 기존엔 응답 예시가 raw JSON textarea 하나였으나, `api-form.ejs`가 요청 파라미터와 동일한 구조(필드ID/필드명/Data Type/예시 값/설명)의 표로 대체했다. 필드ID에 점 표기(예: `ds_prcsResult.PROC_CD`)를 쓰면 요청과 동일하게 `{ "ds_prcsResult": [ {...} ] }` 배열로 그룹핑되어 저장된다(응답 예시 JSON 자체엔 상위 `Data` 키를 씌우지 않는다 — 기존 `ep.responseExample` 저장 형식과 동일, API Reference 읽기 화면이 표시할 때만 `{ Data: ... }`로 감싼다). "예시 값" 칸이 비어 있으면 `null`로 저장된다(§10 null 규칙과 통일). Data Type이 `Number`/`Integer`면 숫자로, `Boolean`이면 불리언으로 변환해 저장(문자열 "0"/"true"로 남지 않도록).
+  - **수정 모드 역변환**: 기존에 저장된 `responseExample`(JSON 문자열)을 열면 `flattenResponseExampleToFields`가 위 규칙의 역으로 필드 표를 자동 생성한다. 배열이 아닌 중첩 객체 등 이 규칙에 맞지 않는 예전 데이터(예: STATIC_SPECS 유래 `condo` 도메인의 `{ resultCode, resultMsg, data: {...} }`)는 값 손실 없이 해당 값을 JSON 문자열 그대로 한 행("예시 값" 칸)에 보존한다 — 필드명/설명은 응답 예시에 원래 메타데이터가 없어 항상 빈 칸(기존 규칙과 동일).
 
 ## 8. 예외 / 에지 케이스
 - DB 미연결·쿼리 오류: 다수 조회 모델이 STATIC fallback 반환하고 화면은 정상 렌더(에러 숨김) → 운영 시 오해 소지, 로깅만 수행.
@@ -71,11 +74,21 @@
 - 공통헤더(System/Transaction/Message) 자동입력 규칙(`header_fields` 재사용, 클라이언트 JS `computeHeaderDefault`/`buildHeaderSection`에서 계산 — 각 섹션의 모든 필드를 채우고 값 없는 항목도 키는 유지):
   1. `required_request === '×'`(요청측 미생성) → 키는 유지하고 값은 `null`(실제 관측 예시에서 `MessageHeader.MSG_PRCS_RSLT_CD: null` 등으로 확인).
   2. `setting_type === 'fix'` → `setting_value` 그대로 사용(값을 추측하지 않고 DB에 저장된 값 그대로).
-  3. `setting_type === 'variable'`(서비스/호출마다 달라질 수 있음, 예: 전문일련번호·타임스탬프 등) → 자동으로 채우지 않고 빈 값, 사용자가 반드시 직접 입력해야 함.
-  4. 그 외(`setting_type === 'none'`, 예: `CMP_NO`/`BRANCH_NO`/`SCREEN_ID`) → 빈 값이지만 비워둬도 되는 선택 항목.
+  3. `setting_type === 'variable'`(서비스/호출마다 달라질 수 있음, 예: 전문일련번호·타임스탬프 등) → 아래 §자동 계산 대상(`HEADER_AUTO_COMPUTE`)에 없으면 자동으로 채우지 않고 `null`(요청, 빈 문자열 `""` 아님), 사용자가 반드시 직접 입력해야 함.
+  4. 그 외(`setting_type === 'none'`, 예: `CMP_NO`/`BRANCH_NO`/`SCREEN_ID`) → `null`이지만 비워둬도 되는 선택 항목.
   5. **예외(잠금, `setting_type`과 무관)**: `RECV_SVC_CD`(수신서비스코드)는 테스트 대상 엔드포인트의 `ep.url`(SVC ID, 예: `HBSGOLOCH0119`)을 그대로, `INTF_ID`(인터페이스ID)는 `{systemCode}00{ep.url}`(예: `OCH00HBSGOLOCH0119`)을 자동 산출해 넣고 두 필드 모두 읽기전용으로 잠근다(`index.ejs` `makeFieldRow`의 `kind==='locked'`, `computeIntfId`). `systemCode`(모달 상단 입력칸)를 바꾸면 `onSystemCodeChange()`가 `INTF_ID`를 즉시 다시 계산한다. 테스트 중인 API 자체로 결정되는 값이라 사용자가 실수로 다른 값을 넣을 수 없게 막은 것.
   - **UI 구분(`index.ejs` `fieldKind`/`FIELD_KIND_STYLE`)**: 구조화 보기의 각 입력 행에 배지+테두리 색으로 fix(회색 "고정값")/variable(주황 "필수 입력", `setting_value`를 placeholder 힌트로 표시)/none(연회색 "선택")/locked(진회색 "자동 고정(수정불가)", 읽기전용)을 구분해, 사용자가 반드시 채워야 하는 값·비워도 되는 값·건드릴 수 없는 값을 한눈에 알 수 있게 한다.
+  - **`variable` 필드 중 일부는 값 형식이 고정 규칙이라 자동 계산해 채운다(요청, `index.ejs` `HEADER_AUTO_COMPUTE`)** — 여전히 `variable`(주황 "필수 입력") 배지로 표시되고 편집 가능, 값만 미리 채워질 뿐이다:
+    - `FRS_RQST_SYS_CD`(최초요청시스템코드) = 모달 상단 `systemCode`(추천값은 `ep.description`의 첫 토큰).
+    - `TMSG_CRE_SYS_NM`(표준전문생성시스템명) = `systemCode` + 랜덤 숫자 5자리.
+    - `STD_TMSG_SEQ_NO`(표준전문일련번호) = 랜덤 숫자 1자리 + Unix time(ms, 13자리) = 총 14자리.
+    - `ENVR_INFO_DV_CD`(환경정보구분코드) = 고정값 `D`.
+    - `FRS_RQST_DTM`(최초요청일시)/`TMSG_RQST_DTM`(표준전문송신일시) = 팝업을 연 시점 기준 `YYYYMMDDHHMMSSTTT`(17자리, 밀리초 포함).
+    - `TMSG_WRTG_DT`(표준전문작성일자) = 팝업을 연 시점 기준 `YYYYMMDD`(8자리).
+    - `systemCode`는 `openTryModal()`이 `currentPayload` 조립 전에 먼저 확정해 `buildHeaderSection(groups, sysCode)`에 전달한다(전문구조 탭의 정적 "전문 예시"는 특정 엔드포인트 문맥이 없어 플레이스홀더 `{시스템코드}`를 사용).
 - Body(`Data`): `ep.params` 전체를 입력 필드로 노출하되, API 스펙상 `required=true`인 항목은 "필수 입력"(주황), `required=false`인 항목은 "선택"(연회색) 배지로 구분. 접두사별로 배열 그룹핑(위 참고).
+  - **Data 필드 기본값(`index.ejs` `DATA_FIELD_DEFAULTS`, 요청)**: 여러 API에 공통으로 등장하고 테스트 환경 기준값이 정해진 필드는 리프 필드명(접두사 제외) 기준으로 자동 채운다. 현재 `CORP_CD`(법인 코드) = `1000`. 편집 가능하며, 목록에 없는 필드는 `null`(요청, 빈 문자열 `""` 아님).
+- **빈 값 표기(요청, 갱신)**: 헤더/Data를 막론하고 자동으로 채우지 않는 필드는 전문 조립 시 값이 `""`(빈 문자열)이 아니라 `null`이다(`computeHeaderDefault`/`buildDataSection` 공통 규칙). 팝업 입력창은 `null`이어도 빈칸으로 보이며(`makeFieldRow`), 사용자가 입력하면 그 값으로 대체된다.
 - 위 자동 조립은 어디까지나 기본값이며, 필드별 null/빈값 처리 등 세부 사양이 SVC마다 다를 수 있어 팝업의 "구조화 보기"에서 편집하거나 "Raw JSON" 탭에서 최종 페이로드를 직접 고쳐서 실행할 수 있다. 실제로 전송되는 값은 항상 사용자가 실행 시점에 확인한 JSON이다.
 - **응답 해석(`index.ejs` `renderTryResult`)**: 실제 게이트웨이는 정상/오류 모두 `SystemHeader`/`TransactionHeader`를 포함한 JSON 봉투로 응답하며, `MessageHeader.MSG_DATA_SUB[].MSG_CD`/`MSG_CTNS`(메시지 코드/코드에 대한 한글 명칭)는 성공·실패 모두 채워져 온다(성공 예: `SCMI000001`/"정상적으로 처리되었습니다.", 실패 예: `REME000074`/쿠폰 사용 불가 안내 — 관측된 실 예시로 확인). 결과 패널은 이를 요약으로 먼저 보여주고 전체 원본 응답은 접어서 아래에 둔다:
   1. 응답이 `SystemHeader`/`TransactionHeader`를 포함한 JSON 객체가 아님(예: 게이트웨이의 HTML 404 에러 페이지) → "⚠ 예상된 응답 형식이 아닙니다..." 경고 + 원본 응답을 펼친 상태로 바로 표시(요약할 게 없으므로).

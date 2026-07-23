@@ -454,16 +454,32 @@ function filterSidebar(query) {
 // 실행 전 사용자가 구조화 보기/Raw JSON에서 항상 확인·수정할 수 있게 한다.
 const headerFieldsData = <%- JSON.stringify(headerFields) %>;
 
+// 일부 variable 필드는 값 형식이 고정 규칙이라(요청, docs/business-rules.md §10) 버튼 클릭 시점
+// 기준으로 자동 계산해 채운다. sysCode는 모달 상단 "시스템코드" 입력칸 값(추천값은 ep.description 기반).
+// buildHeaderSection(아래 정의, 함수 선언 호이스팅)이 바로 아래 renderStructureExample()에서
+// 즉시 호출되므로, 이 const는 그 호출 전에 와야 한다(TDZ).
+const HEADER_AUTO_COMPUTE = {
+  FRS_RQST_SYS_CD: (sysCode) => sysCode,
+  TMSG_CRE_SYS_NM: (sysCode) => sysCode + randomDigits(5),
+  STD_TMSG_SEQ_NO: () => randomDigits(1) + String(Date.now()),
+  ENVR_INFO_DV_CD: () => 'D',
+  FRS_RQST_DTM: () => formatDateTime17(new Date()),
+  TMSG_RQST_DTM: () => formatDateTime17(new Date()),
+  TMSG_WRTG_DT: () => formatDate8(new Date()),
+};
+
 // 전문구조 탭 "전문 예시" 블록 — 아래 buildHeaderSection()(테스트 샌드박스와 동일 로직)을
 // 그대로 재사용해 별도 계산 없이 실제 요청 전문 예시를 렌더링한다. buildHeaderSection은
 // function 선언(호이스팅)이라 이 시점에 정의보다 먼저 호출해도 안전하다.
 (function renderStructureExample() {
   const el = document.getElementById('structureExampleJson');
   if (!el) return;
+  // 특정 엔드포인트 문맥이 없는 정적 예시라 시스템코드는 실제 값 대신 플레이스홀더를 사용.
+  const examplePlaceholderSysCode = '{시스템코드}';
   const example = {
-    SystemHeader: buildHeaderSection(headerFieldsData.system),
-    TransactionHeader: buildHeaderSection(headerFieldsData.transaction),
-    MessageHeader: buildHeaderSection(headerFieldsData.message),
+    SystemHeader: buildHeaderSection(headerFieldsData.system, examplePlaceholderSysCode),
+    TransactionHeader: buildHeaderSection(headerFieldsData.transaction, examplePlaceholderSysCode),
+    MessageHeader: buildHeaderSection(headerFieldsData.message, examplePlaceholderSysCode),
     Data: { '...': 'API마다 다름 — 왼쪽에서 API를 선택한 뒤 해당 문서의 파라미터 표를 참고' },
   };
   el.textContent = JSON.stringify(example, null, 2);
@@ -643,6 +659,13 @@ function renderResponseTable(idx, responseExample) {
   return parsed;
 }
 
+// 일부 Data 필드는 여러 API에 공통으로 등장하고 테스트 환경 기준값이 정해져 있어(요청)
+// 리프 필드명(접두사 제외) 기준으로 자동 채운다. 여전히 편집 가능. buildDataSection(아래,
+// 함수 선언은 호이스팅됨)이 참조하므로 const는 첫 사용(바로 아래 forEach) 전에 와야 한다.
+const DATA_FIELD_DEFAULTS = {
+  CORP_CD: '1000',
+};
+
 // buildDataSection()은 테스트 샌드박스 팝업에서도 쓰는 함수(아래 정의, 함수 선언은 호이스팅되어
 // 이 시점에 먼저 호출해도 안전)를 그대로 재사용해, 요청 파라미터를 접두사 기준으로 그룹핑한
 // 실제 전송 봉투 형태(Data.ds_search = [ {...} ] 등)를 요청 파라미터 표와 별도로 보여준다.
@@ -672,16 +695,40 @@ specEndpoints.forEach((ep, idx) => {
   }
 });
 
+function pad(n, len) {
+  return String(n).padStart(len, '0');
+}
+
+function randomDigits(len) {
+  let s = '';
+  for (let i = 0; i < len; i++) s += Math.floor(Math.random() * 10);
+  return s;
+}
+
+// YYYYMMDDHHMMSSTTT(17자리, 밀리초 3자리 포함).
+function formatDateTime17(d) {
+  return '' + d.getFullYear() + pad(d.getMonth() + 1, 2) + pad(d.getDate(), 2)
+    + pad(d.getHours(), 2) + pad(d.getMinutes(), 2) + pad(d.getSeconds(), 2) + pad(d.getMilliseconds(), 3);
+}
+
+// YYYYMMDD(8자리).
+function formatDate8(d) {
+  return '' + d.getFullYear() + pad(d.getMonth() + 1, 2) + pad(d.getDate(), 2);
+}
+
 // header_fields.setting_type/setting_value/required_request 메타데이터 기반 자동입력 규칙.
 // - required_request === '×' (요청측 미생성): 키는 남기고 값은 null(관측된 실제 봉투 예시 기준).
+// - HEADER_AUTO_COMPUTE에 등록된 필드(fieldNameEn 기준): 위 계산 규칙으로 자동 채움(여전히 편집 가능).
 // - setting_type === 'fix': setting_value를 그대로 채운다(값을 추측하지 않음).
-// - setting_type === 'variable' | 'none': 서비스/호출마다 달라질 수 있어 자동으로 채우지 않고
-//   빈 값으로 두고 사용자가 직접 입력한다. UI에서 variable=필수, none=선택으로 구분 표시한다
-//   (fieldKind가 그 구분을 담당).
-function computeHeaderDefault(field) {
+// - setting_type === 'variable' | 'none'(그 외): 서비스/호출마다 달라질 수 있어 자동으로 채우지 않고
+//   값은 null(요청, 빈 문자열 "" 대신)로 두고 사용자가 직접 입력한다. UI에서 variable=필수,
+//   none=선택으로 구분 표시한다(fieldKind가 그 구분을 담당). 입력창 자체는 null이어도 빈칸으로 보인다
+//   (makeFieldRow의 value !== null ? value : '' 처리).
+function computeHeaderDefault(field, sysCode) {
   if (field.requiredRequest === '×') return null;
+  if (HEADER_AUTO_COMPUTE[field.fieldNameEn]) return HEADER_AUTO_COMPUTE[field.fieldNameEn](sysCode || '');
   if (field.settingType === 'fix') return field.settingValue;
-  return '';
+  return null;
 }
 
 function fieldKind(settingType) {
@@ -690,10 +737,10 @@ function fieldKind(settingType) {
   return 'none';
 }
 
-function buildHeaderSection(groups) {
+function buildHeaderSection(groups, sysCode) {
   const out = {};
   (groups || []).forEach(g => (g.fields || []).forEach(f => {
-    out[f.fieldNameEn] = computeHeaderDefault(f);
+    out[f.fieldNameEn] = computeHeaderDefault(f, sysCode);
   }));
   return out;
 }
@@ -717,18 +764,19 @@ function onSystemCodeChange() {
 // 필수/선택 파라미터 모두 대상(필수 여부는 UI 배지로 구분). 이름에 점(.)이 있으면
 // (예: ds_inSearch.CORP_CD) 접두사를 Data 하위의 배열 키로 그룹핑한다
 // (실제 관측된 봉투 예시: Data.ds_search = [ {필드...} ]). 점이 없으면 Data 바로 아래.
+// DATA_FIELD_DEFAULTS에 없는 필드는 빈 문자열 "" 대신 null로 둔다(요청).
 function buildDataSection(params) {
   const top = {};
   const groups = {};
   (params || []).forEach(p => {
     const parts = p.name.split('.');
     if (parts.length === 1) {
-      top[parts[0]] = '';
+      top[parts[0]] = DATA_FIELD_DEFAULTS[parts[0]] || null;
     } else {
       const prefix = parts[0];
       const leaf = parts.slice(1).join('.');
       groups[prefix] = groups[prefix] || {};
-      groups[prefix][leaf] = '';
+      groups[prefix][leaf] = DATA_FIELD_DEFAULTS[leaf] || null;
     }
   });
   const data = Object.assign({}, top);
@@ -887,18 +935,21 @@ function openTryModal(idx) {
   const ep = specEndpoints[idx];
   if (!ep) return;
 
+  // URL 경로의 시스템코드는 API마다 다르다(예: OCH, LCB) — description의 "{시스템코드} / ..." 첫 토큰을
+  // 추천값으로 채우고, 실행 전 사용자가 직접 확인/수정한다. FRS_RQST_SYS_CD/TMSG_CRE_SYS_NM
+  // 자동 채움이 이 값을 사용하므로 currentPayload를 만들기 전에 먼저 확정한다.
+  const sysCode = (ep.description || '').split(' / ')[0].trim();
+  document.getElementById('trySystemCode').value = sysCode;
+
   // 실제 봉투 구조: { SystemHeader, TransactionHeader, MessageHeader, Data } 4개 최상위 키.
   currentPayload = {
-    SystemHeader: buildHeaderSection(headerFieldsData.system),
-    TransactionHeader: buildHeaderSection(headerFieldsData.transaction),
-    MessageHeader: buildHeaderSection(headerFieldsData.message),
+    SystemHeader: buildHeaderSection(headerFieldsData.system, sysCode),
+    TransactionHeader: buildHeaderSection(headerFieldsData.transaction, sysCode),
+    MessageHeader: buildHeaderSection(headerFieldsData.message, sysCode),
     Data: buildDataSection(ep.params),
   };
 
   document.getElementById('tryModalTitle').textContent = ep.description + ' · ' + ep.url;
-  // URL 경로의 시스템코드는 API마다 다르다(예: OCH, LCB) — description의 "{시스템코드} / ..." 첫 토큰을
-  // 추천값으로 채우고, 실행 전 사용자가 직접 확인/수정한다.
-  document.getElementById('trySystemCode').value = (ep.description || '').split(' / ')[0].trim();
   const resultPanel = document.getElementById('tryResultPanel');
   resultPanel.style.display = 'none';
   resultPanel.textContent = '';

@@ -29,15 +29,16 @@ async function resolveAllowedDocs(sessionUser) {
 const apiReferenceController = {
   async index(req, res) {
     const sessionUser = req.session.user;
+    const isPartial = req.query._partial === '1';
     try {
       const { sidebar, allowedDocs } = await resolveAllowedDocs(sessionUser);
 
       // role이 허용하지 않은 doc으로 직접 접근하면 첫 허용 문서로 리다이렉트
-      if (req.query.doc && !allowedDocs.includes(req.query.doc) && allowedDocs.length > 0) {
+      if (!isPartial && req.query.doc && !allowedDocs.includes(req.query.doc) && allowedDocs.length > 0) {
         return res.redirect('/api-reference?doc=' + encodeURIComponent(allowedDocs[0]));
       }
       // 랜딩: 쿼리 doc(허용된 경우) → role의 첫 허용 문서 → null(허용 문서 없음)
-      const selectedDoc = req.query.doc || allowedDocs[0] || null;
+      const selectedDoc = allowedDocs.includes(req.query.doc) ? req.query.doc : (req.query.doc ? (allowedDocs[0] || null) : (allowedDocs[0] || null));
 
       const specs = await apiSpecModel.getAll();
       const selectedSpec = specs.find((s) => s.domain === selectedDoc) || null;
@@ -72,6 +73,7 @@ const apiReferenceController = {
         systemInfo,
         commonCodes,
         sidebar,
+        layout: isPartial ? false : undefined,
       });
     } catch (err) {
       console.error(err);
@@ -85,6 +87,7 @@ const apiReferenceController = {
         systemInfo: [],
         commonCodes: [],
         sidebar: [],
+        layout: isPartial ? false : undefined,
       });
     }
   },

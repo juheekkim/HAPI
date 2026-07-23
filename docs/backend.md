@@ -16,6 +16,7 @@
 - `home`,`guide`,`api-reference`: `isAuthenticated` 후 `GET /`.
 - `support`: `/`, `/inquiry`(GET/POST), `/firewall-apply`(GET/POST). 모두 `isAuthenticated`.
 - `admin`: `router.use(isAuthenticated, isAdmin)` 후 partners/firewall/inquiries/notices CRUD·상태변경, **apis**(`/admin/apis`) CRUD(등록/수정/삭제 + 목록/폼).
+- `chatbot`: `router.use(isAuthenticated)` 후 `GET /history`, `POST /message`, `POST /clear`. `POST /message`는 기존 `reply` 문자열을 유지하면서 `apiDocs`(API 문서 트리 렌더링 전용)와 `trace`(model/iterations/showApiTrace/request/toolCalls/response, 현재 UI 비노출) 메타데이터를 함께 반환한다.
 
 ## 컨트롤러 규약
 - `'use strict'`, 객체 리터럴로 핸들러 export.

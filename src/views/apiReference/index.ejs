@@ -269,9 +269,30 @@
           .api-subblock { margin-bottom: 20px; }
           .api-subblock:last-child { margin-bottom: 0; }
           .api-subblock-title { font-size: 13px; font-weight: 700; color: #1a3a6b; margin: 0 0 8px; }
+          .api-focus-target {
+            animation: apiFocusFlash 2.8s ease;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.28) inset;
+            border-radius: 6px;
+          }
+          .api-focus-row {
+            animation: apiFocusRowPulse 0.85s ease-in-out 3;
+            box-shadow: inset 4px 0 0 0 #f59e0b;
+          }
+          .api-focus-row > td,
+          .api-focus-row > th {
+            background-color: transparent !important;
+          }
+          @keyframes apiFocusFlash {
+            0% { background-color: rgba(191, 219, 254, 0.85); }
+            100% { background-color: transparent; }
+          }
+          @keyframes apiFocusRowPulse {
+            0%, 100% { background-color: #fff7d6; }
+            50% { background-color: #fcd34d; }
+          }
         </style>
         <% selectedSpec.endpoints.forEach((ep, idx) => { %>
-        <div class="api-section">
+        <div class="api-section" data-ep-index="<%= idx %>" data-ep-url="<%= ep.url %>" data-ep-desc="<%= ep.description %>">
           <div class="api-section-header" onclick="toggleSection(this)">
             <h3><%= ep.description %></h3>
             <div style="display:flex; align-items:center; gap:12px;">
@@ -452,7 +473,7 @@ function filterSidebar(query) {
 // 실제 게이트웨이 봉투: { SystemHeader, TransactionHeader, MessageHeader, Data } 4개 최상위 키
 // (Data.<파라미터 접두사>는 배열, 예: Data.ds_search = [ {필드...} ]). 자동 조립은 "기본값"일 뿐이고
 // 실행 전 사용자가 구조화 보기/Raw JSON에서 항상 확인·수정할 수 있게 한다.
-const headerFieldsData = <%- JSON.stringify(headerFields) %>;
+var headerFieldsData = <%- JSON.stringify(headerFields) %>;
 
 // 전문구조 탭 "전문 예시" 블록 — 아래 buildHeaderSection()(테스트 샌드박스와 동일 로직)을
 // 그대로 재사용해 별도 계산 없이 실제 요청 전문 예시를 렌더링한다. buildHeaderSection은
@@ -469,10 +490,10 @@ const headerFieldsData = <%- JSON.stringify(headerFields) %>;
   el.textContent = JSON.stringify(example, null, 2);
 })();
 
-const specEndpoints = <%- JSON.stringify(selectedSpec ? selectedSpec.endpoints : []) %>;
-const currentDomain = <%- JSON.stringify(selectedDoc) %>;
-let tryModalEndpointIdx = null;
-let currentPayload = {};
+var specEndpoints = <%- JSON.stringify(selectedSpec ? selectedSpec.endpoints : []) %>;
+var currentDomain = <%- JSON.stringify(selectedDoc) %>;
+var tryModalEndpointIdx = null;
+var currentPayload = {};
 
 // ── 엔드포인트 목록의 "요청 파라미터"/"응답 예시" 표 + "Data부 JSON 샘플" 렌더링 ──────────
 // 파라미터명이 "ds_inSearch.CORP_CD"처럼 점 표기라 그대로 한 줄에 나열하면 실제로는
@@ -523,6 +544,9 @@ function makeParamLeafRow(p, leafName, depth) {
   const displayLabel = hasLabel ? p.label : (p.desc || '');
   const displayDesc = hasLabel ? (p.desc || '') : '';
   const tr = document.createElement('tr');
+  tr.dataset.paramName = (p.name || '').toLowerCase();
+  tr.dataset.paramLeaf = (leafName || '').toLowerCase();
+  tr.dataset.paramLabel = (displayLabel || '').toLowerCase();
   const idTd = document.createElement('td');
   idTd.className = 'mono';
   idTd.style.paddingLeft = (14 + depth * 18) + 'px';
@@ -600,6 +624,7 @@ function buildResponseRows(root) {
 
 function makeResponseLeafRow(r) {
   const tr = document.createElement('tr');
+  tr.dataset.responseField = (r.name || '').toLowerCase();
   const idTd = document.createElement('td');
   idTd.className = 'mono';
   idTd.style.paddingLeft = (14 + r.depth * 18) + 'px';
@@ -738,7 +763,7 @@ function buildDataSection(params) {
 
 // kind: 'fix'(자동 채워짐, 확인만) | 'variable'(반드시 채워야 함) | 'none'(비워둬도 됨)
 // | 'locked'(테스트 대상 API에서 자동 산출, 수정 불가 — RECV_SVC_CD/INTF_ID 전용)
-const FIELD_KIND_STYLE = {
+var FIELD_KIND_STYLE = {
   fix:      { text: '고정값',        color: '#64748b', bg: '#f1f5f9', border: '#cbd5e1' },
   variable: { text: '필수 입력',     color: '#c2410c', bg: '#fff7ed', border: '#fb923c' },
   none:     { text: '선택',          color: '#94a3b8', bg: '#fafbfc', border: '#e2e8f0' },
@@ -1046,4 +1071,186 @@ function renderTryResult(panel, result) {
   panel.appendChild(summary);
   makeRawToggle(panel, raw, false);
 }
+
+function normalizeFocusToken(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[^a-z0-9_\.가-힣]/g, '');
+}
+
+function getScrollContainer(el) {
+  let node = el && el.parentElement;
+  while (node) {
+    const oy = window.getComputedStyle(node).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+
+function highlightAndScroll(target, rowOnly) {
+  if (!target) return;
+  const className = rowOnly ? 'api-focus-row' : 'api-focus-target';
+  target.classList.add(className);
+  // API Reference scrolls inside `.api-content` (overflow-y:auto), not the window.
+  const container = getScrollContainer(target);
+  if (container) {
+    const cRect = container.getBoundingClientRect();
+    const tRect = target.getBoundingClientRect();
+    // Already fully in view: keep position, just highlight (no re-scroll on repeat clicks).
+    const fullyVisible = tRect.top >= cRect.top && tRect.bottom <= cRect.bottom;
+    if (!fullyVisible) {
+      const top = container.scrollTop + (tRect.top - cRect.top) - 24;
+      container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }
+  } else {
+    const tRect = target.getBoundingClientRect();
+    const fullyVisible = tRect.top >= 0 && tRect.bottom <= window.innerHeight;
+    if (!fullyVisible) {
+      const y = tRect.top + window.scrollY - 96;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    }
+  }
+  setTimeout(() => target.classList.remove(className), 3000);
+}
+
+function openSectionByHeader(header) {
+  if (!header) return;
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.api-section-toggle');
+  if (body && body.style.display === 'none') {
+    body.style.display = '';
+    if (toggle) toggle.textContent = '▼ 접기';
+  }
+}
+
+function focusHeaderSection(section) {
+  if (!section) return false;
+  if (typeof switchHeaderTab === 'function') switchHeaderTab('headers');
+  const map = {
+    system: '시스템공통헤더',
+    transaction: '거래공통헤더',
+    message: '메시지헤더',
+  };
+  const title = map[section];
+  if (!title) return false;
+  const header = Array.from(document.querySelectorAll('.api-section-header')).find((el) =>
+    (el.textContent || '').includes(title)
+  );
+  if (!header) return false;
+  openSectionByHeader(header);
+  highlightAndScroll(header.closest('.api-section'));
+  return true;
+}
+
+function focusHeaderField(section, field) {
+  if (!section || !field) return false;
+  if (!focusHeaderSection(section)) return false;
+  const needle = normalizeFocusToken(field);
+  const rows = Array.from(document.querySelectorAll('.header-field-table tbody tr'));
+  const row = rows.find((r) => normalizeFocusToken(r.textContent).includes(needle));
+  if (!row) return false;
+  highlightAndScroll(row, true);
+  return true;
+}
+
+function openEndpointByIndex(index) {
+  if (!Number.isInteger(index) || index < 0) return null;
+  const section = document.querySelector('.api-section[data-ep-index="' + index + '"]');
+  if (!section) return null;
+  const header = section.querySelector('.api-section-header');
+  if (header) openSectionByHeader(header);
+  return section;
+}
+
+function focusEndpointField(index, field, mode) {
+  const section = openEndpointByIndex(index);
+  if (!section) return false;
+  if (!field) {
+    highlightAndScroll(section);
+    return true;
+  }
+
+  const needle = normalizeFocusToken(field);
+  const selector = mode === 'response'
+    ? 'tr[data-response-field]'
+    : 'tr[data-param-name], tr[data-param-leaf], tr[data-param-label]';
+  const rows = Array.from(section.querySelectorAll(selector));
+  const row = rows.find((r) => {
+    const values = [
+      r.dataset.paramName,
+      r.dataset.paramLeaf,
+      r.dataset.paramLabel,
+      r.dataset.responseField,
+      r.textContent,
+    ].filter(Boolean);
+    return values.some((v) => normalizeFocusToken(v).includes(needle));
+  });
+
+  if (row) {
+    highlightAndScroll(row, true);
+    return true;
+  }
+
+  highlightAndScroll(section);
+  return true;
+}
+
+function focusCommonOrErrorRow(doc, token) {
+  const needle = normalizeFocusToken(token);
+  if (!needle) return false;
+  const rows = Array.from(document.querySelectorAll('.param-table tbody tr'));
+  const row = rows.find((r) => normalizeFocusToken(r.textContent).includes(needle));
+  if (!row) return false;
+  highlightAndScroll(row, true);
+  return true;
+}
+
+function applyApiReferenceFocusFromLocation() {
+  const params = new URLSearchParams(window.location.search || '');
+  const focusType = params.get('focusType');
+  const field = params.get('field');
+  const section = params.get('section');
+  const query = params.get('q');
+  const ep = Number.parseInt(params.get('ep') || '', 10);
+
+  if (window.location.hash === '#headers') {
+    if (typeof switchHeaderTab === 'function') switchHeaderTab('headers');
+  }
+
+  if (!focusType) return;
+
+  if (focusType === 'header-section') {
+    focusHeaderSection(section || query);
+    return;
+  }
+  if (focusType === 'header-field') {
+    if (!focusHeaderField(section, field || query)) {
+      focusHeaderSection(section || 'system');
+    }
+    return;
+  }
+  if (focusType === 'endpoint') {
+    const sectionEl = openEndpointByIndex(ep);
+    if (sectionEl) highlightAndScroll(sectionEl);
+    return;
+  }
+  if (focusType === 'request-param') {
+    focusEndpointField(ep, field || query, 'request');
+    return;
+  }
+  if (focusType === 'response-field') {
+    focusEndpointField(ep, field || query, 'response');
+    return;
+  }
+  if (focusType === 'common-code' || focusType === 'error-code') {
+    focusCommonOrErrorRow(params.get('doc'), field || query);
+  }
+}
+
+window.hapiApiReferenceApplyFocus = applyApiReferenceFocusFromLocation;
+setTimeout(applyApiReferenceFocusFromLocation, 0);
 </script>

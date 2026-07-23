@@ -47,6 +47,60 @@ async function resolveAllowedDocs(sessionUser) {
   return collectDocs(sidebar);
 }
 
+function normalizeResponseFieldPath(path) {
+  return String(path || '').replace(/\[\d+\]/g, '[]');
+}
+
+function collectResponseFields(value, basePath, bucket) {
+  if (value === null || value === undefined) return;
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return;
+    collectResponseFields(value[0], basePath ? basePath + '[]' : '[]', bucket);
+    return;
+  }
+
+  if (typeof value === 'object') {
+    Object.entries(value).forEach(([key, nested]) => {
+      const nextPath = basePath ? basePath + '.' + key : key;
+      collectResponseFields(nested, nextPath, bucket);
+    });
+    return;
+  }
+
+  const parts = String(basePath || '').split('.').filter(Boolean);
+  const leaf = (parts[parts.length - 1] || '').replace(/\[]/g, '');
+  if (!leaf) return;
+  bucket.push({
+    name: leaf,
+    path: normalizeResponseFieldPath(basePath),
+    type: typeof value,
+  });
+}
+
+function extractResponseFields(responseExample) {
+  if (!responseExample) return [];
+
+  let parsed = responseExample;
+  if (typeof parsed === 'string') {
+    try {
+      parsed = JSON.parse(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  const fields = [];
+  collectResponseFields(parsed, '', fields);
+  const dedupe = new Map();
+  fields.forEach((field) => {
+    const key = String(field.path || '').toLowerCase();
+    if (!key || dedupe.has(key)) return;
+    dedupe.set(key, field);
+  });
+  return Array.from(dedupe.values()).slice(0, 160);
+}
+
 const chatbotModel = {
   // "새 대화"(clearHistory) 이후 시점만 조회 — chatbot_clears.cleared_at 경계 이전 메시지는
   // 원본 그대로 DB에 남아있지만 화면/LLM 컨텍스트에는 노출하지 않는다(아래 clearHistory 참고).
@@ -114,11 +168,20 @@ const chatbotModel = {
       domain: s.domain,
       name: s.name,
       description: s.description,
+      category: s.category,
       endpoints: (s.endpoints || []).slice(0, 8).map((ep) => ({
         method: ep.method,
         url: ep.url,
         description: ep.description,
+        params: (ep.params || []).map((p) => ({
+          name: p.name,
+          type: p.type,
+          required: p.required,
+          label: p.label,
+          desc: p.desc,
+        })),
         paramNames: (ep.params || []).map((p) => p.name),
+        responseFields: extractResponseFields(ep.responseExample),
       })),
     }));
   },

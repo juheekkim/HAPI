@@ -10,7 +10,7 @@
   - `CHATBOT_LLM_API_KEY`, `CHATBOT_LLM_BASE_URL`, `CHATBOT_LLM_MODEL`(기본 `gpt-5.4-mini`) — 챗봇 위젯용 사내 AI 허브 전용 키/엔드포인트(둘 중 하나라도 없으면 501). 호출 URL은 `{CHATBOT_LLM_BASE_URL}/{CHATBOT_LLM_MODEL}/invoke`. `docs/chatbot.md` 참고.
   - `.env.example`(키 목록 유지) 복구 완료.
   - 기존 로컬 컨벤션(`src/scripts/createPartnerUser.js`에 하드코딩): `postgresql://postgres:postgres@localhost:5432/hapi_db`.
-- `28_local_data_snapshot.sql`/`29_local_data_snapshot_v2.sql`은 PostgreSQL 18.4에서 `pg_dump`한 파일이라 PG16 서버에서 실행 시 `SET transaction_timeout = 0;`(PG17+ 신규 파라미터) 줄에서 `unrecognized configuration parameter` 오류 발생. 해당 줄만 걸러서 실행: `grep -v "^SET transaction_timeout" 29_local_data_snapshot_v2.sql | psql ... `. 스크립트 파일 자체는 수정하지 않는다(기존 스크립트 수정 금지 원칙). **29번이 28번을 대체**(header_fields 테이블 포함, menus 중복 정리됨) — 로컬 DB를 새로 셋업할 때는 29번까지 순서대로 실행.
+- `28_local_data_snapshot.sql`/`29_local_data_snapshot_v2.sql`은 PostgreSQL 18.4 `pg_dump` 출력(`SET transaction_timeout = 0;`, `set_config('search_path','',false)`)을 포함한다. `npm run db:scripts` 실행기는 이 두 호환성 라인을 실행 전 자동 제거하고, 각 파일을 `SET LOCAL search_path TO public`으로 실행하므로 스냅샷 이후 스크립트의 연쇄 실패를 방지한다. 스크립트 파일 자체는 수정하지 않는다(기존 스크립트 수정 금지 원칙). **29번이 28번을 대체**(header_fields 테이블 포함, menus 중복 정리됨) — 로컬 DB를 새로 셋업할 때는 29번까지 순서대로 실행.
 
 ## 2. 실행
 ```bash

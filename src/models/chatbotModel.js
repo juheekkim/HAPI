@@ -107,8 +107,8 @@ const chatbotModel = {
   async getHistory(userId, limit = 50) {
     try {
       const result = await pool.query(
-        `SELECT role, content, created_at FROM (
-           SELECT role, content, created_at FROM chatbot_messages
+        `SELECT role, content, meta, created_at FROM (
+           SELECT role, content, meta, created_at FROM chatbot_messages
            WHERE user_id = $1
              AND created_at > COALESCE(
                (SELECT cleared_at FROM chatbot_clears WHERE user_id = $1),
@@ -125,12 +125,13 @@ const chatbotModel = {
     }
   },
 
-  async addMessage(userId, role, content) {
-    await pool.query('INSERT INTO chatbot_messages (user_id, role, content) VALUES ($1, $2, $3)', [
-      userId,
-      role,
-      content,
-    ]);
+  // meta: assistant 메시지의 링크/트리 재구성용 데이터(예: { apiDocs })를 JSONB로 저장.
+  // 없으면 null(기존 동작과 동일, 이력 복원 시 텍스트만 렌더).
+  async addMessage(userId, role, content, meta = null) {
+    await pool.query(
+      'INSERT INTO chatbot_messages (user_id, role, content, meta) VALUES ($1, $2, $3, $4)',
+      [userId, role, content, meta ? JSON.stringify(meta) : null]
+    );
   },
 
   // 원본 대화 기록(chatbot_messages)은 삭제하지 않는다 — 사용자별 "초기화 시점"만 upsert해서

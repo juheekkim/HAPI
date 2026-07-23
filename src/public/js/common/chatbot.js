@@ -940,7 +940,8 @@ const NAV_MATCH_MIN_SCORE = 0.52;
         appendNotice('안녕하세요! HAPI 포털 이용에 대해 무엇이든 물어보세요.');
         return;
       }
-      data.messages.forEach((m) => appendMessage(m.role, m.content));
+      // m.meta(예: { apiDocs })가 있으면 그대로 넘겨 링크/API 트리를 복원한다(없으면 텍스트만).
+      data.messages.forEach((m) => appendMessage(m.role, m.content, m.meta));
     } catch (err) {
       if (err.status === 401) {
         location.href = '/auth/login';

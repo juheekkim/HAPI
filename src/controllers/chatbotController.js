@@ -300,7 +300,9 @@ const chatbotController = {
         reply = '죄송합니다, 지금은 답변을 완성하지 못했습니다. 다시 시도해 주세요.';
       }
 
-      await chatbotModel.addMessage(sessionUser.id, 'assistant', reply);
+      // apiDocs가 있으면 메타로 함께 저장 → 새로고침/재접속 후 이력 복원 시 링크·API 트리 유지.
+      const assistantMeta = apiDocs.length > 0 ? { apiDocs } : null;
+      await chatbotModel.addMessage(sessionUser.id, 'assistant', reply, assistantMeta);
       res.json({
         success: true,
         reply,

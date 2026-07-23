@@ -69,7 +69,7 @@
 - 챗봇 패널 기본 크기는 데스크톱 `440x680`(모바일은 뷰포트 기반 축소)이며, 대화 가독성을 위해 assistant 출력은 markdown + 코드 블록 + JSON 트리 뷰어 형태로 구조화한다.
 - 일반 질의는 텍스트 중심으로 표시하고, API 질의는 답변 하단에 "API 문서 트리"(문서→상세 API→요청/응답 필드)를 함께 표시한다.
 - LLM 통신 과정의 trace(Request/Response/Tool Calls) JSON은 운영 사용자 화면에 노출하지 않는다.
-- `apiDocs`/trace 데이터는 `/chatbot/message` 응답에만 포함되는 현재 턴 정보이며, `chatbot_messages` 원문에는 저장하지 않는다(이력 조회 시 assistant 텍스트 원문만 복원).
+- `apiDocs`는 assistant 메시지 저장 시 `chatbot_messages.meta`(JSONB)에 함께 보관해 새로고침·재접속 후 이력 복원 시 링크·API 트리를 유지한다. `trace`는 진단용으로 저장하지 않고 `/chatbot/message` 응답에만 포함되는 현재 턴 정보다.
 - 챗봇 응답에서 API 문서/헤더/필드로 매핑 가능한 텍스트를 클릭하면 챗봇창을 닫지 않고(열림/스크롤/입력중 상태 유지) API Reference 목표 위치로 이동한다. 이동 후 관련 탭/아코디언은 자동으로 펼치고 대상 섹션/행을 강조 표시한다.
 
 ## 10. API Reference "테스트" 샌드박스

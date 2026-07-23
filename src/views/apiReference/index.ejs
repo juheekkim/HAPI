@@ -1262,8 +1262,10 @@ function focusCommonOrErrorRow(doc, token) {
   return true;
 }
 
-function applyApiReferenceFocusFromLocation() {
-  const params = new URLSearchParams(window.location.search || '');
+// search 인자(예: '?doc=...&focusType=...')를 넘기면 현재 주소 대신 그 값으로 포커스한다 —
+// AI 어시스턴트 우측 패널처럼 주소가 바뀌지 않는 임베드 문맥용. 무인자 호출은 기존과 동일.
+function applyApiReferenceFocusFromLocation(search) {
+  const params = new URLSearchParams(typeof search === 'string' ? search : (window.location.search || ''));
   const focusType = params.get('focusType');
   const field = params.get('field');
   const section = params.get('section');

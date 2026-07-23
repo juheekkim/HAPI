@@ -1,0 +1,107 @@
+<link rel="stylesheet" href="/css/assistant.css">
+
+<div class="assistant-layout">
+  <!-- 좌: 대화 영역 -->
+  <main class="assistant-main">
+    <div class="assistant-topbar">
+      <div class="assistant-topbar-title">🤖 AI 어시스턴트 <span class="assistant-beta">실험 기능</span></div>
+      <button id="assistant-clear" type="button" class="assistant-clear-btn" title="새 대화">새 대화</button>
+    </div>
+
+    <div id="assistant-messages" class="chatbot-messages assistant-messages">
+      <!-- 진입 시 추천 정보(스크롤 상단에 상시 유지, 대화는 아래로 이어짐) -->
+      <div class="assistant-hero" id="assistant-hero">
+        <div class="assistant-hero-greeting">
+          <h2><%= user.name || '' %>님, 무엇을 도와드릴까요?</h2>
+          <p>API 문서, 연동 가이드, 공지, 내 지원 현황까지 대화로 바로 확인하세요.</p>
+        </div>
+
+        <!-- 추천 질문 칩 -->
+        <div class="assistant-chips">
+          <% questionChips.forEach((chip) => { %>
+            <button type="button" class="assistant-chip"><%= chip %></button>
+          <% }); %>
+        </div>
+
+        <!-- 역할별 API 문서 카드 -->
+        <% if (apiDocCards.length > 0) { %>
+        <div class="assistant-section">
+          <div class="assistant-section-title">📚 이용 가능한 API 문서</div>
+          <div class="assistant-cards">
+            <% apiDocCards.forEach((card) => { %>
+              <a class="assistant-card" data-chatbot-nav="api-reference" href="/api-reference?doc=<%= encodeURIComponent(card.doc) %>">
+                <span class="assistant-card-icon"><%= card.icon || '📄' %></span>
+                <span class="assistant-card-name"><%= card.name %></span>
+              </a>
+            <% }); %>
+          </div>
+        </div>
+        <% } %>
+
+        <div class="assistant-hero-grid">
+          <!-- 내 지원 현황 -->
+          <div class="assistant-section">
+            <div class="assistant-section-title">🧾 내 지원 현황</div>
+            <% const fwCount = supportStatus.firewallRequests.length; %>
+            <% const inqCount = supportStatus.inquiries.length; %>
+            <% if (fwCount === 0 && inqCount === 0) { %>
+              <div class="assistant-muted">접수된 문의/방화벽 신청이 없습니다.</div>
+            <% } else { %>
+              <%# 상태값은 DB 원문(영문) — 표시용 한글 라벨/색상으로 변환 (01_create_tables.sql 참고) %>
+              <% const fwLabel = { approved: ['승인', 'ok'], rejected: ['반려', 'warn'], pending: ['대기', 'wait'] }; %>
+              <% const inqLabel = { answered: ['답변완료', 'ok'], pending: ['접수', 'wait'] }; %>
+              <ul class="assistant-list">
+                <% supportStatus.firewallRequests.slice(0, 3).forEach((f) => { %>
+                  <% const [fwText, fwTone] = fwLabel[f.approvalStatus] || ['대기', 'wait']; %>
+                  <li>
+                    <span class="assistant-badge assistant-badge-<%= fwTone %>"><%= fwText %></span>
+                    방화벽 <%= f.destIp %>:<%= f.destPort %>
+                  </li>
+                <% }); %>
+                <% supportStatus.inquiries.slice(0, 3).forEach((i) => { %>
+                  <% const [inqText, inqTone] = inqLabel[i.status] || ['접수', 'wait']; %>
+                  <li>
+                    <span class="assistant-badge assistant-badge-<%= inqTone %>"><%= inqText %></span>
+                    문의: <%= (i.question || '').slice(0, 30) %><%= (i.question || '').length > 30 ? '…' : '' %>
+                  </li>
+                <% }); %>
+              </ul>
+            <% } %>
+          </div>
+
+          <!-- 공지 / 가이드 -->
+          <div class="assistant-section">
+            <div class="assistant-section-title">📢 최근 공지 · 가이드</div>
+            <ul class="assistant-list">
+              <% notices.forEach((n) => { %>
+                <li><span class="assistant-badge assistant-badge-wait"><%= n.tag || '공지' %></span> <%= n.title %></li>
+              <% }); %>
+              <% if (notices.length === 0) { %>
+                <li class="assistant-muted">등록된 공지사항이 없습니다.</li>
+              <% } %>
+            </ul>
+            <a class="assistant-guide-link" href="/guide">🚀 시작하기 가이드 바로가기 →</a>
+          </div>
+        </div>
+      </div>
+      <!-- 대화 버블은 여기에 이어서 추가됨 -->
+    </div>
+
+    <form id="assistant-form" class="assistant-form">
+      <textarea id="assistant-input" placeholder="궁금한 점을 물어보세요" rows="1" maxlength="2000"></textarea>
+      <button id="assistant-send" type="submit">전송</button>
+    </form>
+  </main>
+
+  <!-- 우: 문서 사이드 패널 (링크 클릭 시 API Reference 부분화면을 주입) -->
+  <aside id="assistant-panel" class="assistant-panel" hidden>
+    <div class="assistant-panel-header">
+      <span id="assistant-panel-title">📖 API 문서</span>
+      <button id="assistant-panel-close" type="button" aria-label="패널 닫기">✕</button>
+    </div>
+    <div id="assistant-panel-body" class="assistant-panel-body"></div>
+  </aside>
+</div>
+
+<%# defer: 레이아웃 하단의 chatbot.js(window.HapiChatbotShared 제공)보다 뒤에 실행되도록 보장 %>
+<script src="/js/assistant.js" defer></script>

@@ -83,6 +83,10 @@
 - UI 갱신: 패널 기본 크기를 `440x680`으로 확장했고(모바일은 뷰포트 제한), assistant 답변은 markdown/코드 블록/JSON 트리 뷰어로 구조화해 표시한다. API 질의에서는 답변 하단에 "API 문서 트리"(문서→상세 API→요청/응답 필드)를 제공하며, LLM 통신 trace(Request/Response/Tool Calls) 패널은 운영 사용자 화면에서 숨긴다.
 - 추가 UX: 챗봇 답변 내 API/헤더/필드 언급 텍스트를 클릭하면 챗봇창을 유지한 채 API Reference로 즉시 점프한다. 이동은 본문 영역 비동기 교체 + 히스토리 pushState 기반이며, 도착지에서 탭/아코디언 자동 펼침과 위치 강조를 수행한다.
 
+### AI 어시스턴트 (실험 기능)
+- 역할: `/assistant` 전용 대메뉴 — 로그인 사용자 맞춤 추천(역할별 API 문서 카드/추천 질문 칩/내 지원 현황/공지)과 풀페이지 AI 대화. 링크 클릭 시 배경 이동 대신 **우측 문서 패널**에 API Reference 부분화면을 주입해 표시.
+- 위치: `routes/assistant.js` → `assistantController.js` → `views/assistant/index.ejs` + `public/js/assistant.js` + `public/css/assistant.css`. 백엔드 대화 API는 신설 없이 기존 `/chatbot/*` 재사용, 답변 렌더는 `chatbot.js`가 노출한 `window.HapiChatbotShared` 재사용. 상세는 `docs/assistant.md`.
+
 ## 모듈 간 의존성 / 분기
 - 공통: 세션(`res.locals.user`), 헤더 partial(`currentMenu`, admin 노출 분기), `apiClient.js`.
 - Admin 승인 → `partners.partner_code` 채번 + `users` 계정 생성 → 파트너 로그인 → Support/API 이용.

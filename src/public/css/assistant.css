@@ -1,0 +1,123 @@
+/* ===== AI 어시스턴트 풀페이지 (/assistant) =====
+   대화 버블/마크다운/API 트리 렌더링은 chatbot.css의 .chatbot-* 클래스를 그대로 재사용하고,
+   이 파일은 풀페이지 2열 레이아웃(대화 + 우측 문서 패널)과 추천(히어로) 영역만 담당한다. */
+
+/* 이 페이지에서는 우측 하단 플로팅 챗봇 위젯을 숨긴다(중복 대화 채널 방지) */
+.assistant-page .chatbot-widget { display: none; }
+
+.assistant-layout {
+  display: flex;
+  height: calc(100vh - var(--header-h));
+  background: #f7f9fc;
+}
+
+/* ── 좌: 대화 영역 ─────────────────────────────── */
+.assistant-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.assistant-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 24px; background: #fff; border-bottom: 1px solid var(--border);
+}
+.assistant-topbar-title { font-size: 16px; font-weight: 700; }
+.assistant-beta {
+  font-size: 11px; font-weight: 700; color: #7c3aed; background: #f3e8ff;
+  border: 1px solid #ddd6fe; border-radius: 10px; padding: 2px 8px; margin-left: 6px; vertical-align: middle;
+}
+.assistant-clear-btn {
+  border: 1px solid var(--border); background: #fff; color: var(--text-mid);
+  font-size: 12.5px; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+}
+.assistant-clear-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* chatbot.css .chatbot-messages(flex/overflow/gap)를 상속하고 풀페이지 여백만 넓힌다 */
+.assistant-messages { padding: 20px max(24px, calc((100% - 860px) / 2)); }
+.assistant-messages .chatbot-bubble { max-width: min(720px, 92%); }
+
+/* ── 히어로(추천 정보) ─────────────────────────── */
+.assistant-hero { display: flex; flex-direction: column; gap: 16px; margin-bottom: 8px; }
+.assistant-hero-greeting h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.assistant-hero-greeting p { font-size: 13.5px; color: var(--text-mid); }
+
+.assistant-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.assistant-chip {
+  border: 1px solid #c7dcf5; background: #fff; color: var(--blue);
+  font-size: 13px; padding: 7px 14px; border-radius: 16px; cursor: pointer; transition: all 0.15s;
+}
+.assistant-chip:hover { background: #eef4ff; border-color: var(--blue); }
+
+.assistant-section {
+  background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px;
+}
+.assistant-section-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+
+.assistant-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+.assistant-card {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;
+  font-size: 12.5px; color: var(--text-mid); background: #fbfdff;
+  text-decoration: none; transition: all 0.15s;
+}
+.assistant-card:hover { border-color: var(--blue); color: var(--blue); background: #eef4ff; }
+.assistant-card-icon { font-size: 14px; }
+
+.assistant-hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.assistant-list { list-style: none; display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; color: var(--text-mid); }
+.assistant-muted { font-size: 12.5px; color: var(--text-light); }
+.assistant-badge {
+  display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 9px;
+  padding: 1px 8px; margin-right: 4px; vertical-align: middle;
+}
+.assistant-badge-ok   { color: #15803d; background: #dcfce7; }
+.assistant-badge-warn { color: #b91c1c; background: #fee2e2; }
+.assistant-badge-wait { color: #1d4ed8; background: #dbeafe; }
+.assistant-guide-link { display: inline-block; margin-top: 10px; font-size: 12.5px; color: var(--blue); text-decoration: none; }
+.assistant-guide-link:hover { text-decoration: underline; }
+
+/* ── 입력 폼 ───────────────────────────────────── */
+.assistant-form {
+  display: flex; gap: 8px; padding: 14px max(24px, calc((100% - 860px) / 2));
+  background: #fff; border-top: 1px solid var(--border);
+}
+.assistant-form textarea {
+  flex: 1; resize: none; border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; font-size: 13.5px; font-family: inherit; outline: none; max-height: 140px;
+}
+.assistant-form textarea:focus { border-color: var(--blue); }
+.assistant-form button {
+  border: none; background: var(--blue); color: #fff; font-size: 13.5px; font-weight: 600;
+  padding: 0 20px; border-radius: 8px; cursor: pointer; transition: opacity 0.15s;
+}
+.assistant-form button:disabled { opacity: 0.5; cursor: default; }
+
+/* ── 우: 문서 사이드 패널 ──────────────────────── */
+.assistant-panel {
+  width: min(48%, 760px); background: #fff; border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; min-width: 380px;
+}
+.assistant-panel[hidden] { display: none; }
+.assistant-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 700;
+}
+.assistant-panel-header button {
+  border: none; background: none; font-size: 15px; color: var(--text-light); cursor: pointer;
+}
+.assistant-panel-header button:hover { color: var(--text-mid); }
+.assistant-panel-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+/* 패널 안 API Reference 부분화면: 사이드바는 숨기고 콘텐츠만 패널 높이에 맞춘다.
+   (.api-content의 overflow-y:auto가 그대로 스크롤 컨테이너가 되어
+    highlightAndScroll/getScrollContainer 로직이 패널 안에서도 동일하게 동작) */
+.assistant-panel-body .api-layout { height: 100%; }
+.assistant-panel-body .api-sidebar { display: none; }
+.assistant-panel-body .api-content { padding: 20px 22px; }
+
+/* ── 반응형: 좁은 화면에서는 패널을 오버레이로 ── */
+@media (max-width: 1024px) {
+  .assistant-panel {
+    position: fixed; top: var(--header-h); right: 0; bottom: 0; z-index: 900;
+    width: min(92vw, 560px); box-shadow: -6px 0 24px rgba(0, 0, 0, 0.12);
+  }
+  .assistant-hero-grid { grid-template-columns: 1fr; }
+}

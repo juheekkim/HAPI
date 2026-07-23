@@ -10,6 +10,7 @@
 | API | `/api-reference` | `routes/apiReference.js` | 로그인 필요 |
 | 운영 지원 | `/support` | `routes/support.js` | 로그인 필요 |
 | 관리자 | `/admin` | `routes/admin.js` | admin 전용 |
+| AI 어시스턴트 | `/assistant` | `routes/assistant.js` | 로그인 필요 (실험 기능, `46` 시드) |
 | (로그인/신청) | `/auth` | `routes/auth.js` | 공개 |
 
 ## 엔드포인트 목록
@@ -17,9 +18,10 @@
 - `GET /auth/login`, `POST /auth/login`, `POST /auth/logout`
 - `GET /auth/apply`, `POST /auth/apply`
 
-### /home, /guide, /api-reference (isAuthenticated)
+### /home, /guide, /api-reference, /assistant (isAuthenticated)
 - `GET /home` · `GET /guide`
 - `GET /api-reference` (쿼리 `?doc=<domain>`)
+- `GET /assistant` — AI 어시스턴트 풀페이지(대화 API는 기존 `/chatbot/*` 재사용, `docs/assistant.md`)
 
 ### /support (isAuthenticated)
 - `GET /support`

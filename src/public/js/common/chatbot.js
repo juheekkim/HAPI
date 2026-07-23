@@ -1044,6 +1044,8 @@ const NAV_MATCH_MIN_SCORE = 0.52;
   });
 
   document.addEventListener('click', async (e) => {
+    // /assistant 풀페이지에서는 assistant.js가 같은 링크를 우측 패널로 처리하므로 여기서 양보
+    if (window.__hapiAssistantActive) return;
     const anchor = e.target.closest('a[data-chatbot-nav="api-reference"]');
     if (!anchor) return;
     e.preventDefault();
@@ -1069,5 +1071,9 @@ const NAV_MATCH_MIN_SCORE = 0.52;
       // fallback to native page behavior on failure
     }
   });
+
+  // AI 어시스턴트 풀페이지(/assistant, assistant.js)가 동일한 답변 렌더링(마크다운/API 트리/
+  // nav 링크 생성)을 재사용할 수 있도록 노출. 위젯 동작(open/close/persist)은 노출하지 않는다.
+  window.HapiChatbotShared = { renderAssistantMessageContent };
 
 })();

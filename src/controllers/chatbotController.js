@@ -18,10 +18,10 @@ const TOOLS = [
     type: 'function',
     function: {
       name: 'search_api_docs',
-      description: '사용자가 접근 가능한 API 문서에서 키워드로 API/엔드포인트/파라미터를 검색한다.',
+      description: '사용자가 접근 가능한 API 문서에서 키워드로 API/엔드포인트/파라미터를 검색한다. "어떤 API가 있나"처럼 전체 목록을 원하면 keyword를 비워서 호출한다.',
       parameters: {
         type: 'object',
-        properties: { keyword: { type: 'string', description: '검색 키워드(비워두면 전체 목록)' } },
+        properties: { keyword: { type: 'string', description: '검색 키워드(비워두면 접근 가능한 전체 API 목록 반환). 여러 단어를 넣으면 단어별로 점수화해 관련도 순으로 반환한다.' } },
         required: [],
       },
     },

@@ -147,24 +147,46 @@ const chatbotModel = {
 
   async searchApiDocs(keyword, allowedDocs) {
     const specs = await apiSpecModel.getAll();
-    const kw = (keyword || '').toLowerCase();
     const visible = specs.filter((s) => allowedDocs.includes(s.domain));
-    const matched = visible.filter((s) => {
-      const haystack = [
-        s.name,
-        s.description,
-        s.domain,
-        ...(s.endpoints || []).flatMap((ep) => [
-          ep.description,
-          ...(ep.params || []).map((p) => p.name),
-        ]),
-      ]
+
+    // 순수 substring(.includes) 필터 대신 키워드를 단어 토큰으로 나눠 룰베이스로 점수화한다.
+    // 필드별 가중치: 이름/도메인(3) > 설명(2) > 엔드포인트 설명·파라미터명(1). 여러 토큰이면 합산.
+    // 토큰이 하나라도 걸리는 스펙만 남겨 점수 내림차순 정렬한다(부분/다중 키워드도 관련 API가 노출됨).
+    // 토큰이 없으면(빈 키워드 = "전체 목록") 접근 가능한 전체를 표시 순서대로 반환한다.
+    const tokens = String(keyword || '')
+      .toLowerCase()
+      .split(/[^a-z0-9가-힣]+/)
+      .map((w) => w.trim())
+      .filter((w) => w.length >= 2);
+
+    const scoreOf = (s) => {
+      const nameText = [s.name, s.domain].filter(Boolean).join(' ').toLowerCase();
+      const descText = String(s.description || '').toLowerCase();
+      const epText = (s.endpoints || [])
+        .flatMap((ep) => [ep.description, ...(ep.params || []).map((p) => p.name)])
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
-      return !kw || haystack.includes(kw);
-    });
-    return matched.slice(0, 5).map((s) => ({
+      return tokens.reduce(
+        (sum, t) =>
+          sum + (nameText.includes(t) ? 3 : 0) + (descText.includes(t) ? 2 : 0) + (epText.includes(t) ? 1 : 0),
+        0
+      );
+    };
+
+    const scored = tokens.length === 0
+      ? visible
+      : visible
+          .map((s) => ({ s, score: scoreOf(s) }))
+          .filter((x) => x.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map((x) => x.s);
+
+    // 토큰이 있어도 매칭이 하나도 없으면("어떤 게 있니"처럼 불용어만 들어온 경우 등) 빈 결과 대신
+    // 접근 가능한 전체 목록으로 폴백한다. LLM이 "관련 API를 못 찾았어도 전체를 안내"할 수 있게 한다.
+    const ranked = scored.length > 0 ? scored : visible;
+
+    return ranked.slice(0, 12).map((s) => ({
       domain: s.domain,
       name: s.name,
       description: s.description,

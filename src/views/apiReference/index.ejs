@@ -478,8 +478,9 @@ var headerFieldsData = <%- JSON.stringify(headerFields) %>;
 // 일부 variable 필드는 값 형식이 고정 규칙이라(요청, docs/business-rules.md §10) 버튼 클릭 시점
 // 기준으로 자동 계산해 채운다. sysCode는 모달 상단 "시스템코드" 입력칸 값(추천값은 ep.description 기반).
 // buildHeaderSection(아래 정의, 함수 선언 호이스팅)이 바로 아래 renderStructureExample()에서
-// 즉시 호출되므로, 이 const는 그 호출 전에 와야 한다(TDZ).
-const HEADER_AUTO_COMPUTE = {
+// 즉시 호출되므로, 이 선언(할당)은 그 호출 전에 와야 한다.
+// var 사용: 챗봇 in-place 네비게이션이 이 <script>를 통째로 재실행하므로 const면 재선언 SyntaxError가 난다.
+var HEADER_AUTO_COMPUTE = {
   FRS_RQST_SYS_CD: (sysCode) => sysCode,
   TMSG_CRE_SYS_NM: (sysCode) => sysCode + randomDigits(5),
   STD_TMSG_SEQ_NO: () => randomDigits(1) + String(Date.now()),
@@ -686,8 +687,9 @@ function renderResponseTable(idx, responseExample) {
 
 // 일부 Data 필드는 여러 API에 공통으로 등장하고 테스트 환경 기준값이 정해져 있어(요청)
 // 리프 필드명(접두사 제외) 기준으로 자동 채운다. 여전히 편집 가능. buildDataSection(아래,
-// 함수 선언은 호이스팅됨)이 참조하므로 const는 첫 사용(바로 아래 forEach) 전에 와야 한다.
-const DATA_FIELD_DEFAULTS = {
+// 함수 선언은 호이스팅됨)이 참조하므로 이 할당은 첫 사용(바로 아래 forEach) 전에 와야 한다.
+// var 사용: 챗봇 in-place 네비게이션의 <script> 재실행 시 const면 재선언 SyntaxError가 나기 때문.
+var DATA_FIELD_DEFAULTS = {
   CORP_CD: '1000',
 };
 

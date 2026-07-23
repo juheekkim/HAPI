@@ -9,5 +9,6 @@ router.use(isAuthenticated);
 
 router.get('/', apiReferenceController.index);
 router.post('/try', apiReferenceController.tryEndpoint);
+router.get('/my-source-ip', apiReferenceController.mySourceIp);
 
 module.exports = router;

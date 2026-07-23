@@ -14,6 +14,7 @@ const apiSpecImportMapper = require('../models/apiSpecImportMapper');
 const menuModel = require('../models/menuModel');
 const roleModel = require('../models/roleModel');
 const commonCodeModel = require('../models/commonCodeModel');
+const systemInfoModel = require('../models/systemInfoModel');
 
 // ── 이미지 업로드 자동입력: Claude Vision 구조화 추출 ──────
 // apiSpecImportMapper의 필드 shape({depth,id,label,type,usage,length,decimal,default,isArray,note})과
@@ -86,7 +87,7 @@ async function extractSpecFromImage(client, file) {
 
 const adminController = {
   index(req, res) {
-    res.redirect('/admin/partners');
+    res.redirect('/admin/apis');
   },
 
   async partners(req, res) {
@@ -776,9 +777,10 @@ const adminController = {
   // db/scripts 없이도 등록/수정/삭제할 수 있도록 한다(system_info류는 여전히 스크립트 관리).
   async codes(req, res) {
     try {
-      const [commonCodes, errorCodesResult] = await Promise.all([
+      const [commonCodes, errorCodesResult, systemInfoRows] = await Promise.all([
         commonCodeModel.getAllForAdmin(),
         apiSpecModel.getErrorCodesForAdmin(),
+        systemInfoModel.getAllForAdmin(),
       ]);
       res.render('admin/codes', {
         title: '코드 관리',
@@ -786,6 +788,7 @@ const adminController = {
         activeTab: 'codes',
         commonCodes,
         errorCodes: errorCodesResult.errorCodes,
+        systemInfoRows,
         error: null,
       });
     } catch (err) {
@@ -796,6 +799,7 @@ const adminController = {
         activeTab: 'codes',
         commonCodes: [],
         errorCodes: [],
+        systemInfoRows: [],
         error: null,
       });
     }
@@ -903,6 +907,63 @@ const adminController = {
   async deleteErrorCode(req, res) {
     try {
       await apiSpecModel.deleteErrorCode(req.params.code);
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/codes');
+  },
+
+  async createSystemInfo(req, res) {
+    const {
+      system_name, system_code, protocol, division, source, target,
+      message_format, charset, remark, display_order,
+    } = req.body;
+    try {
+      await systemInfoModel.create({
+        systemName: system_name,
+        systemCode: system_code,
+        protocol,
+        division,
+        source,
+        target,
+        messageFormat: message_format,
+        charset,
+        remark,
+        displayOrder: parseInt(display_order, 10) || 0,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/codes');
+  },
+
+  async updateSystemInfo(req, res) {
+    const {
+      system_name, system_code, protocol, division, source, target,
+      message_format, charset, remark, display_order,
+    } = req.body;
+    try {
+      await systemInfoModel.update(req.params.id, {
+        systemName: system_name,
+        systemCode: system_code,
+        protocol,
+        division,
+        source,
+        target,
+        messageFormat: message_format,
+        charset,
+        remark,
+        displayOrder: parseInt(display_order, 10) || 0,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    res.redirect('/admin/codes');
+  },
+
+  async deleteSystemInfo(req, res) {
+    try {
+      await systemInfoModel.delete(req.params.id);
     } catch (err) {
       console.error(err);
     }

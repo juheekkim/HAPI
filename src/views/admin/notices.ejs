@@ -78,7 +78,7 @@
 
 <!-- 등록 모달 -->
 <div id="createModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:560px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+  <div class="modal-box" style="width:560px;">
     <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">새 공지 등록</h3>
     <form action="/admin/notices" method="POST">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
@@ -124,7 +124,7 @@
 
 <!-- 수정 모달 -->
 <div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:560px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+  <div class="modal-box" style="width:560px;">
     <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">공지 수정</h3>
     <form id="editForm" method="POST">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">

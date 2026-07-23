@@ -114,7 +114,9 @@
 
     <input type="hidden" name="endpoints_json" id="endpointsJson">
 
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+    <!-- 우측 하단 챗봇 위젯(공통 영역, 56px 아이콘 + 24px 여백, z-index:1000)에 저장 버튼이 가리지
+         않도록 하단 여백을 확보한다. -->
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;margin-bottom:96px;">
       <a href="/admin/apis" class="btn btn-sm" style="border:1px solid #d1d5db;background:#fff;color:#374151;">취소</a>
       <button type="submit" class="btn btn-primary btn-sm"><%= mode === 'edit' ? '저장' : '등록' %></button>
     </div>
@@ -398,16 +400,22 @@ function addEndpoint(endpoint) {
     const tbody = block.querySelector('.ep-params-body');
     (endpoint.params || []).forEach((p) => addParamRow(tbody, p));
     const responseTbody = block.querySelector('.ep-response-body');
-    const fields = flattenResponseExampleToFields(endpoint.responseExample);
-    if (fields === null) {
-      // JSON이 아니거나(레거시 텍스트) 최상위가 배열/원시값 — 통짜로 한 행에 보존해 값 손실 방지.
-      addResponseRow(responseTbody, {
-        name: '_raw',
-        example: endpoint.responseExample || '',
-        desc: '(자동 변환 불가 원본 — 확인 후 수정)',
-      });
+    // responseFields(필드명/설명 메타데이터 포함, 이 폼이 직접 저장한 데이터)가 있으면 그대로 우선
+    // 사용한다 — responseExample(값만 있는 JSON)에서 역변환하면 라벨/설명이 애초에 없어 복원 불가.
+    if (endpoint.responseFields && endpoint.responseFields.length > 0) {
+      endpoint.responseFields.forEach((f) => addResponseRow(responseTbody, f));
     } else {
-      fields.forEach((f) => addResponseRow(responseTbody, f));
+      const fields = flattenResponseExampleToFields(endpoint.responseExample);
+      if (fields === null) {
+        // JSON이 아니거나(레거시 텍스트) 최상위가 배열/원시값 — 통짜로 한 행에 보존해 값 손실 방지.
+        addResponseRow(responseTbody, {
+          name: '_raw',
+          example: endpoint.responseExample || '',
+          desc: '(자동 변환 불가 원본 — 확인 후 수정)',
+        });
+      } else {
+        fields.forEach((f) => addResponseRow(responseTbody, f));
+      }
     }
   }
   renumberEndpoints();
@@ -457,6 +465,18 @@ document.getElementById('apiForm').addEventListener('submit', function () {
       required: row.querySelector('.param-required').checked,
       desc: row.querySelector('.param-desc').value.trim(),
     }));
+    // responseFields: 필드명/설명까지 보존하는 원본 메타데이터(요청 params와 동일한 구조).
+    // responseExample: 그 값들만 뽑아 실제 응답 봉투 모양으로 조립한 JSON 문자열(기존 저장 형식
+    // 그대로 유지 — Data부 JSON 샘플 등 값만 필요한 곳에서 계속 사용).
+    const responseFields = Array.from(block.querySelectorAll('.response-row'))
+      .map((row) => ({
+        name: row.querySelector('.response-name').value.trim(),
+        label: row.querySelector('.response-label').value.trim(),
+        type: row.querySelector('.response-type').value,
+        example: row.querySelector('.response-example').value.trim(),
+        desc: row.querySelector('.response-desc').value.trim(),
+      }))
+      .filter((f) => f.name);
     const responseData = buildResponsePreview(block);
     const responseExample = Object.keys(responseData).length > 0
       ? JSON.stringify(responseData, null, 2)
@@ -466,6 +486,7 @@ document.getElementById('apiForm').addEventListener('submit', function () {
       url: block.querySelector('.ep-url').value.trim(),
       description: block.querySelector('.ep-description').value.trim(),
       params,
+      responseFields,
       responseExample,
     };
   });

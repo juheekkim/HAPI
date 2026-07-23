@@ -6,6 +6,7 @@ const systemInfoModel = require('../models/systemInfoModel');
 const commonCodeModel = require('../models/commonCodeModel');
 const menuModel = require('../models/menuModel');
 const partnerModel = require('../models/partnerModel');
+const partnerFirewallApplyModel = require('../models/partnerFirewallApplyModel');
 
 // 세션 사용자가 실제로 접근 가능한 API 문서(domain) 목록을 산출.
 // 파트너는 /admin/partner-roles에서 지정한 partners.role_id가 세션 role보다 우선 적용.
@@ -149,6 +150,23 @@ const apiReferenceController = {
       console.error(err);
       return res.status(502).json({ success: false, message: '게이트웨이 호출 중 오류가 발생했습니다.' });
     }
+  },
+
+  // 테스트 샌드박스의 STN_TMSG_IP(표준전문요청IP주소) 자동 채움용. 브라우저는 로컬 PC의 실제 IP를
+  // 읽을 방법이 없어(WebRTC 우회도 최신 브라우저에서 차단), 사용자가 방화벽 신청 시 이미 직접
+  // 입력해둔 source_ip(partner_firewall_applies, 요청 반영)를 재사용한다. 승인된 신청 중 가장 최근
+  // 것을 쓰고, 없으면 sourceIp: null(클라이언트는 기존처럼 빈 값 유지).
+  // admin은 파트너가 아니라 방화벽 신청 이력 자체가 없는 게 정상이라(내부 담당자, 원격지 신청 대상
+  // 아님) loopback(127.0.0.1)을 기본값으로 준다(요청).
+  async mySourceIp(req, res) {
+    if (req.session.user.role === 'admin') {
+      return res.json({ sourceIp: '127.0.0.1' });
+    }
+    const applies = await partnerFirewallApplyModel.getByUserId(req.session.user.id);
+    const approved = applies
+      .filter((a) => a.approval_status === 'approved')
+      .sort((a, b) => new Date(b.approved_at || b.requested_at) - new Date(a.approved_at || a.requested_at));
+    res.json({ sourceIp: approved[0] ? approved[0].source_ip : null });
   },
 };
 

@@ -13,12 +13,16 @@ const homeController = {
         noticeModel.getVisible(),
       ]);
 
+      // category='common'(에러 코드 등)은 실제 연동 API 정의가 아니라 헤더/공통 코드 같은 참고
+      // 정보라 "API 명세" 집계에서 제외한다(요청).
+      const apiSpecs = specs.filter((s) => s.category !== 'common');
+
       const categoryCounts = {};
-      specs.forEach((s) => {
+      apiSpecs.forEach((s) => {
         categoryCounts[s.category] = (categoryCounts[s.category] || 0) + 1;
       });
       const specStats = {
-        total: specs.length,
+        total: apiSpecs.length,
         byCategory: Object.keys(categoryCounts).map((key) => ({
           label: CATEGORY_LABELS[key] || key,
           count: categoryCounts[key],

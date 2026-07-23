@@ -30,6 +30,7 @@
   <div style="display:flex; gap:0; margin-bottom:24px; border-bottom:2px solid #dde3ea;">
     <button type="button" id="ctab-btn-common" class="tab-btn active" onclick="switchCodeTab('common')" style="padding:10px 24px;">📚 공통 코드</button>
     <button type="button" id="ctab-btn-error" class="tab-btn" onclick="switchCodeTab('error')" style="padding:10px 24px;">⚠️ 에러 코드</button>
+    <button type="button" id="ctab-btn-system" class="tab-btn" onclick="switchCodeTab('system')" style="padding:10px 24px;">🖧 시스템 정보</button>
   </div>
 
   <!-- 공통 코드 -->
@@ -121,11 +122,71 @@
       </tbody>
     </table>
   </div>
+
+  <!-- 시스템 정보(API Reference "전문구조" 탭이 읽는 system_info 테이블) -->
+  <div id="ctab-system" style="display:none;">
+    <div class="admin-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>시스템 정보 목록</span>
+      <button class="btn btn-primary btn-sm" onclick="openSystemCreateModal()">+ 새 시스템 정보 등록</button>
+    </div>
+    <div style="font-size:12px;color:#8a9bb0;margin-bottom:12px;">
+      시스템명·시스템코드·Protocol·Target·전문포맷·문자코드·비고 값이 같은 행끼리 API Reference 화면에서 하나의 그룹(rowspan)으로 묶여 보입니다. 같은 시스템에 회원/비회원처럼 구분(division)이 여러 개면 그 값들만 다르게 하고 나머지는 동일하게 등록하세요.
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;">시스템 명</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;">시스템 코드</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;">Protocol</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;">구분</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;">Source</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;">Target</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;">전문 포맷</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;">문자코드</th>
+          <th style="text-align:left;background:#d9e8fb;color:#5a7194;">비고</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:70px;">정렬</th>
+          <th style="text-align:center;background:#d9e8fb;color:#5a7194;width:150px;">관리</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (!systemInfoRows || systemInfoRows.length === 0) { %>
+        <tr><td colspan="11" style="text-align:center;color:#8a9bb0;padding:32px;">등록된 시스템 정보가 없습니다.</td></tr>
+        <% } %>
+        <% (systemInfoRows || []).forEach((s) => { %>
+        <tr>
+          <td style="text-align:center;"><%= s.system_name %></td>
+          <td class="mono" style="text-align:center;color:#1a3a6b;"><%= s.system_code %></td>
+          <td style="text-align:center;"><%= s.protocol || '—' %></td>
+          <td style="text-align:center;"><%= s.division || '—' %></td>
+          <td style="text-align:center;color:#8a9bb0;"><%= s.source || '—' %></td>
+          <td style="text-align:center;"><%= s.target || '—' %></td>
+          <td class="mono" style="text-align:center;"><%= s.message_format || '—' %></td>
+          <td style="text-align:center;"><%= s.charset || '—' %></td>
+          <td style="color:#8a9bb0;"><%= s.remark || '—' %></td>
+          <td style="text-align:center;color:#8a9bb0;"><%= s.display_order %></td>
+          <td style="text-align:center;">
+            <div class="action-btns" style="justify-content:center;">
+              <button class="btn btn-sm btn-edit-outline"
+                onclick="openSystemEditModal(<%= s.id %>, `<%= (s.system_name||'').replace(/`/g,'\\`') %>`, `<%= (s.system_code||'').replace(/`/g,'\\`') %>`, `<%= (s.protocol||'').replace(/`/g,'\\`') %>`, `<%= (s.division||'').replace(/`/g,'\\`') %>`, `<%= (s.source||'').replace(/`/g,'\\`') %>`, `<%= (s.target||'').replace(/`/g,'\\`') %>`, `<%= (s.message_format||'').replace(/`/g,'\\`') %>`, `<%= (s.charset||'').replace(/`/g,'\\`') %>`, `<%= (s.remark||'').replace(/`/g,'\\`') %>`, <%= s.display_order %>)">
+                수정
+              </button>
+              <form action="/admin/codes/system/<%= s.id %>/delete" method="POST" style="display:inline;"
+                onsubmit="return confirm('이 시스템 정보를 삭제하시겠습니까?')">
+                <button type="submit" class="btn btn-sm btn-delete-outline">삭제</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- 공통 코드 등록 모달 -->
 <div id="commonCreateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+  <div class="modal-box" style="width:520px;">
     <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">새 공통 코드 등록</h3>
     <form action="/admin/codes/common" method="POST">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
@@ -168,7 +229,7 @@
 
 <!-- 공통 코드 수정 모달 -->
 <div id="commonEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+  <div class="modal-box" style="width:520px;">
     <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">공통 코드 수정</h3>
     <form id="commonEditForm" method="POST">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
@@ -211,7 +272,7 @@
 
 <!-- 에러 코드 등록 모달 -->
 <div id="errorCreateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+  <div class="modal-box" style="width:520px;">
     <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">새 에러 코드 등록</h3>
     <form action="/admin/codes/error" method="POST">
       <div style="margin-bottom:14px;">
@@ -240,7 +301,7 @@
 
 <!-- 에러 코드 수정 모달 -->
 <div id="errorEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:12px;padding:32px 28px;width:520px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+  <div class="modal-box" style="width:520px;">
     <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">에러 코드 수정</h3>
     <form id="errorEditForm" method="POST">
       <input type="hidden" id="errorEditOriginalCode" name="original_code">
@@ -268,20 +329,163 @@
   </div>
 </div>
 
+<!-- 시스템 정보 등록 모달 -->
+<div id="systemCreateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+  <div class="modal-box" style="width:620px;">
+    <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">새 시스템 정보 등록</h3>
+    <form action="/admin/codes/system" method="POST">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">시스템 명</label>
+          <input type="text" name="system_name" placeholder="예: 대형법인사" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">시스템 코드</label>
+          <input type="text" name="system_code" placeholder="예: LCB" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Protocol</label>
+          <input type="text" name="protocol" placeholder="예: HTTPS"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">구분 (division)</label>
+          <input type="text" name="division" placeholder="예: 회원"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Source</label>
+          <input type="text" name="source" placeholder="예: —"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Target</label>
+          <input type="text" name="target" placeholder="예: 한화 리조트 대외채널 MCI"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">전문 포맷</label>
+          <input type="text" name="message_format" placeholder="예: JSON String"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">문자코드</label>
+          <input type="text" name="charset" placeholder="예: UTF-8"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 110px;gap:14px;margin-bottom:20px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">비고</label>
+          <input type="text" name="remark" placeholder="예: —"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">정렬순서</label>
+          <input type="number" name="display_order" value="0"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="closeSystemCreateModal()"
+          style="padding:8px 20px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#374151;font-size:13px;cursor:pointer;">취소</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;padding:8px 20px;">등록</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 시스템 정보 수정 모달 -->
+<div id="systemEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+  <div class="modal-box" style="width:620px;">
+    <h3 style="margin:0 0 20px;font-size:17px;color:#1e40af;">시스템 정보 수정</h3>
+    <form id="systemEditForm" method="POST">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">시스템 명</label>
+          <input type="text" id="systemEditName" name="system_name" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">시스템 코드</label>
+          <input type="text" id="systemEditCode" name="system_code" required
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;font-family:'JetBrains Mono',monospace;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Protocol</label>
+          <input type="text" id="systemEditProtocol" name="protocol"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">구분 (division)</label>
+          <input type="text" id="systemEditDivision" name="division"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Source</label>
+          <input type="text" id="systemEditSource" name="source"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Target</label>
+          <input type="text" id="systemEditTarget" name="target"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">전문 포맷</label>
+          <input type="text" id="systemEditMessageFormat" name="message_format"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">문자코드</label>
+          <input type="text" id="systemEditCharset" name="charset"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 110px;gap:14px;margin-bottom:20px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">비고</label>
+          <input type="text" id="systemEditRemark" name="remark"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">정렬순서</label>
+          <input type="number" id="systemEditDisplayOrder" name="display_order"
+            style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" onclick="closeSystemEditModal()"
+          style="padding:8px 20px;border:1px solid #d1d5db;border-radius:6px;background:#fff;color:#374151;font-size:13px;cursor:pointer;">취소</button>
+        <button type="submit" class="btn btn-primary btn-sm" style="font-size:13px;padding:8px 20px;">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
-// 공통 코드/에러 코드 페이지 내 탭 전환(헤더 문서 switchHeaderTab과 동일한 방식)
+// 공통 코드/에러 코드/시스템 정보 페이지 내 탭 전환(헤더 문서 switchHeaderTab과 동일한 방식)
 function switchCodeTab(tab) {
-  var common = document.getElementById('ctab-common');
-  var error = document.getElementById('ctab-error');
-  var btnCommon = document.getElementById('ctab-btn-common');
-  var btnError = document.getElementById('ctab-btn-error');
-  if (tab === 'common') {
-    common.style.display = ''; error.style.display = 'none';
-    btnCommon.classList.add('active'); btnError.classList.remove('active');
-  } else {
-    common.style.display = 'none'; error.style.display = '';
-    btnCommon.classList.remove('active'); btnError.classList.add('active');
-  }
+  var panels = { common: document.getElementById('ctab-common'), error: document.getElementById('ctab-error'), system: document.getElementById('ctab-system') };
+  var btns = { common: document.getElementById('ctab-btn-common'), error: document.getElementById('ctab-btn-error'), system: document.getElementById('ctab-btn-system') };
+  Object.keys(panels).forEach(function (key) {
+    panels[key].style.display = key === tab ? '' : 'none';
+    btns[key].classList.toggle('active', key === tab);
+  });
 }
 
 function openCommonCreateModal() { document.getElementById('commonCreateModal').style.display = 'flex'; }
@@ -309,9 +513,28 @@ function openErrorEditModal(code, name, desc) {
 }
 function closeErrorEditModal() { document.getElementById('errorEditModal').style.display = 'none'; }
 
+function openSystemCreateModal() { document.getElementById('systemCreateModal').style.display = 'flex'; }
+function closeSystemCreateModal() { document.getElementById('systemCreateModal').style.display = 'none'; }
+function openSystemEditModal(id, systemName, systemCode, protocol, division, source, target, messageFormat, charset, remark, displayOrder) {
+  document.getElementById('systemEditForm').action = '/admin/codes/system/' + id + '/update';
+  document.getElementById('systemEditName').value = systemName;
+  document.getElementById('systemEditCode').value = systemCode;
+  document.getElementById('systemEditProtocol').value = protocol;
+  document.getElementById('systemEditDivision').value = division;
+  document.getElementById('systemEditSource').value = source;
+  document.getElementById('systemEditTarget').value = target;
+  document.getElementById('systemEditMessageFormat').value = messageFormat;
+  document.getElementById('systemEditCharset').value = charset;
+  document.getElementById('systemEditRemark').value = remark;
+  document.getElementById('systemEditDisplayOrder').value = displayOrder;
+  document.getElementById('systemEditModal').style.display = 'flex';
+}
+function closeSystemEditModal() { document.getElementById('systemEditModal').style.display = 'none'; }
+
 // 모달 외부 클릭 시 닫기
 [['commonCreateModal', closeCommonCreateModal], ['commonEditModal', closeCommonEditModal],
- ['errorCreateModal', closeErrorCreateModal], ['errorEditModal', closeErrorEditModal]].forEach(function(pair) {
+ ['errorCreateModal', closeErrorCreateModal], ['errorEditModal', closeErrorEditModal],
+ ['systemCreateModal', closeSystemCreateModal], ['systemEditModal', closeSystemEditModal]].forEach(function(pair) {
   document.getElementById(pair[0]).addEventListener('click', function(e) {
     if (e.target === this) pair[1]();
   });

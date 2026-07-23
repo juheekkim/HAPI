@@ -11,7 +11,10 @@
   --border: #dde3ea;
   --text-dark: #1a2332;
   --text-mid: #4a5568;
-  --text-light: #8a9bb0;
+  /* 원래 #8a9bb0였으나 흰 배경 대비 2.84:1로 WCAG AA(4.5:1) 미달(요청, 검토 중 발견) — 탭 비활성
+     라벨/사이드바 분류명/breadcrumb/공지 날짜 등 실제 텍스트에 쓰여 장식색으로 보기 어려움.
+     같은 색조·채도를 유지한 채 명도만 낮춰 4.86:1로 확보. */
+  --text-light: #5f738c;
   --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;
@@ -139,18 +142,33 @@ a { text-decoration: none; color: inherit; }
   position: relative;
   overflow: hidden;
 }
+/* 은은한 글로우(콘투어 그래픽 뒤에서 입체감만 보태는 용도) */
 .login-left::before {
-  content: ''; position: absolute; width: 280px; height: 280px;
-  border-radius: 50%; background: rgba(30,111,206,0.2);
-  bottom: 80px; right: -80px;
+  content: ''; position: absolute; width: 320px; height: 320px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(0,196,204,0.16), rgba(0,196,204,0) 70%);
+  bottom: -60px; right: -100px;
 }
+/* 골프장/리조트 지형 등고선을 연상시키는 곡선 레이어 — 예전엔 반투명 원 두 개짜리 전형적인
+   "블롭" 장식이었는데, 이 포털이 다루는 리조트/골프 도메인과 맞닿는 그래픽으로 교체(요청). */
 .login-left::after {
-  content: ''; position: absolute; width: 180px; height: 180px;
-  border-radius: 50%; background: rgba(0,196,204,0.12);
-  bottom: 200px; right: 60px;
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' preserveAspectRatio='xMaxYMax slice'%3E%3Cpath d='M-20 300 Q 90 260 190 288 T 420 268' stroke='rgba(255,255,255,0.08)' stroke-width='2' fill='none'/%3E%3Cpath d='M-20 250 Q 100 205 200 240 T 420 215' stroke='rgba(77,163,255,0.16)' stroke-width='2' fill='none'/%3E%3Cpath d='M-20 200 Q 110 155 210 190 T 420 165' stroke='rgba(0,196,204,0.2)' stroke-width='2' fill='none'/%3E%3Cpath d='M-20 150 Q 120 105 220 140 T 420 115' stroke='rgba(255,255,255,0.09)' stroke-width='2' fill='none'/%3E%3Ccircle cx='330' cy='96' r='5' fill='rgba(0,196,204,0.55)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: bottom -10px right -10px;
+  background-size: 340px 340px;
+  pointer-events: none;
 }
-.login-brand { font-size: 13px; color: var(--blue-light); font-weight: 500; margin-bottom: 24px; }
-.login-title { font-size: 28px; font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 48px; }
+.login-brand-row { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; position: relative; z-index: 1; }
+.login-logo-badge {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--blue-bright), var(--cyan));
+  color: #fff; font-weight: 800; font-size: 15px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 14px rgba(0,196,204,0.35);
+}
+.login-brand { font-size: 13px; color: var(--blue-light); font-weight: 500; }
+.login-title { font-size: 28px; font-weight: 700; color: #fff; line-height: 1.3; margin-bottom: 48px; position: relative; z-index: 1; }
 .login-features { list-style: none; display: flex; flex-direction: column; gap: 14px; position: relative; z-index: 1; }
 .login-features li {
   display: flex; align-items: center; gap: 10px;
@@ -164,24 +182,60 @@ a { text-decoration: none; color: inherit; }
   flex: 1; background: #eef2f7;
   display: flex; align-items: center; justify-content: center; padding: 40px;
 }
-.login-box { width: 380px; }
+/* 배경과 같은 톤 위에 붕 떠 있던 폼을 카드로 분리(요청) */
+.login-box {
+  width: 380px; background: #fff; border-radius: 16px;
+  padding: 40px 36px; border: 1px solid rgba(17,24,39,0.05);
+  box-shadow: 0 24px 48px -20px rgba(10,22,40,0.22), 0 2px 6px rgba(10,22,40,0.05);
+}
 .login-box h2 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
 .login-box p { color: var(--text-light); font-size: 13px; margin-bottom: 28px; }
 .login-form .form-group { margin-bottom: 18px; }
 .login-form label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
 .login-form input {
-  width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
+  width: 100%; padding: 12px 14px 12px 42px; border: 1.5px solid var(--border);
   border-radius: 8px; font-size: 14px; outline: none; background: #fff;
-  transition: border-color 0.2s; font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit;
 }
-.login-form input:focus { border-color: var(--blue); }
+.login-form input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(30,111,206,0.14); }
+/* 아이콘을 input 자체의 background-image로 넣었더니, 브라우저 자동완성(예: 파트너사 코드에
+   "admin" 자동완성)이 입력칸 배경을 강제로 덮어써서 아이콘이 사라지는 문제(요청, 실제 발견)가
+   있었다. input 위에 절대 위치로 겹치는 별도 아이콘 엘리먼트로 옮겨서(position:absolute는 같은
+   스택킹 맥락에서 static인 input보다 항상 위에 그려짐) 자동완성 배경과 무관하게 항상 보이게 한다. */
+.input-icon-wrap { position: relative; }
+.input-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; z-index: 2; pointer-events: none;
+  background-repeat: no-repeat; background-size: 18px 18px;
+}
+.input-icon-partner-code {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Ccircle cx='9' cy='12' r='2'/%3E%3Cpath d='M14 10h4M14 14h4M6.5 16.5c0-1.5 1.2-2.5 2.5-2.5s2.5 1 2.5 2.5'/%3E%3C/svg%3E");
+}
+.input-icon-password {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='5' y='11' width='14' height='9' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E");
+}
+.input-icon-company {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16'/%3E%3Cpath d='M14 9h6v12'/%3E%3Cpath d='M8 8h.01M8 12h.01M8 16h.01M11 8h.01M11 12h.01M11 16h.01'/%3E%3C/svg%3E");
+}
+.input-icon-manager {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='8' r='3.2'/%3E%3Cpath d='M5 20c0-3.5 3-6 7-6s7 2.5 7 6'/%3E%3C/svg%3E");
+}
+.input-icon-email {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='m4 7 8 6 8-6'/%3E%3C/svg%3E");
+}
+.input-icon-phone {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 3h3l1.5 4.5-2 1.5a12 12 0 0 0 6.5 6.5l1.5-2L21 15v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2Z'/%3E%3C/svg%3E");
+}
 .btn-login {
   width: 100%; padding: 13px;
   background: var(--blue-bright); color: #fff;
   border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
-  cursor: pointer; margin-bottom: 20px; transition: background 0.2s; font-family: inherit;
+  cursor: pointer; margin-bottom: 20px; font-family: inherit;
+  box-shadow: 0 10px 20px -8px rgba(38,128,235,0.55);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
 }
-.btn-login:hover { background: #1a5fb8; }
+.btn-login:hover { background: #1a5fb8; transform: translateY(-1px); box-shadow: 0 14px 24px -8px rgba(38,128,235,0.6); }
+.btn-login:active { transform: translateY(0); }
 .login-divider { text-align: center; color: var(--text-light); font-size: 13px; margin-bottom: 12px; }
 .btn-partner-apply {
   width: 100%; padding: 12px; background: #fff;
@@ -190,7 +244,7 @@ a { text-decoration: none; color: inherit; }
   cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: all 0.2s; font-family: inherit;
 }
-.btn-partner-apply:hover { border-color: var(--blue); color: var(--blue); }
+.btn-partner-apply:hover { border-color: var(--blue); color: var(--blue); background: #f5f9ff; }
 
 /* ===== HOME PAGE ===== */
 .home-hero {
@@ -297,7 +351,7 @@ a { text-decoration: none; color: inherit; }
 .method-post  { background: #dcfce7; color: #15803d; }
 .method-get   { background: #dbeafe; color: #1d4ed8; }
 .method-delete{ background: #fee2e2; color: #dc2626; }
-.method-put   { background: #fef3c7; color: #d97706; }
+.method-put   { background: #fef3c7; color: #9f5704; }
 .api-url {
   font-family: 'JetBrains Mono', monospace; font-size: 13px;
   color: var(--text-dark); background: #f8fafc; padding: 10px 16px;
@@ -319,18 +373,27 @@ a { text-decoration: none; color: inherit; }
 }
 .param-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--border); }
 .param-table tr:last-child td { border-bottom: none; }
-.param-table tr:hover td { background: #f8fafc; }
 .param-req { color: var(--danger); font-weight: 700; font-size: 12px; }
 .type-text { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--blue); }
-/* 컬럼 많은 데이터 그리드 opt-in(표준전문 구조/시스템 정보/헤더정보/엔드포인트 요청·응답 표 등).
-   실선 없이도 컬럼이 구분되도록 옅은 세로 구분선 + 줄무늬만 추가(.param-table 기본 스타일은 그대로 둠). */
+/* 옅은 세로 구분선 + 줄무늬 + 호버(요청, 갱신) — 예전엔 이 클래스를 붙인 표(주로 API Reference
+   읽기 화면)만 세로 구분선/줄무늬가 있고, 나머지 표(Admin data-table 전체, api-form.ejs/guide의
+   param-table)는 가로선만(그나마 data-table은 더 옅은 색) 있어 화면마다 표의 구분감이 서로 달라
+   보였다. .param-table/.data-table 전부에 기본으로 적용해 이 포털 전체 표의 톤을 통일한다.
+   `.subtle-grid` 클래스는 과거 호환용으로 셀렉터에 남겨두되(붙어 있어도 무해), 더 이상 opt-in이
+   필요하지 않다. */
+.param-table td + td, .param-table th + th,
+.data-table td + td, .data-table th + th,
 .subtle-grid td + td,
 .subtle-grid th + th {
   border-left: 1px solid rgba(15, 23, 42, 0.06);
 }
+.param-table tbody tr:nth-child(even) td,
+.data-table tbody tr:nth-child(even) td,
 .subtle-grid tbody tr:nth-child(even) td {
   background: #f9fafb;
 }
+.param-table tbody tr:hover td,
+.data-table tbody tr:hover td,
 .subtle-grid tbody tr:hover td {
   background: #eef4ff;
 }
@@ -366,7 +429,7 @@ a { text-decoration: none; color: inherit; }
 .mono { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
 .env-table-wrap { background: #fff; border-radius: 10px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
 .env-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; }
-.env-staging { background: #fef3c7; color: #d97706; }
+.env-staging { background: #fef3c7; color: #9f5704; }
 .env-prod    { background: #dcfce7; color: #15803d; }
 .proto-badge { background: #dbeafe; color: #1d4ed8; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
 
@@ -410,7 +473,7 @@ a { text-decoration: none; color: inherit; }
 .qa-item { padding: 14px 0; border-bottom: 1px solid #f0f4f8; }
 .qa-item:last-child { border-bottom: none; }
 .qa-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d; margin-bottom: 6px; }
-.qa-badge-pending { background: #fef3c7; color: #d97706; }
+.qa-badge-pending { background: #fef3c7; color: #9f5704; }
 .qa-q { font-size: 13.5px; font-weight: 600; margin-bottom: 4px; }
 .qa-a { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
 .btn-ask {
@@ -463,13 +526,12 @@ a { text-decoration: none; color: inherit; }
 }
 .data-table td {
   padding: 12px 14px; font-size: 13px;
-  border-bottom: 1px solid #f0f4f8; vertical-align: middle;
+  border-bottom: 1px solid var(--border); vertical-align: middle;
 }
-.data-table tr:hover td { background: #fafbff; }
 .data-table tr:last-child td { border-bottom: none; }
 .action-btns { display: flex; gap: 6px; align-items: center; }
 .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-.badge-pending    { background: #fef3c7; color: #d97706; }
+.badge-pending    { background: #fef3c7; color: #9f5704; }
 .badge-approved   { background: #dcfce7; color: #15803d; }
 .badge-rejected   { background: #fee2e2; color: #dc2626; }
 .badge-inprogress { background: #dbeafe; color: #1d4ed8; }
@@ -523,14 +585,23 @@ a { text-decoration: none; color: inherit; }
   position: fixed; inset: 0; background: rgba(0,0,0,0.5);
   display: flex; align-items: center; justify-content: center; z-index: 1000;
 }
+/* 모든 모달 카드의 공통 레시피(요청, 통일) — 예전엔 admin/codes·menus·notices·roles.ejs
+   6곳이 이 값을 인라인 스타일로 매번 복붙(border-radius:12px, 얕은 그림자)했고, reject-modal/
+   sandbox-modal은 별도 클래스로 border-radius:10px + 훨씬 진한 그림자를 써서 같은 "모달 팝업"인데
+   화면마다 모서리 둥글기·그림자 깊이가 달라 보였다. 이 클래스 하나로 합치고, width/padding처럼
+   모달마다 다를 수 있는 값만 인라인/개별 클래스로 덮어쓴다. */
+.modal-box {
+  background: #fff; border-radius: 12px; padding: 32px 28px;
+  max-width: 95vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
 .reject-modal {
-  background: #fff; border-radius: 10px; padding: 28px;
-  width: 420px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  background: #fff; border-radius: 12px; padding: 28px;
+  width: 420px; max-width: 95vw; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
 }
 .sandbox-modal {
-  background: #fff; border-radius: 10px; padding: 24px;
+  background: #fff; border-radius: 12px; padding: 24px;
   width: 720px; max-width: 95vw; max-height: 88vh; overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
 }
 
 /* ===== SCROLLBAR ===== */

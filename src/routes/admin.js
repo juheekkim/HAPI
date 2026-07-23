@@ -58,5 +58,8 @@ router.post('/codes/common/:id/delete', adminController.deleteCommonCode);
 router.post('/codes/error', adminController.createErrorCode);
 router.post('/codes/error/:code/update', adminController.updateErrorCode);
 router.post('/codes/error/:code/delete', adminController.deleteErrorCode);
+router.post('/codes/system', adminController.createSystemInfo);
+router.post('/codes/system/:id/update', adminController.updateSystemInfo);
+router.post('/codes/system/:id/delete', adminController.deleteSystemInfo);
 
 module.exports = router;

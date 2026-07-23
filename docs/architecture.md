@@ -43,6 +43,7 @@ Browser ──HTTP──▶ Express (app.js)
 ```
 - `routes` → `controllers` → `models` → DB. 별도 service/dao 계층은 없으며 `models/*`가 DAO 역할.
 - 브라우저 측 비동기 호출은 `public/js/common/apiClient.js`만 사용(직접 `fetch` 금지). 현재 화면 대부분은 폼 POST + 서버 렌더 방식.
+- **세션 캐시 방지(요청, 신규)**: `app.js`가 `express.static` 바로 다음, 세션 미들웨어 이전에 모든 동적 응답에 `Cache-Control: no-store`를 설정한다(정적 자원은 `express.static`이 이미 응답을 끝내므로 영향 없음). 로그아웃/서버 재시작(세션 스토어가 `express-session` 기본 `MemoryStore`라 재시작 시 전 세션이 사라짐) 이후 브라우저 "뒤로가기"를 누르면 서버에 재요청하지 않고 브라우저 캐시(bfcache 등)에 있던 이전 로그인 화면을 그대로 보여주던 문제를 막기 위함 — 서버 측 `isAuthenticated`(`req.session.user` 체크)는 이 변경 전에도 항상 정상 동작했고, 이번 수정은 새로고침 없이도 그 사실이 화면에 정확히 반영되도록 하는 것.
 
 ## 5. frontend / backend / db 관계
 - frontend(`views/**`, `public/**`)는 controller가 넘기는 `{ title, currentMenu, ...데이터 }`로 렌더된다.

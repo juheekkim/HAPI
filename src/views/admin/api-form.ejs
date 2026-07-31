@@ -55,8 +55,8 @@
   </div>
 
   <div id="importPanel-mci" class="import-panel" style="display:none;border:1px dashed #93c5fd;border-radius:8px;padding:16px;margin-bottom:18px;background:#f8fafc;">
-    <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">MCI 서비스 주소</label>
-    <input type="text" id="mciAddress" placeholder="예: /svc/condo-reserve" style="width:60%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+    <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">RECV_SVC_CD (SVC_ID)</label>
+    <input type="text" id="mciSvcId" placeholder="예: HBSINCCRM9659 또는 devView.jsp?svc_id=HBSINCCRM9659 URL 전체" style="width:60%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
     <div id="mciImportMsg" style="font-size:12px;color:#6b7280;margin-top:8px;"></div>
   </div>
 
@@ -110,6 +110,21 @@
       <button type="button" class="btn btn-primary btn-sm" onclick="addEndpoint()">+ 엔드포인트 추가</button>
     </div>
 
+    <% if (mode === 'edit') { %>
+    <!-- 수정 화면 전용: 이미 등록된 API에 MCI 조회 결과를 엔드포인트로 "추가"만 한다(카테고리/도메인/
+         명칭/설명은 안 건드림, 신규 등록의 수기/엑셀/이미지 3가지 방식은 여기선 지원 안 함). 엔드포인트를
+         추가하는 두 방법(수기 "+ 엔드포인트 추가"/MCI)을 같은 자리에 모아 실제로 반영되는 목록
+         (endpointsContainer) 바로 위에 둔다 — 이전엔 페이지 제목 바로 아래 별도 섹션 제목으로 떨어져
+         있어 "API 수정" 제목과 나란히 겹쳐 보이는 문제가 있었다. 저장은 여전히 기존 apiForm 제출
+         (updateApi)이 그대로 처리한다. -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:10px 14px;border:1px dashed #93c5fd;border-radius:8px;background:#f8fafc;">
+      <span style="font-size:12px;font-weight:600;color:#374151;white-space:nowrap;">🔗 MCI에서 추가</span>
+      <input type="text" id="mciSvcIdEdit" placeholder="RECV_SVC_CD(SVC_ID), 예: HBSINCCRM9659 또는 devView.jsp?svc_id=... URL 전체" style="flex:1;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
+      <button type="button" class="btn btn-primary btn-sm" onclick="importFromMciAppend()">추가</button>
+    </div>
+    <div id="mciImportMsgEdit" style="font-size:12px;color:#6b7280;margin:0 0 14px 2px;"></div>
+    <% } %>
+
     <div id="endpointsContainer"></div>
 
     <input type="hidden" name="endpoints_json" id="endpointsJson">
@@ -118,7 +133,7 @@
          않도록 하단 여백을 확보한다. -->
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;margin-bottom:96px;">
       <a href="/admin/apis" class="btn btn-sm" style="border:1px solid #d1d5db;background:#fff;color:#374151;">취소</a>
-      <button type="submit" class="btn btn-primary btn-sm"><%= mode === 'edit' ? '저장' : '등록' %></button>
+      <button type="submit" id="apiFormSubmitBtn" class="btn btn-primary btn-sm"><%= mode === 'edit' ? '저장' : '등록' %></button>
     </div>
   </form>
 </div>
@@ -128,8 +143,14 @@
   <div class="endpoint-block" style="border:1px solid #dde3ea;border-radius:8px;padding:16px;margin-bottom:16px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <strong style="color:#1e40af;font-size:13px;">엔드포인트 <span class="ep-number"></span></strong>
-      <button type="button" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;"
-        onclick="this.closest('.endpoint-block').remove(); renumberEndpoints();">엔드포인트 삭제</button>
+      <div style="display:flex;gap:6px;">
+        <button type="button" class="btn btn-sm" style="background:#e5e7eb;color:#374151;border:none;"
+          onclick="moveEndpoint(this, -1)" title="위로 이동">▲</button>
+        <button type="button" class="btn btn-sm" style="background:#e5e7eb;color:#374151;border:none;"
+          onclick="moveEndpoint(this, 1)" title="아래로 이동">▼</button>
+        <button type="button" class="btn btn-sm" style="background:#fca5a5;color:#b91c1c;border:none;"
+          onclick="this.closest('.endpoint-block').remove(); renumberEndpoints();">엔드포인트 삭제</button>
+      </div>
     </div>
     <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:10px;margin-bottom:12px;">
       <select class="ep-method" style="padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;box-sizing:border-box;">
@@ -443,6 +464,19 @@ document.getElementById('endpointsContainer').addEventListener('change', (e) => 
   updateResponsePreview(e.target.closest('.endpoint-block'));
 });
 
+// 엔드포인트 블록 순서 변경(▲/▼). 맨 위에서 위로, 맨 아래에서 아래로 누르면 이웃이 없어 아무 동작 안 함.
+function moveEndpoint(btn, direction) {
+  const block = btn.closest('.endpoint-block');
+  const sibling = direction < 0 ? block.previousElementSibling : block.nextElementSibling;
+  if (!sibling) return;
+  if (direction < 0) {
+    block.parentNode.insertBefore(block, sibling);
+  } else {
+    block.parentNode.insertBefore(sibling, block);
+  }
+  renumberEndpoints();
+}
+
 // 엔드포인트 추가/삭제 시 "엔드포인트 #N" 표시를 현재 순서대로 갱신
 function renumberEndpoints() {
   document.querySelectorAll('#endpointsContainer .endpoint-block').forEach((block, idx) => {
@@ -454,6 +488,11 @@ function renumberEndpoints() {
 // 수정 모드일 때 기존 엔드포인트 데이터로 초기화
 const initialEndpoints = <%- JSON.stringify((apiSpec && apiSpec.endpoints) || []).replace(/</g, '\\u003c') %>;
 initialEndpoints.forEach((ep) => addEndpoint(ep));
+
+// MCI 가져오기에서 "이미 등록된 도메인 → 덮어쓸까요?" 확정 시 이 폼의 action을 update로 임시
+// 전환한다(mode!=='edit' 페이지라 기본 action은 항상 신규 등록). 새로 조회할 때마다 이 기본값으로
+// 되돌린 뒤 다시 판단한다.
+const apiFormDefaultAction = document.getElementById('apiForm').action;
 
 document.getElementById('apiForm').addEventListener('submit', function () {
   const blocks = document.querySelectorAll('#endpointsContainer .endpoint-block');
@@ -596,18 +635,72 @@ async function importFromImage() {
   }
 }
 
+// 이번 조회가 기존에 등록된 도메인과 겹치면 "덮어쓸까요?" 확인 후 폼 action을 그 API의 수정(update)
+// 경로로 바꾼다 — 실제 저장은 여전히 기존 apiForm 제출(updateApi)이 그대로 처리하고, MCI 가져오기
+// 쪽은 어떤 API를 덮어쓸지 미리 안내하고 action만 바꿔주는 역할만 한다(createApi/updateApi 자체는
+// 손대지 않음, 엑셀/이미지 경로에는 영향 없음).
+function applyMciOverwriteTarget(existing) {
+  const form = document.getElementById('apiForm');
+  const submitBtn = document.getElementById('apiFormSubmitBtn');
+  if (!existing) {
+    form.action = apiFormDefaultAction;
+    submitBtn.textContent = '등록';
+    return false;
+  }
+  const overwrite = confirm(
+    `이미 등록된 API입니다: "${existing.name}" (도메인: ${existing.domain})\n\n` +
+      '확인 = 기존 내용을 덮어쓰기(수정)\n취소 = 새 도메인으로 별도 등록'
+  );
+  if (overwrite) {
+    form.action = '/admin/apis/' + existing.id + '/update';
+    submitBtn.textContent = '덮어쓰기 저장';
+    document.querySelector('[name="domain"]').value = existing.domain;
+    document.getElementById('domainSuggestion').style.display = 'none';
+    return true;
+  }
+  form.action = apiFormDefaultAction;
+  submitBtn.textContent = '등록';
+  return false;
+}
+
 async function importFromMci() {
-  const address = document.getElementById('mciAddress').value.trim();
+  const svcId = document.getElementById('mciSvcId').value.trim();
   const msg = document.getElementById('mciImportMsg');
-  if (!address) {
-    msg.textContent = 'MCI 서비스 주소를 입력하세요.';
+  if (!svcId) {
+    msg.textContent = 'RECV_SVC_CD(SVC_ID)를 입력하세요.';
     return;
   }
   msg.textContent = '조회 중...';
   try {
-    const result = await apiClient.post('/admin/apis/import/mci', { address });
+    const result = await apiClient.post('/admin/apis/import/mci', { svcId });
     applyImportedSpec(result.specs[0]);
-    msg.textContent = '불러온 내용을 확인한 뒤 등록 버튼을 누르세요.';
+    const overwriting = applyMciOverwriteTarget(result.existing);
+    msg.textContent = overwriting
+      ? `"${result.existing.name}"(도메인: ${result.existing.domain})을 덮어씁니다. 내용을 확인한 뒤 저장 버튼을 누르세요.`
+      : '불러온 내용을 확인한 뒤 등록 버튼을 누르세요.';
+  } catch (err) {
+    applyMciOverwriteTarget(null);
+    msg.textContent = err.message || 'MCI 서비스 조회 중 오류가 발생했습니다.';
+  }
+}
+
+// 수정 화면 전용: 신규 등록의 importFromMci()와 달리 카테고리/도메인/명칭/설명은 그대로 두고
+// endpointsContainer에 조회된 엔드포인트만 추가한다(applyImportedSpec처럼 기존 내용을 지우지 않음).
+// 중복 도메인 확인(existing)은 "새 API를 등록할지" 판단하는 정보라 이미 수정 중인 화면에서는
+// 의미가 없어 여기서는 쓰지 않는다 — 저장은 여전히 기존 updateApi 제출이 처리한다.
+async function importFromMciAppend() {
+  const svcId = document.getElementById('mciSvcIdEdit').value.trim();
+  const msg = document.getElementById('mciImportMsgEdit');
+  if (!svcId) {
+    msg.textContent = 'RECV_SVC_CD(SVC_ID)를 입력하세요.';
+    return;
+  }
+  msg.textContent = '조회 중...';
+  try {
+    const result = await apiClient.post('/admin/apis/import/mci', { svcId });
+    (result.specs[0].endpoints || []).forEach((ep) => addEndpoint(ep));
+    msg.textContent = '엔드포인트가 추가되었습니다. 아래 내용을 확인한 뒤 저장 버튼을 누르세요.';
+    document.getElementById('mciSvcIdEdit').value = '';
   } catch (err) {
     msg.textContent = err.message || 'MCI 서비스 조회 중 오류가 발생했습니다.';
   }

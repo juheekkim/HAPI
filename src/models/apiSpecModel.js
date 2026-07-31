@@ -198,6 +198,15 @@ const apiSpecModel = {
     return { ...row, endpoints: row.endpoints || [], errorCodes: row.error_codes || [] };
   },
 
+  // MCI 서비스 주소 가져오기(관리자, 신규 등록 화면)에서 같은 svc_id를 다시 조회했을 때 이미 등록된
+  // 도메인인지 미리 확인해 "덮어쓸까요?" 안내를 띄우는 데 사용.
+  async getByDomain(domain) {
+    const result = await pool.query('SELECT * FROM api_specs WHERE domain=$1', [domain]);
+    const row = result.rows[0];
+    if (!row) return null;
+    return { ...row, endpoints: row.endpoints || [], errorCodes: row.error_codes || [] };
+  },
+
   async create({ category, domain, name, description, endpoints, displayOrder }) {
     const result = await pool.query(
       `INSERT INTO api_specs (category, domain, name, description, endpoints, display_order)

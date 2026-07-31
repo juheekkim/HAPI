@@ -387,7 +387,11 @@ a { text-decoration: none; color: inherit; }
 .subtle-grid th + th {
   border-left: 1px solid rgba(15, 23, 42, 0.06);
 }
-.param-table tbody tr:nth-child(even) td,
+/* :not(.grouped-rowspan-grid) 버그 수정 — 이 물리적 행 기준 줄무늬가 아래 .grouped-rowspan-grid
+   전용(그룹 단위) 줄무늬와 같은 표에 함께 걸려 있었다. 그룹 행 수가 홀수면(예: system_info의 LCB가
+   2행, 다음 그룹 OCH가 1행째부터 시작) 두 줄무늬 규칙의 경계가 어긋나, 서로 다른 시스템의 행인데도
+   우연히 같은 배경색(#f9fafb)으로 보여 한 그룹처럼 오인되는 문제가 있었다. */
+.param-table:not(.grouped-rowspan-grid) tbody tr:nth-child(even) td,
 .data-table tbody tr:nth-child(even) td,
 .subtle-grid tbody tr:nth-child(even) td {
   background: #f9fafb;

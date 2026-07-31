@@ -81,6 +81,17 @@ const roleModel = {
     await pool.query('DELETE FROM roles WHERE id=$1', [id]);
   },
 
+  // 특정 role(code)에 메뉴 하나만 추가 매핑한다 — setMenus처럼 그 role의 기존 매핑을 통째로
+  // 교체하지 않는다(요청, 신규 API 등록 시 자동 생성된 메뉴를 admin에게 즉시 보이게 하는 용도).
+  async addMenuToRoleByCode(roleCode, menuId) {
+    await pool.query(
+      `INSERT INTO role_menus (role_id, menu_id)
+       SELECT id, $2 FROM roles WHERE code = $1
+       ON CONFLICT DO NOTHING`,
+      [roleCode, menuId]
+    );
+  },
+
   // 역할의 메뉴 매핑을 통째로 교체 (트랜잭션)
   async setMenus(roleId, menuIds) {
     const client = await pool.connect();

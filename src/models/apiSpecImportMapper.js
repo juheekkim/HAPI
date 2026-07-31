@@ -10,11 +10,21 @@
  */
 
 /**
+ * @typedef {Object} ApiSpecResponseField
+ * @property {string} name 필드 ID(점 경로로 계층 표현 가능, params와 동일한 그룹핑 규칙)
+ * @property {string} [label] 필드명(한글 표기)
+ * @property {'String'|'Integer'|'Number'|'Boolean'|'Object'|'Array'} type
+ * @property {string} [example] 예시 값(문자열, 모르면 빈 값 — 수기 작성과 동일하게 빈 칸이면 null로 저장됨)
+ * @property {string} desc 설명(부가 정보/자유 서술)
+ */
+
+/**
  * @typedef {Object} ApiSpecEndpoint
  * @property {'GET'|'POST'|'PUT'|'DELETE'|'PATCH'} method
  * @property {string} url
  * @property {string} description
  * @property {ApiSpecParam[]} params
+ * @property {ApiSpecResponseField[]} responseFields
  * @property {string|null} responseExample
  */
 
@@ -31,62 +41,7 @@
  * @property {number} displayOrder
  */
 
-const ALLOWED_CATEGORIES = ['resort', 'estate', 'common'];
-const ALLOWED_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-
-function toBoolean(value) {
-  const v = String(value ?? '')
-    .trim()
-    .toUpperCase();
-  return value === true || v === 'Y' || v === 'TRUE' || v === '1' || v === 'REQUIRED';
-}
-
-function normalizeCategory(value) {
-  const v = String(value ?? '')
-    .trim()
-    .toLowerCase();
-  return ALLOWED_CATEGORIES.includes(v) ? v : 'resort';
-}
-
-function normalizeMethod(value) {
-  const v = String(value ?? '')
-    .trim()
-    .toUpperCase();
-  return ALLOWED_METHODS.includes(v) ? v : 'GET';
-}
-
-/**
- * MCI 서비스 주소 조회 결과(JSON)를 ApiSpecInput 하나로 변환한다.
- * MCI 응답의 실제 필드명은 [Needs verification] — 아래는 잠정 매핑(자주 쓰이는 대체 키까지 함께 인식)이며,
- * 연동 확정 시 이 함수만 교체하면 컨트롤러/화면 코드는 손댈 필요가 없다.
- *
- * @param {Record<string, any>} mci
- * @returns {ApiSpecInput}
- */
-function mapMciResponseToApiSpec(mci) {
-  const src = mci || {};
-  const rawEndpoints = src.endpoints || src.operations || [];
-  return {
-    category: normalizeCategory(src.category),
-    domain: String(src.domain ?? src.serviceCode ?? '').trim(),
-    name: String(src.name ?? src.serviceName ?? '').trim(),
-    description: String(src.description ?? '').trim(),
-    displayOrder: Number(src.displayOrder) || 0,
-    endpoints: rawEndpoints.map((op) => ({
-      method: normalizeMethod(op.method ?? op.httpMethod),
-      url: String(op.url ?? op.path ?? '').trim(),
-      description: String(op.description ?? '').trim(),
-      params: (op.params ?? op.parameters ?? []).map((p) => ({
-        name: String(p.name ?? '').trim(),
-        label: String(p.label ?? '').trim(),
-        type: String(p.type ?? 'String').trim() || 'String',
-        required: toBoolean(p.required),
-        desc: String(p.desc ?? p.description ?? '').trim(),
-      })),
-      responseExample: op.responseExample ?? op.example ?? null,
-    })),
-  };
-}
+// MCI 서비스 주소(devView.jsp?svc_id=...) 조회 결과는 아래쪽 "MCI devView HTML → ApiSpecInput" 절 참고.
 
 // ── HABIS "모델 정의서" 엑셀 → ApiSpecInput ─────────────────────────────
 // 실제 사내 표준 양식(2026-07 샘플, 골프 키오스크 HBSGOLOCH0119 시트) 기준.
@@ -219,31 +174,66 @@ function isNotUsed(f) {
   return f.usage.trim().toUpperCase() === 'NOT USE';
 }
 
-// [INPUT] 필드 목록 → 파라미터 목록(Group은 컨테이너일 뿐이라 제외, 하위 필드 name은 점 경로로 펼침).
-// name=필드ID(점 경로), label=필드명(한글), desc=길이/소수점/Default/배열/사용여부 등 부가 정보.
-// 사용여부가 NOT USE인 필드도 목록엔 남기고 설명에만 표시한다(위 주석 참조 — 제외하면 데이터 유실 위험).
-function buildParams(fields) {
-  const params = [];
+// 길이/소수점/Default/배열/사용여부 등 부가 정보를 하나의 설명 문자열로 정리한다(params/responseFields
+// 공통 — 사용여부가 NOT USE인 필드도 제외하지 않고 여기 표시만 한다, 제외하면 데이터 유실 위험).
+function describeFieldNote(f) {
+  const noteParts = [];
+  if (isNotUsed(f)) noteParts.push('사용여부:NOT USE');
+  if (f.length && f.length.toUpperCase() !== 'NOT USE') noteParts.push('길이:' + f.length);
+  if (f.decimal && f.decimal !== '0') noteParts.push('소수점:' + f.decimal);
+  if (f.default) noteParts.push('Default:' + f.default);
+  if (f.isArray.toUpperCase() === 'Y') noteParts.push('배열');
+  if (f.note) noteParts.push(f.note);
+  return noteParts.join(', ');
+}
+
+function fieldTypeLabel(f) {
+  return f.type.trim().toLowerCase() === 'numeric' ? 'Number' : f.type || 'String';
+}
+
+// Group은 컨테이너일 뿐이라 건너뛰고, 나머지 리프 필드마다 점 경로(depth 기준 pathStack)와 함께
+// visit(f, path)을 호출한다. buildParams/buildResponseFields가 이 순회 하나를 공유한다.
+function walkLeafFields(fields, visit) {
   const pathStack = [];
   for (const f of fields) {
     pathStack[f.depth] = f.id;
     if (isGroupField(f)) continue;
-    const noteParts = [];
-    if (isNotUsed(f)) noteParts.push('사용여부:NOT USE');
-    if (f.length && f.length.toUpperCase() !== 'NOT USE') noteParts.push('길이:' + f.length);
-    if (f.decimal && f.decimal !== '0') noteParts.push('소수점:' + f.decimal);
-    if (f.default) noteParts.push('Default:' + f.default);
-    if (f.isArray.toUpperCase() === 'Y') noteParts.push('배열');
-    if (f.note) noteParts.push(f.note);
-    params.push({
-      name: pathStack.slice(0, f.depth + 1).join('.'),
-      label: f.label,
-      type: f.type.trim().toLowerCase() === 'numeric' ? 'Number' : f.type || 'String',
-      required: false,
-      desc: noteParts.join(', '),
-    });
+    visit(f, pathStack.slice(0, f.depth + 1).join('.'));
   }
+}
+
+// [INPUT] 필드 목록 → 파라미터 목록. name=필드ID(점 경로), label=필드명(한글), desc=부가 정보.
+function buildParams(fields) {
+  const params = [];
+  walkLeafFields(fields, (f, path) => {
+    params.push({
+      name: path,
+      label: f.label,
+      type: fieldTypeLabel(f),
+      required: false,
+      desc: describeFieldNote(f),
+    });
+  });
   return params;
+}
+
+// [OUTPUT] 필드 목록 → 응답 필드 메타데이터 목록(수기 작성 화면의 "응답 예시" 표와 동일한 shape:
+// {name,label,type,example,desc}). buildResponseExampleObject가 만드는 값 전용 JSON과 달리 필드명·설명이
+// 살아있어, api-form.ejs의 addEndpoint가 이 배열이 있으면 responseFields를 그대로 표에 채운다 —
+// 그전까지는 이 정보가 buildResponseExampleObject 단계에서 버려져 응답 예시 표의 필드명/설명이 항상
+// 빈칸이었다(엑셀/이미지/MCI 공통 문제). Default 값이 있으면 예시 값으로, 없으면 수기 작성처럼 빈 값.
+function buildResponseFields(fields) {
+  const result = [];
+  walkLeafFields(fields, (f, path) => {
+    result.push({
+      name: path,
+      label: f.label,
+      type: fieldTypeLabel(f),
+      example: f.default || '',
+      desc: describeFieldNote(f),
+    });
+  });
+  return result;
 }
 
 // [OUTPUT] 필드 목록 → 중첩 JSON 예시 객체(Group=하위 오브젝트, 배열형태=Y면 배열로 감쌈).
@@ -271,6 +261,7 @@ function buildResponseExampleObject(fields) {
 // (mapImageExtractionsToApiSpec)가 이 함수 하나를 공유해 규칙(NOT USE 처리, 도메인 추천 등)이 갈라지지 않게 한다.
 function buildEndpointFromFields({ svcId, businessDesc, inputFields, outputFields }, fallbackLabel) {
   const params = buildParams(inputFields || []);
+  const responseFields = buildResponseFields(outputFields || []);
   const responseExample =
     outputFields && outputFields.length
       ? JSON.stringify(buildResponseExampleObject(outputFields), null, 2)
@@ -280,6 +271,7 @@ function buildEndpointFromFields({ svcId, businessDesc, inputFields, outputField
     url: svcId || fallbackLabel,
     description: businessDesc || fallbackLabel,
     params,
+    responseFields,
     responseExample,
   };
 }
@@ -450,4 +442,146 @@ function mapImageExtractionsToApiSpec(extractions, fallbackName) {
   return assembleApiSpecInput(endpoints, firstMeta, fallbackName);
 }
 
-module.exports = { mapMciResponseToApiSpec, mapHabisWorkbookToApiSpec, mapImageExtractionsToApiSpec };
+// ── MCI devView HTML → ApiSpecInput ─────────────────────────────────────
+// MCI_SERVICE_BASE_URL(devView.jsp)?svc_id=<RECV_SVC_CD> 조회 결과는 JSON이 아니라 셀 서식이 입혀진
+// 순수 HTML <table> 한 장이며, 실제 관측 결과(2026-07-31, svc_id=HBSINCCRM9659) 레이아웃이
+// mapEndpointSheet가 읽는 HABIS 엑셀 "모델 정의서"와 라벨 체계까지 동일하다(시스템명/SVC명/업무설명
+// 메타 + [INPUT]/[OUTPUT] 마커 + 필드ID/필드명/오브젝트명/길이/소수점/Default/배열형태 헤더,
+// ▷ 들여쓰기로 Group 하위 표현). 그래서 셀 읽기 계층만 새로 만들고 그 아래(buildEndpointFromFields/
+// assembleApiSpecInput, NOT USE 처리, 도메인 추천)는 엑셀·이미지 경로와 동일하게 재사용한다.
+// 한 페이지 = svc_id 하나 = 엔드포인트 하나(엑셀의 시트 1개에 해당).
+//
+// [Needs verification] 관측된 페이지엔 "사용여부" 헤더 셀이 없다(엑셀엔 있음) — 그 칸에 들어갈 값이
+// "길이" 헤더 칸에 대신 나타난다(리프 필드는 전부 "NOT USE", Group 행은 빈 칸). 헤더 텍스트 기준으로만
+// 컬럼을 찾으므로 이 값은 그대로 "길이" 값으로 읽히고, buildParams가 "NOT USE"는 길이 메모에서
+// 걸러내(값 손실은 없지만 "사용여부:NOT USE" 메모는 남지 않는다). svc_id별로 실제 길이/사용여부가
+// 필요하면 관리자가 등록 화면에서 직접 확인·보정해야 한다.
+
+function stripMciHtmlCell(raw) {
+  return String(raw || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// <tr>/<td> 만 다루는 목적 한정 파서(범용 HTML 파서 아님) — devView.jsp가 항상 단일 플랫 <table>
+// 하나만 내려주는 고정 서식이라 정규식 셀 추출로 충분하다(엑셀 파서가 셀을 좌표로 훑는 것과 동급 접근).
+function parseMciHtmlRows(html) {
+  const rows = [];
+  const trRe = /<tr\b[^>]*>([\s\S]*?)<\/tr>/gi;
+  let trMatch;
+  while ((trMatch = trRe.exec(html))) {
+    const tdRe = /<td\b[^>]*>([\s\S]*?)<\/td>/gi;
+    const cells = [];
+    let tdMatch;
+    while ((tdMatch = tdRe.exec(trMatch[1]))) {
+      cells.push(stripMciHtmlCell(tdMatch[1]));
+    }
+    if (cells.length) rows.push(cells);
+  }
+  return rows;
+}
+
+// 라벨 셀 바로 다음 칸만 값으로 본다(엑셀 scanMeta처럼 빈 칸을 건너뛰며 앞으로 스캔하면, 값이 빈
+// 라벨-값 쌍(예: 조회 실패한 svc_id 응답)에서 같은 행의 "다음 라벨 텍스트"를 값으로 잘못 주워버린다 —
+// 실제 devView.jsp 응답은 라벨-값이 항상 바로 인접해 있어(엑셀과 달리 병합/스킵 열이 없음) 이 방식으로 충분하다).
+function scanMciMeta(rows) {
+  const meta = {};
+  for (const cells of rows) {
+    for (let i = 0; i < cells.length - 1; i++) {
+      const key = META_LABELS[cells[i]];
+      if (!key || meta[key]) continue;
+      if (cells[i + 1]) meta[key] = cells[i + 1];
+    }
+  }
+  return meta;
+}
+
+function findMciMarkerRowIndex(rows, marker) {
+  return rows.findIndex((cells) => cells.some((c) => c.toUpperCase().includes(marker)));
+}
+
+function findMciHeaderRowIndex(rows, fromIndex) {
+  const lastRow = Math.min(fromIndex + 5, rows.length - 1);
+  for (let r = fromIndex; r <= lastRow; r++) {
+    if (rows[r].includes('필드ID')) return r;
+  }
+  return -1;
+}
+
+function buildMciColumnMap(headerCells) {
+  const map = {};
+  headerCells.forEach((text, idx) => {
+    const key = COLUMN_SYNONYMS[text];
+    if (key && map[key] === undefined) map[key] = idx;
+  });
+  return map;
+}
+
+// 헤더 다음 행부터 필드ID/필드명이 둘 다 빈 행을 만날 때까지 읽는다(= 섹션 끝, parseFieldRows와 동일 규칙).
+function parseMciFieldRows(rows, headerIndex, colMap) {
+  const fields = [];
+  for (let r = headerIndex + 1; r < rows.length; r++) {
+    const cells = rows[r];
+    const idRaw = colMap.id !== undefined ? cells[colMap.id] || '' : '';
+    const label = colMap.label !== undefined ? cells[colMap.label] || '' : '';
+    if (!idRaw && !label) break;
+    const depth = (idRaw.match(/▷/g) || []).length;
+    const id = idRaw.replace(/[▷\s]+/g, '');
+    if (!id) break;
+    fields.push({
+      depth,
+      id,
+      label,
+      type: colMap.type !== undefined ? cells[colMap.type] || '' : '',
+      usage: colMap.usage !== undefined ? cells[colMap.usage] || '' : '',
+      length: colMap.length !== undefined ? cells[colMap.length] || '' : '',
+      decimal: colMap.decimal !== undefined ? cells[colMap.decimal] || '' : '',
+      default: colMap.default !== undefined ? cells[colMap.default] || '' : '',
+      isArray: colMap.isArray !== undefined ? cells[colMap.isArray] || '' : '',
+      note: colMap.note !== undefined ? cells[colMap.note] || '' : '',
+    });
+  }
+  return fields;
+}
+
+function parseMciFieldSection(rows, marker) {
+  const markerRow = findMciMarkerRowIndex(rows, marker);
+  if (markerRow < 0) return [];
+  const headerRow = findMciHeaderRowIndex(rows, markerRow);
+  if (headerRow < 0) return [];
+  return parseMciFieldRows(rows, headerRow, buildMciColumnMap(rows[headerRow]));
+}
+
+/**
+ * MCI devView.jsp(svc_id로 조회한 "모델 정의서" HTML 페이지 1장) → ApiSpecInput 1건.
+ * svc_id가 잘못됐거나 페이지에 데이터가 없으면(SVC명/INPUT/OUTPUT 전부 못 찾음) null을 반환한다 —
+ * 컨트롤러가 이 경우 "조회 결과가 없습니다" 류 메시지로 안내한다.
+ *
+ * @param {string} html
+ * @param {string} [fallbackName] SVC명을 못 찾았을 때 쓸 이름(보통 사용자가 입력한 RECV_SVC_CD)
+ * @returns {ApiSpecInput|null}
+ */
+function mapMciHtmlToApiSpec(html, fallbackName) {
+  const rows = parseMciHtmlRows(html);
+  const meta = scanMciMeta(rows);
+  const inputFields = parseMciFieldSection(rows, '[INPUT]');
+  const outputFields = parseMciFieldSection(rows, '[OUTPUT]');
+
+  if (!meta.svcId && !inputFields.length && !outputFields.length) return null;
+
+  const endpoint = buildEndpointFromFields(
+    { svcId: meta.svcId || fallbackName, businessDesc: meta.businessDesc, inputFields, outputFields },
+    fallbackName
+  );
+  return assembleApiSpecInput([endpoint], meta, fallbackName);
+}
+
+module.exports = { mapMciHtmlToApiSpec, mapHabisWorkbookToApiSpec, mapImageExtractionsToApiSpec };

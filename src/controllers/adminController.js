@@ -85,6 +85,25 @@ async function extractSpecFromImage(client, file) {
   return JSON.parse(textBlock ? textBlock.text : '{}');
 }
 
+// API 등록 성공 직후 사이드바에 바로 노출되도록 메뉴를 자동 생성하고 admin에게 매핑한다(요청, 신규).
+// 그동안 등록(api_specs 저장)과 노출(menus/role_menus)이 완전히 분리된 2단계라 관리자가 두 번째 단계를
+// 깜빡하면 등록된 API가 조용히 사이드바에 안 보이는 문제가 있었다(실제로 common-codes 메뉴가 이렇게
+// 누락돼 있던 걸 확인해 db/scripts/49로 복구함). 여기서는 admin에게만 우선 매핑하고, 다른 role에게도
+// 보여줄지는 /admin/roles에서 관리자가 검토 후 판단하게 한다(정책 판단이라 자동화 대상 아님).
+// 실패해도 API 등록 자체는 이미 성공했으니 로그만 남기고 넘어간다 — 관리자가 /admin/menus에서 나중에
+// 수동으로 만들어도 되는 부가 기능이라 이것 때문에 등록 자체를 실패시키지 않는다.
+async function autoCreateSidebarMenu(category, domain, name) {
+  try {
+    const parentId = await menuModel.getApiGroupIdByCategory(category);
+    if (!parentId) return;
+    const menuId = await menuModel.createApiDocMenuIfMissing({ parentId, name, domain });
+    if (!menuId) return;
+    await roleModel.addMenuToRoleByCode('admin', menuId);
+  } catch (err) {
+    console.error('사이드바 메뉴 자동 생성 실패:', err);
+  }
+}
+
 const adminController = {
   index(req, res) {
     res.redirect('/admin/apis');
@@ -373,6 +392,7 @@ const adminController = {
         endpoints,
         displayOrder: Number(display_order) || 0,
       });
+      await autoCreateSidebarMenu(category, domain, name);
       return res.redirect('/admin/apis');
     } catch (err) {
       console.error(err);
@@ -499,14 +519,25 @@ const adminController = {
     }
   },
 
-  // ── API 등록/관리: MCI 서비스 주소 가져오기 (뼈대) ──
-  // MCI_SERVICE_BASE_URL(.env, 공통 영역)이 설정된 경우에만 동작한다. 실제 MCI 응답 필드명은
-  // apiSpecImportMapper.mapMciResponseToApiSpec에서 [Needs verification]로 표시된 잠정 매핑을 사용 중이며,
-  // 연동 확정 시 그 함수만 교체하면 된다.
+  // ── API 등록/관리: MCI 서비스 주소 가져오기 ──
+  // MCI_SERVICE_BASE_URL(.env, 공통 영역)에 devView.jsp 주소(예: http://<host>:<port>/iomanage/jsp/devView.jsp)를
+  // 설정하면 동작한다. 관리자가 입력한 RECV_SVC_CD(svc_id)를 쿼리스트링으로 붙여 호출하고, 응답은 JSON이 아니라
+  // "모델 정의서" 서식의 HTML 페이지라 apiSpecImportMapper.mapMciHtmlToApiSpec이 HTML 표를 직접 파싱한다
+  // (엑셀 업로드가 읽는 것과 동일한 라벨 체계 — 상세는 그 함수 주석 참고). 호스트는 항상 서버 env로
+  // 고정하고 클라이언트는 svc_id 값만 보낼 수 있다(SSRF 방지, 테스트 샌드박스의 systemCode 검증과 동일 패턴).
   async fetchApiFromMci(req, res) {
-    const address = (req.body && req.body.address ? String(req.body.address) : '').trim();
-    if (!address) {
-      return res.status(400).json({ success: false, message: 'MCI 서비스 주소를 입력하세요.' });
+    const svcId = (req.body && req.body.svcId ? String(req.body.svcId) : '').trim();
+    if (!svcId) {
+      return res.status(400).json({ success: false, message: 'RECV_SVC_CD(SVC_ID)를 입력하세요.' });
+    }
+    // 전체 URL을 붙여넣은 경우(devView.jsp?svc_id=... 등)에도 svc_id 값만 추출해서 쓴다.
+    const svcIdMatch = svcId.match(/[?&]svc_id=([^&\s]+)/i);
+    const extractedSvcId = svcIdMatch ? decodeURIComponent(svcIdMatch[1]) : svcId;
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(extractedSvcId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'RECV_SVC_CD 형식이 올바르지 않습니다(영문/숫자/-/_ 40자 이내).',
+      });
     }
     const baseUrl = process.env.MCI_SERVICE_BASE_URL;
     if (!baseUrl) {
@@ -516,15 +547,28 @@ const adminController = {
       });
     }
     try {
-      const response = await fetch(new URL(address, baseUrl).toString());
+      const url = new URL(baseUrl);
+      url.searchParams.set('svc_id', extractedSvcId);
+      const response = await fetch(url.toString(), { signal: AbortSignal.timeout(10000) });
       if (!response.ok) {
         return res
           .status(502)
           .json({ success: false, message: `MCI 서비스 응답 오류 (${response.status})` });
       }
-      const mciData = await response.json();
-      const spec = apiSpecImportMapper.mapMciResponseToApiSpec(mciData);
-      return res.json({ success: true, specs: [spec] });
+      const html = await response.text();
+      const spec = apiSpecImportMapper.mapMciHtmlToApiSpec(html, extractedSvcId);
+      if (!spec) {
+        return res.status(404).json({
+          success: false,
+          message: `RECV_SVC_CD "${extractedSvcId}"에 대한 조회 결과가 없습니다. 값을 확인하세요.`,
+        });
+      }
+      // 같은 svc_id를 실수로(또는 갱신 목적으로) 다시 조회하는 경우를 대비해 추천 도메인 코드가
+      // 이미 등록돼 있는지 미리 확인해 화면에서 "덮어쓸까요?" 안내를 띄울 수 있게 한다. MCI 가져오기
+      // 경로에만 한정된 안내이며, 실제 덮어쓰기는 여전히 기존 updateApi(수정) 제출로 이루어진다.
+      const existingRow = spec.domain ? await apiSpecModel.getByDomain(spec.domain) : null;
+      const existing = existingRow ? { id: existingRow.id, name: existingRow.name, domain: existingRow.domain } : null;
+      return res.json({ success: true, specs: [spec], existing });
     } catch (err) {
       console.error(err);
       return res.status(502).json({ success: false, message: 'MCI 서비스 조회 중 오류가 발생했습니다.' });

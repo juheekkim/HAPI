@@ -151,6 +151,34 @@ const menuModel = {
   async delete(id) {
     await pool.query('DELETE FROM menus WHERE id=$1', [id]);
   },
+
+  // 카테고리('resort'|'estate'|'common') → 최상위 API 그룹(menu_type='group') 메뉴 id.
+  // API 등록 시 사이드바 메뉴를 자동 생성할 부모를 찾는 용도(아래 createApiDocMenuIfMissing).
+  async getApiGroupIdByCategory(category) {
+    const nameByCategory = { resort: '리조트', estate: '에스테이트', common: '공통' };
+    const name = nameByCategory[category];
+    if (!name) return null;
+    const result = await pool.query(
+      "SELECT id FROM menus WHERE menu_type = 'group' AND name = $1 LIMIT 1",
+      [name]
+    );
+    return result.rows[0] ? result.rows[0].id : null;
+  },
+
+  // API 등록 직후 사이드바에 바로 노출되도록 api-doc 메뉴를 자동 생성한다. 같은 path의 메뉴가 이미
+  // 있으면 건너뛴다(정상 흐름에서는 api_specs.domain이 UNIQUE라 겹칠 일이 없지만, 방어적으로 멱등 처리).
+  async createApiDocMenuIfMissing({ parentId, name, domain }) {
+    const path = `/api-reference?doc=${domain}`;
+    const result = await pool.query(
+      `INSERT INTO menus (parent_id, name, path, menu_type, admin_only, display_order, is_active)
+       SELECT $1::int, $2::varchar, $3::varchar, 'api-doc', false,
+         COALESCE((SELECT MAX(display_order) + 1 FROM menus WHERE parent_id = $1::int), 0), true
+       WHERE NOT EXISTS (SELECT 1 FROM menus WHERE path = $3::varchar)
+       RETURNING id`,
+      [parentId, name, path]
+    );
+    return result.rows[0] ? result.rows[0].id : null;
+  },
 };
 
 module.exports = menuModel;

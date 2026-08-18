@@ -54,6 +54,10 @@ app.use((req, res, next) => {
 const loadNavMenus = require('./middlewares/loadNavMenus');
 app.use(loadNavMenus);
 
+// 비밀번호 변경 주기(1년)/강제 변경 플래그 검사 — 만료·강제 대상은 /auth/change-password로 유도
+const requirePasswordChange = require('./middlewares/requirePasswordChange');
+app.use(requirePasswordChange);
+
 // Routes
 const authRoutes = require('./routes/auth');
 const homeRoutes = require('./routes/home');

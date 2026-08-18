@@ -135,6 +135,8 @@ const adminController = {
       const code = String(Math.floor(10000000 + Math.random() * 90000000));
       await partnerModel.updateStatus(req.params.id, 'approved', null, code);
       // 파트너사 로그인 계정 생성 (초기 PW = partner_code)
+      // partner_code(숫자 8자리)는 비밀번호 정책(대/소문자·숫자·특수문자)을 만족하지 못하므로
+      // 최초 로그인 직후 비밀번호 변경을 강제한다(middlewares/requirePasswordChange).
       const hash = await bcrypt.hash(code, 10);
       await userModel.create({
         username: code,
@@ -142,6 +144,7 @@ const adminController = {
         name: partner ? partner.manager_name : '파트너',
         role: 'BigCorp',
         partnerId: Number(req.params.id),
+        mustChangePassword: true,
       });
     } catch (err) {
       console.error(err);

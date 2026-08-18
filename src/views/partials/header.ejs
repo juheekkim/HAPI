@@ -9,6 +9,7 @@
   <div class="nav-right">
     <% if (user) { %>
       <span class="nav-username"><%= user.name %></span>
+      <a href="/auth/change-password" class="nav-user">비밀번호 변경</a>
       <form action="/auth/logout" method="POST" style="display:inline">
         <button class="nav-user" type="submit">로그아웃</button>
       </form>

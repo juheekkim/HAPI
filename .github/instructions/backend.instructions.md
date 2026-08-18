@@ -18,7 +18,7 @@ Root instructions in `/CLAUDE.md` (and `/AGENTS.md`, `/GEMINI.md`) take priority
 - Auth: session-based (`express-session`). `middlewares/isAuthenticated.js` guards all menu routes; `middlewares/isAdmin.js` guards `/admin`. `role` values in use: `admin`, `partner` (schema comment says `user`).
 - Controllers render EJS and pass `{ title, currentMenu, ... }`; async handlers wrap DB calls in try/catch and log errors.
 - Many models return **STATIC fallback data** when the DB is unavailable — preserve this pattern when adding read queries.
-- Passwords hashed with `bcrypt`. Partner login: `username = partner_code`, initial password = `partner_code`.
+- Passwords hashed with `bcrypt`. Partner login: `username = partner_code`, initial password = `partner_code` (`must_change_password=true` since it fails policy). Policy + 1-year expiry: `src/utils/passwordPolicy.js`, enforced by `middlewares/requirePasswordChange.js` (registered globally in `app.js`). See `docs/auth.md`.
 
 ## Rules
 - Follow ESLint + Prettier (`coding-convention.md`), `'use strict'`, `eqeqeq`, `const`/`let`.

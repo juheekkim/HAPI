@@ -77,8 +77,9 @@
   - `ep.params`가 비어 있어도 `ep.responseExample`만 있으면 응답 표가 보이도록 두 조건을 독립적으로 분리(예전엔 파라미터가 있을 때만 응답 예시 블록이 렌더링되는 제약이 있었음).
 
 ### Auth
-- 역할: 로그인/로그아웃, 파트너사 코드 신청.
-- 위치: `routes/auth.js` → `authController.js` → `userModel`, `partnerModel` → `views/auth/login.ejs`(`layout:false`).
+- 역할: 로그인/로그아웃, 파트너사 코드 신청, 비밀번호 변경(자율 + 정책 위반/주기 만료 강제).
+- 위치: `routes/auth.js` → `authController.js` → `userModel`, `partnerModel` → `views/auth/login.ejs`(`layout:false`), `views/auth/changePassword.ejs`(`layout:false`).
+- 비밀번호 정책(`src/utils/passwordPolicy.js`)·변경 주기(1년)·강제 이동(`middlewares/requirePasswordChange.js`, 전역 등록)는 `docs/auth.md`·`docs/business-rules.md` §11 참고. 헤더 우측 "비밀번호 변경" 링크(`views/partials/header.ejs`)로 자율 접근 가능.
 
 ### Chatbot (공통 위젯)
 - 역할: 로그인한 모든 페이지 우측 하단 아이콘 → 대화 패널. OpenAI function calling으로 `hapi_db` 데이터와 포털 정적 콘텐츠(공지/FAQ/API 문서/공통코드/에러코드/시스템정보/헤더필드/가이드)를 조회해 답하고, 로그인 사용자 본인의 문의·방화벽 신청 현황도 세션 범위로 조회 가능. 특정 개발자 소유가 아닌 레이아웃/파셜과 동일한 **공통 영역**(`team-ownership.md` §3).

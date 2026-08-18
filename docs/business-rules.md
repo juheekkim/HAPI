@@ -21,9 +21,9 @@
 ## 2. 파트너사 온보딩 (확정 흐름)
 1. 파트너가 `/auth/apply`로 신청 → `partners` 저장(`status='pending'`).
 2. 관리자가 `/admin/partners`에서 승인/반려.
-   - 승인: `partner_code` = 8자리 숫자 난수 채번 → `partners.status='approved'` + code 저장. 이어서 로그인 계정 생성: `users(username=code, password=bcrypt(code), role='BigCorp', partner_id)`. **초기 비밀번호 = partner_code.**
+   - 승인: `partner_code` = 8자리 숫자 난수 채번 → `partners.status='approved'` + code 저장. 이어서 로그인 계정 생성: `users(username=code, password=bcrypt(code), role='BigCorp', partner_id, must_change_password=true)`. **초기 비밀번호 = partner_code.**
    - 반려: `status='rejected'` + `reject_reason` 저장(계정 미생성).
-3. 파트너 로그인: 아이디 = `partner_code`, 비밀번호 = 초기값(code).
+3. 파트너 로그인: 아이디 = `partner_code`, 비밀번호 = 초기값(code). `partner_code`는 숫자로만 구성돼 §12 비밀번호 정책을 만족하지 못하므로, 로그인 직후 어떤 메뉴로 이동해도 `/auth/change-password`로 강제 이동해 비밀번호를 먼저 변경해야 한다(`requirePasswordChange` 미들웨어, `docs/auth.md` 참고).
 
 > 규칙 확인 필요: 이메일 통지("이메일로 안내드립니다") 문구는 UI에 있으나 **메일 발송 로직은 코드에 없음** → **[Needs verification]**.
 
@@ -59,7 +59,7 @@
 
 ## 8. 예외 / 에지 케이스
 - DB 미연결·쿼리 오류: 다수 조회 모델이 STATIC fallback 반환하고 화면은 정상 렌더(에러 숨김) → 운영 시 오해 소지, 로깅만 수행.
-- 입력 검증: 로그인은 빈값 체크. 그 외 폼(신청/문의/방화벽)은 서버측 강한 검증이 약함 → 보강 대상 **[Needs verification]**.
+- 입력 검증: 로그인은 빈값 체크. 새 비밀번호는 §11 정책으로 서버측 검증(길이/문자종류/아이디 포함 등). 그 외 폼(신청/문의/방화벽)은 서버측 강한 검증이 약함 → 보강 대상 **[Needs verification]**.
 - 파트너 중복 신청/재승인 방지 규칙: 코드에 명시 없음 **[Needs verification]**.
 
 ## 9. 시스템 이동 조건 (메뉴 분기)
@@ -105,3 +105,10 @@
   1. 응답이 `SystemHeader`/`TransactionHeader`를 포함한 JSON 객체가 아님(예: 게이트웨이의 HTML 404 에러 페이지) → "⚠ 예상된 응답 형식이 아닙니다..." 경고 + 원본 응답을 펼친 상태로 바로 표시(요약할 게 없으므로).
   2/3. 정상 봉투 → `MessageHeader.MSG_PRCS_RSLT_CD`로 성공(`'0'`, 녹색 "✓ 처리 결과")/실패(그 외, 빨강 "⚠ 처리 실패") 배너 + `MSG_DATA_SUB[]`의 `MSG_CD`/`MSG_CTNS` 나열 + `Data`(응답 반환 결과, 비어있으면 "(비어 있음)") 요약 카드를 먼저 보여주고, "▶ 전체 응답 보기" 버튼으로 접힌 전체 JSON을 필요할 때만 펼친다.
 - SSRF 방지: 호출 대상 host는 서버 env(`SANDBOX_GATEWAY_BASE_URL`)로 고정, 클라이언트는 `systemCode`(형식 검증됨)와 JSON body만 편집 가능(host 지정 불가). 미설정 시 501.
+
+## 11. 비밀번호 정책 / 변경 주기
+- 신규 비밀번호는 10~64자 + 영문 대/소문자·숫자·특수문자 각 1자 이상 + 공백 금지 + 동일 문자 3연속 금지 + 아이디 포함 금지를 모두 만족해야 한다(`src/utils/passwordPolicy.js`, `/auth/change-password`에서 검증).
+- 변경 주기는 1년(`PASSWORD_MAX_AGE_DAYS`). `users.password_changed_at` 기준 1년 경과 시 다음 요청부터 `/auth/change-password?expired=1`로 강제 이동.
+- 파트너 승인 시 자동 발급되는 초기 비밀번호(`partner_code`, 숫자 8자리)는 위 정책을 만족하지 못해 `must_change_password=true`로 발급되며, 최초 로그인 직후 어떤 메뉴에 접근해도 비밀번호 변경 화면으로 강제 이동한다(§2 참고).
+- 관리자 시드 계정(`admin`/`admin123`, `npm run db:setup`)은 위 강제 대상이 아니다 — 정책/주기와 무관하게 그대로 로그인 가능(운영 반입 전 수동 변경 권장, `docs/auth.md` 참고).
+- 상세 흐름/미들웨어는 `docs/auth.md` 참고.

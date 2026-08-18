@@ -9,5 +9,7 @@ router.post('/login', authController.login);
 router.post('/logout', authController.logout);
 router.get('/apply', authController.applyPage);
 router.post('/apply', authController.apply);
+router.get('/change-password', authController.changePasswordPage);
+router.post('/change-password', authController.changePassword);
 
 module.exports = router;

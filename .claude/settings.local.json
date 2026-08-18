@@ -117,7 +117,13 @@
       "Bash(curl -s -c /tmp/claude-1000/-mnt-c-DEV-HAPI/20891b3c-e060-462c-90f6-ae4060037faa/scratchpad/cookies3.txt -b /tmp/claude-1000/-mnt-c-DEV-HAPI/20891b3c-e060-462c-90f6-ae4060037faa/scratchpad/cookies3.txt http://localhost:3000/api-reference?doc=OchKioskRsv -o /tmp/claude-1000/-mnt-c-DEV-HAPI/20891b3c-e060-462c-90f6-ae4060037faa/scratchpad/page3_och.html -w 'och: %{http_code}\\\\n')",
       "Bash(curl -s -c /tmp/claude-1000/-mnt-c-DEV-HAPI/20891b3c-e060-462c-90f6-ae4060037faa/scratchpad/cookies3.txt -b /tmp/claude-1000/-mnt-c-DEV-HAPI/20891b3c-e060-462c-90f6-ae4060037faa/scratchpad/cookies3.txt http://localhost:3000/api-reference?doc=condo -o /tmp/claude-1000/-mnt-c-DEV-HAPI/20891b3c-e060-462c-90f6-ae4060037faa/scratchpad/page3_condo.html -w 'condo: %{http_code}\\\\n')",
       "Bash(PGPASSWORD=5166838p@ psql -h localhost -U postgres -d hapi_db -t -A -c ' *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(python3 -c ' *)",
+      "Bash(pip install *)",
+      "Bash(python3 -m pip --version)",
+      "Bash(mkdir -p /tmp/claude-1000/-home-user-HAPI/bb92bd05-0eb1-44a9-b855-b637ba29160c/scratchpad/xlsx_extract)",
+      "Bash(unzip -o \"/home/user/HAPI/my_docs/API_공수산정자료.xlsx\")",
+      "Bash(xxd \"/home/user/HAPI/my_docs/API_공수산정자료.xlsx\")"
     ]
   }
 }

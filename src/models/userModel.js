@@ -13,10 +13,20 @@ const userModel = {
     return result.rows[0] || null;
   },
 
-  async create({ username, passwordHash, name, role, partnerId = null }) {
+  async create({ username, passwordHash, name, role, partnerId = null, mustChangePassword = false }) {
     const result = await pool.query(
-      'INSERT INTO users (username, password_hash, name, role, partner_id) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-      [username, passwordHash, name, role, partnerId]
+      `INSERT INTO users (username, password_hash, name, role, partner_id, must_change_password)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [username, passwordHash, name, role, partnerId, mustChangePassword]
+    );
+    return result.rows[0];
+  },
+
+  async updatePassword(id, passwordHash) {
+    const result = await pool.query(
+      `UPDATE users SET password_hash = $1, password_changed_at = now(), must_change_password = false
+       WHERE id = $2 RETURNING *`,
+      [passwordHash, id]
     );
     return result.rows[0];
   },

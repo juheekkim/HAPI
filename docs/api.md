@@ -20,10 +20,10 @@
 | common | error-codes | 공통 에러 코드 | (errorCodes 목록) |
 | common | auth | 인증 API | POST `/api/v1/auth/token` |
 
-## 대형법인사 리조트 예약 등록 (DB 스펙)
-- `44_update_bigcorp_resort_reservation_api.sql`이 `domain='condo'`의 예약 등록 엔드포인트를 `POST HBSREMPRR9901`로 갱신한다.
-- 관리자 화면에서 확정한 Request 파라미터 21개와 `예약 등록` 설명을 `api_specs.endpoints` JSONB에 저장한다.
-- 기존 예약 조회·취소 엔드포인트는 보존하며, 같은 서비스 ID 또는 기존 레거시 예약 등록 엔드포인트를 교체하므로 반복 실행해도 중복되지 않는다.
+## 대형법인사 콘도 예약 API (DB 스펙)
+- `51_upsert_bigcorp_condo_reservation_apis.sql`은 로컬 관리자 화면에서 확정한 `domain='condo'`의 API 8종 전체를 `api_specs.endpoints` JSONB로 저장한다.
+- 서비스 코드는 `HBSREMPRR9901`, `HBSREMPRR9902`, `HBSREMPRR9903` 2종, `HBSREMPRR9905`, `HBSREMPRR9906`, `HBSREMPRR9907`, `HBSREMPRR9931`이다.
+- 신규 환경에서는 INSERT하고 기존 `condo` 행은 현재 스냅샷으로 갱신하므로 반복 실행해도 중복되지 않는다. `44_update_bigcorp_resort_reservation_api.sql`의 예약 등록 변경도 이 전체 스냅샷에 포함된다.
 
 ## 공통 규약 (스펙상)
 - 응답: `{ resultCode, resultMsg, data }`. 성공 `resultCode="0000"`.

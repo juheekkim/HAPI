@@ -39,7 +39,8 @@ views/partials/chatbot.ejs (layouts/main.ejs에 포함, locals.user 있을 때�
 | `get_my_support_status` | **로그인 사용자 본인**의 문의 내역/방화벽 신청 현황 | `inquiryModel.getByUserId` + `partnerFirewallApplyModel.getByUserId` |
 
 ## 보안 범위
-- 모든 `/chatbot/*` 라우트는 `isAuthenticated` 필수 — 비로그인 사용자는 위젯 자체가 렌더되지 않는다(`chatbot.ejs`의 `locals.user` 체크).
+- 모든 `/chatbot/*` 라우트는 `isAuthenticated` + `requireAssistantAccess` 필수 — 비로그인 사용자는 위젯 자체가 렌더되지 않는다(`chatbot.ejs`의 `locals.user` 체크).
+- **AI 기능 권한**: 역할에 "AI 어시스턴트"(`/assistant`, `menu_type='nav'`) 대메뉴가 `role_menus`로 매핑돼 있어야 위젯이 렌더되고(`chatbot.ejs`의 `locals.canUseAssistant`) `/chatbot/*` 호출이 허용된다(없으면 403 JSON). 값은 `loadNavMenus`가 nav 메뉴 목록에서 계산(`res.locals.canUseAssistant`), 검사는 `middlewares/requireAssistantAccess.js`. 관리자 > 역할 관리에서 해당 메뉴 체크를 끄면 상단 메뉴·`/assistant` 페이지·우측 하단 위젯·챗봇 API가 함께 막힌다. 메뉴를 비활성(`is_active=false`)하면 전 역할에서 꺼진다.
 - `search_api_docs`는 `chatbotModel.resolveAllowedDocs(sessionUser)`로 파트너 권한 밖 API 문서를 사전에 제외한다. 이 함수는 `apiReferenceController.js`(박승욱 소유 파일)의 동명 로직을 **의도적으로 재구현**한 것 — 소유 파일을 직접 import/수정하지 않기 위함. `menuModel.getApiSidebarByRole`/`partnerModel.getRoleCodeById` 로직이 바뀌면 두 곳 모두 갱신해야 한다.
 - `get_my_support_status`는 `userId`를 항상 **서버 세션에서 고정 주입**한다. LLM이나 클라이언트가 다른 사용자의 id를 지정해 데이터를 요청할 수 없다.
 - 노출되지 않는 데이터: `users.password_hash`, 타 사용자/타 파트너의 문의·신청 내역, `partners` 테이블 원본(이메일/전화 등), admin 전용 화면 데이터. SQL을 직접 실행하는 tool은 없음 — 전부 기존 모델 함수를 통한 파라미터 바인딩 조회.

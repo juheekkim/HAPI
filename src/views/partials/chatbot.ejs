@@ -1,4 +1,4 @@
-<% if (locals.user) { %>
+<% if (locals.user && locals.canUseAssistant) { %>
 <div id="chatbot-widget" class="chatbot-widget">
   <button id="chatbot-toggle" class="chatbot-toggle" type="button" aria-label="챗봇 열기">
     <img id="chatbot-toggle-icon" src="" alt="챗봇" />

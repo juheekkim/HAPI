@@ -91,6 +91,7 @@
 ### AI 어시스턴트 (실험 기능)
 - 역할: `/assistant` 전용 대메뉴 — 로그인 사용자 맞춤 추천(역할별 API 문서 카드/추천 질문 칩/내 지원 현황/공지)과 풀페이지 AI 대화. 링크 클릭 시 배경 이동 대신 **우측 문서 패널**에 API Reference 부분화면을 주입해 표시.
 - 위치: `routes/assistant.js` → `assistantController.js` → `views/assistant/index.ejs` + `public/js/assistant.js` + `public/css/assistant.css`. 백엔드 대화 API는 신설 없이 기존 `/chatbot/*` 재사용, 답변 렌더는 `chatbot.js`가 노출한 `window.HapiChatbotShared` 재사용. 상세는 `docs/assistant.md`.
+- 권한: 역할의 `/assistant` 메뉴 매핑 = AI 기능 권한. `loadNavMenus`가 `res.locals.canUseAssistant`를 계산하고 `middlewares/requireAssistantAccess.js`가 `/assistant`·`/chatbot/*`를 403 처리, `partials/chatbot.ejs`가 위젯 렌더를 결정(`docs/chatbot.md` 보안 범위).
 
 ## 모듈 간 의존성 / 분기
 - 공통: 세션(`res.locals.user`), 헤더 partial(`currentMenu`, admin 노출 분기), `apiClient.js`.

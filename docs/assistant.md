@@ -4,7 +4,7 @@
 > AI 대화로 바로 필요한 정보를 확인한다"를 별도 대메뉴로 시험한다(홈 화면 대체 아님).
 
 ## 위치
-`routes/assistant.js`(isAuthenticated) → `controllers/assistantController.js` →
+`routes/assistant.js`(isAuthenticated + requireAssistantAccess) → `controllers/assistantController.js` →
 `views/assistant/index.ejs` + `public/js/assistant.js` + `public/css/assistant.css`.
 메뉴: `db/scripts/46_add_assistant_menu.sql` — `menus`에 top-nav `AI 어시스턴트`(`/assistant`,
 `display_order` 6) 신설, `role_menus`는 모든 역할에 매핑(제한 필요 시 `/admin/roles`에서 조정).
@@ -42,4 +42,4 @@
 - 패널 안에서는 `.api-sidebar`를 숨기고 `.api-layout`을 패널 높이(100%)로 오버라이드.
 
 ## 접근/보안
-- `isAuthenticated` 필수. 데이터 조회는 전부 세션 사용자 기준(역할별 문서, 본인 지원 현황).
+- `isAuthenticated` + `requireAssistantAccess` 필수 — 역할에 이 메뉴(`/assistant`)가 매핑돼 있지 않으면 URL 직접 접근도 403. 같은 권한으로 우측 하단 챗봇 위젯·`/chatbot/*`도 제어(`docs/chatbot.md`). 데이터 조회는 전부 세션 사용자 기준(역할별 문서, 본인 지원 현황).

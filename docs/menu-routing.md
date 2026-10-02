@@ -9,7 +9,7 @@
 | 시작하기 | `/guide` | `routes/guide.js` | 로그인 필요 |
 | API | `/api-reference` | `routes/apiReference.js` | 로그인 필요 |
 | 운영 지원 | `/support` | `routes/support.js` | 로그인 필요 |
-| AI 어시스턴트 | `/assistant` | `routes/assistant.js` | 로그인 필요 (실험 기능, `46` 시드, `47`에서 관리자 앞으로 순서 변경) |
+| AI 어시스턴트 | `/assistant` | `routes/assistant.js` | 로그인 + 역할에 `/assistant` 메뉴 매핑 필요(`requireAssistantAccess`, 없으면 403 — 우측 하단 챗봇 위젯·`/chatbot/*`도 동일 권한) (실험 기능, `46` 시드, `47`에서 관리자 앞으로 순서 변경) |
 | 관리자 | `/admin` | `routes/admin.js` | admin 전용 |
 | (로그인/신청) | `/auth` | `routes/auth.js` | 공개 |
 

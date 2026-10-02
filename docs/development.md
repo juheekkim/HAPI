@@ -34,6 +34,8 @@ npm start            # 프로덕션 실행
   - `npm run db:scripts -- --baseline <N>` — 기존 DB 최초 1회: `N`번 이하 스크립트를 실행 없이 "실행됨"으로 기록. 이미 반영된 마지막 번호를 지정(예: `51`).
 - 새 DB(테이블 없음)는 baseline 없이 `npm run db:scripts`로 01부터 전체 실행된다(01~51 신규 DB 전체 실행 검증됨).
 
+- 서버 배포/운영 실행 절차는 `deployment.md` 참고.
+
 ## 3. 빌드
 - 별도 번들 빌드 없음(SSR). 정적 자원은 `src/public`에서 직접 서빙.
 

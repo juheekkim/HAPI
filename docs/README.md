@@ -8,6 +8,7 @@ HAPI 프로젝트 상세 문서 모음. 루트/영역별 AI 지시문이 참조�
 - `db-schema.md` — 테이블/컬럼/관계/인덱스/쿼리/주의사항
 - `business-rules.md` — 권한·온보딩·방화벽·공지/문의 규칙, 예외
 - `development.md` — 환경/실행/빌드/수정 절차/테스트/문서 갱신
+- `deployment.md` — 서버 배포/실행, `.env`·DB 스크립트 준비, 배포 체크리스트
 - `frontend.md` — EJS SSR 뷰/에셋/렌더 규약
 - `backend.md` — Express 라우트/컨트롤러/모델 규약, 알려진 이슈
 - `auth.md` — 세션/로그인/권한/계정

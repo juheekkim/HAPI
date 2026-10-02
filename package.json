@@ -7,6 +7,7 @@
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "db:scripts": "node src/scripts/run-db-scripts.js",
+    "db:scripts:status": "node src/scripts/run-db-scripts.js --status",
     "db:scripts:debug": "node --inspect src/scripts/run-db-scripts.js",
     "db:setup": "node src/scripts/setup.js",
     "lint": "eslint \"src/**/*.js\"",

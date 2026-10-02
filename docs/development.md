@@ -15,13 +15,24 @@
 ## 2. 실행
 ```bash
 npm install
-# PostgreSQL에 DB 생성 후 db/scripts/ 순번대로 실행 (01, 02, 07, 16 ... 43)
+# PostgreSQL에 DB 생성 후 미실행 스크립트 일괄 실행(아래 "DB 스크립트 실행기" 참고)
+npm run db:scripts
 npm run db:setup     # 어드민 계정: admin / admin123
 cp .env.example .env # 없으면 위 키로 직접 생성
 npm run dev          # nodemon, http://localhost:3000
 npm start            # 프로덕션 실행
 ```
 - 챗봇 위젯을 쓰려면 `db/scripts/43_create_chatbot_clears_table.sql`까지 실행하고 `.env`에 `CHATBOT_LLM_API_KEY`/`CHATBOT_LLM_BASE_URL`을 채운다(미설정 시 위젯은 뜨지만 메시지 전송은 501).
+
+### DB 스크립트 실행기 (`npm run db:scripts`, `src/scripts/run-db-scripts.js`)
+- 실행 이력 테이블 `schema_migrations`(실행기가 자동 생성)에 기록된 파일은 건너뛰고, **미실행 스크립트만** 순번대로 실행한다. 이력 키는 `db/scripts` 기준 상대 경로.
+- 첫 실패에서 중단(실패 파일은 기록되지 않음) → 원인 수정 후 재실행하면 그 파일부터 이어서 실행.
+- 안전장치: 이력이 비어 있는데 `users` 테이블이 이미 있는 기존 DB면 실행을 거부한다(`28`/`29` 스냅샷의 TRUNCATE로 데이터가 스냅샷 시점으로 되돌아가는 사고 방지).
+- 명령:
+  - `npm run db:scripts` — 미실행 스크립트 실행(`git pull` 후 이것만 실행).
+  - `npm run db:scripts:status` — 실행/미실행 목록만 출력(DB 변경 없음).
+  - `npm run db:scripts -- --baseline <N>` — 기존 DB 최초 1회: `N`번 이하 스크립트를 실행 없이 "실행됨"으로 기록. 이미 반영된 마지막 번호를 지정(예: `51`).
+- 새 DB(테이블 없음)는 baseline 없이 `npm run db:scripts`로 01부터 전체 실행된다(01~51 신규 DB 전체 실행 검증됨).
 
 ## 3. 빌드
 - 별도 번들 빌드 없음(SSR). 정적 자원은 `src/public`에서 직접 서빙.

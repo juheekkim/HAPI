@@ -94,7 +94,7 @@ app.use((err, req, res, _next) => {
   res.status(500).render('error/500', { title: '서버 오류', currentMenu: '' });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5370;
 app.listen(PORT, () => {
   console.log(`HAPI Portal → http://localhost:${PORT}`);
 });
